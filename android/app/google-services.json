@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "423847166550",
+    "project_id": "landandplot-v2",
+    "storage_bucket": "landandplot-v2.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:423847166550:android:5014d53e9a0c80b39531f7",
+        "android_client_info": {
+          "package_name": "com.landandplotv2.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "423847166550-06umbqp3nen07e50a88nhis2hiqhk1io.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.landandplotv2.app",
+            "certificate_hash": "ac5981d545220b4e3da1507982031aaaf679cc59"
+          }
+        },
+        {
+          "client_id": "423847166550-mttdvg7ih2n901q3g2me4btr46u44lpp.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyASN9fWXsjJ0hewpo0CpUSLdK0CZ2ceCko"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "423847166550-mttdvg7ih2n901q3g2me4btr46u44lpp.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "423847166550-sddpkmpf1knger600lq2c8m04p336kr7.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.landandplot"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
