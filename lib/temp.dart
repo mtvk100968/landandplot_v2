@@ -1,73 +1,85 @@
-import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'firebase_options.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../models/user_model.dart'; // Import the user model
+import './user_service.dart'; // Import the user service
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
+final FirebaseAuth _auth = FirebaseAuth.instance;
+
+Future<User?> signInWithGoogle() async {
+  final GoogleSignIn googleSignIn = GoogleSignIn();
+  final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+  if (googleUser != null) {
+	final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+	final AuthCredential credential = GoogleAuthProvider.credential(
+	  accessToken: googleAuth.accessToken,
+	  idToken: googleAuth.idToken,
+	);
+	final UserCredential userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
+	final User? user = userCredential.user;
+
+	if (user != null) {
+	  // Create an AppUser instance
+	  AppUser appUser = AppUser(
+		uid: user.uid,
+		name: user.displayName,
+		email: user.email,
+		phoneNumber: user.phoneNumber,
+	  );
+
+	  // Save or update the user in Firestore
+	  await UserService().saveUser(appUser);
+	}
+
+	return user;
+  }
+  return null;
+}
+
+Future<void> signInWithPhoneNumber(String phoneNumber, Function(String) codeSent, Function(FirebaseAuthException) verificationFailed) async {
+  await _auth.verifyPhoneNumber(
+    phoneNumber: phoneNumber,
+    verificationCompleted: (PhoneAuthCredential credential) async {
+      final UserCredential authResult = await _auth.signInWithCredential(credential);
+      final User? user = authResult.user;
+
+      if (user != null) {
+        // Create an AppUser instance
+        AppUser appUser = AppUser(
+          uid: user.uid,
+          name: user.displayName,
+          email: user.email,
+          phoneNumber: user.phoneNumber,
+        );
+
+        // Save or update the user in Firestore
+        await UserService().saveUser(appUser);
+      }
+    },
+    verificationFailed: verificationFailed,
+    codeSent: (String verificationId, int? resendToken) {
+      codeSent(verificationId);
+    },
+    codeAutoRetrievalTimeout: (String verificationId) {},
   );
-  runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+Future<User?> signInWithPhoneAuthCredential(PhoneAuthCredential phoneAuthCredential) async {
+  final UserCredential authResult = await _auth.signInWithCredential(phoneAuthCredential);
+  final User? user = authResult.user;
 
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+  if (user != null) {
+    // Create an AppUser instance
+    AppUser appUser = AppUser(
+      uid: user.uid,
+      name: user.displayName,
+      email: user.email,
+      phoneNumber: user.phoneNumber,
     );
-  }
-}
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
+    // Save or update the user in Firestore
+    await UserService().saveUser(appUser);
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ),
-    );
-  }
+  return user;
 }
