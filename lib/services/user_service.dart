@@ -15,7 +15,8 @@ class UserService {
 
   // Fetch a user from Firestore by UID
   Future<AppUser?> getUserById(String uid) async {
-    DocumentSnapshot<Map<String, dynamic>> doc = await _firestore.collection(collectionPath).doc(uid).get();
+    DocumentSnapshot<Map<String, dynamic>> doc =
+        await _firestore.collection(collectionPath).doc(uid).get();
     if (doc.exists) {
       return AppUser.fromDocument(doc.data()!);
     }
@@ -29,6 +30,21 @@ class UserService {
 
   // Update user information
   Future<void> updateUser(AppUser user) async {
-    await _firestore.collection(collectionPath).doc(user.uid).update(user.toMap());
+    await _firestore
+        .collection(collectionPath)
+        .doc(user.uid)
+        .update(user.toMap());
+  }
+
+  Future<void> addPropertyToUser(String userId, String propertyId) async {
+    try {
+      DocumentReference userRef =
+          _firestore.collection(collectionPath).doc(userId);
+      await userRef.update({
+        'propertyIds': FieldValue.arrayUnion([propertyId])
+      });
+    } catch (e) {
+      throw Exception('Failed to link property to user');
+    }
   }
 }
