@@ -9,14 +9,15 @@ class SellLandScreen extends StatefulWidget {
   const SellLandScreen({super.key});
 
   @override
-  _SellLandScreenState createState() => _SellLandScreenState();
+  SellLandScreenState createState() => SellLandScreenState();
 }
 
-class _SellLandScreenState extends State<SellLandScreen> {
+class SellLandScreenState extends State<SellLandScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _areaController = TextEditingController();
   final TextEditingController _priceController = TextEditingController();
-  final TextEditingController _pricePerSqYardController = TextEditingController();
+  final TextEditingController _pricePerSqYardController =
+      TextEditingController();
 
   @override
   void dispose() {
@@ -26,7 +27,7 @@ class _SellLandScreenState extends State<SellLandScreen> {
     super.dispose();
   }
 
-  void _submitForm() async {
+  Future<void> _submitForm() async {
     if (_formKey.currentState!.validate()) {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
@@ -38,21 +39,33 @@ class _SellLandScreenState extends State<SellLandScreen> {
           pricePerSqYard: double.parse(_pricePerSqYardController.text),
         );
 
-        // Save the property using PropertyService
-        String propertyId = await PropertyService().addProperty(newProperty);
+        try {
+          // Save the property using PropertyService
+          String propertyId = await PropertyService().addProperty(newProperty);
 
-        // Link the property to the user using UserService
-        await UserService().addPropertyToUser(user.uid, propertyId);
+          // Link the property to the user using UserService
+          await UserService().addPropertyToUser(user.uid, propertyId);
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Property added successfully!')),
-        );
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Property added successfully!')),
+            );
 
-        Navigator.pop(context);
+            Navigator.pop(context);
+          }
+        } catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Failed to add property: $e')),
+            );
+          }
+        }
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('User not logged in.')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('User not logged in.')),
+          );
+        }
       }
     }
   }

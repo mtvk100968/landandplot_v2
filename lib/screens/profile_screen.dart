@@ -30,13 +30,7 @@ class ProfileScreenState extends State<ProfileScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             ElevatedButton(
-              onPressed: () async {
-                if (!mounted) return;
-                User? user = await signInWithGoogle();
-                if (user != null && mounted) {
-                  Navigator.pushReplacementNamed(context, '/buy_land');
-                }
-              },
+              onPressed: () => _signInWithGoogleAndNavigate(),
               child: const Text('Sign in with Google'),
             ),
             ElevatedButton(
@@ -49,6 +43,17 @@ class ProfileScreenState extends State<ProfileScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _signInWithGoogleAndNavigate() async {
+    User? user = await signInWithGoogle();
+    if (user != null && mounted) {
+      _navigateToBuyLand();
+    }
+  }
+
+  void _navigateToBuyLand() {
+    Navigator.pushReplacementNamed(context, '/buy_land');
   }
 
   void _showPhoneNumberDialog(BuildContext context) {
@@ -74,41 +79,13 @@ class ProfileScreenState extends State<ProfileScreen> {
           actions: [
             TextButton(
               onPressed: () async {
-                if (!mounted) return;
-                await signInWithPhoneNumber(
-                  _phoneController.text,
-                  (String verId) {
-                    if (mounted) {
-                      setState(() {
-                        _verificationId = verId;
-                      });
-                    }
-                  },
-                  (FirebaseAuthException e) {
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                            content: Text(
-                                'Failed to verify phone number: ${e.message}')),
-                      );
-                    }
-                  },
-                );
+                await _sendCode();
               },
               child: const Text('Send Code'),
             ),
             TextButton(
               onPressed: () async {
-                if (!mounted) return;
-                final PhoneAuthCredential credential =
-                    PhoneAuthProvider.credential(
-                  verificationId: _verificationId,
-                  smsCode: _codeController.text,
-                );
-                User? user = await signInWithPhoneAuthCredential(credential);
-                if (user != null && mounted) {
-                  Navigator.pushReplacementNamed(context, '/buy_land');
-                }
+                await _signInWithPhoneAndNavigate();
               },
               child: const Text('Sign In'),
             ),
@@ -116,5 +93,38 @@ class ProfileScreenState extends State<ProfileScreen> {
         );
       },
     );
+  }
+
+  Future<void> _sendCode() async {
+    await signInWithPhoneNumber(
+      _phoneController.text,
+      (String verId) {
+        if (mounted) {
+          setState(() {
+            _verificationId = verId;
+          });
+        }
+      },
+      (FirebaseAuthException e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to verify phone number: ${e.message}'),
+            ),
+          );
+        }
+      },
+    );
+  }
+
+  Future<void> _signInWithPhoneAndNavigate() async {
+    final PhoneAuthCredential credential = PhoneAuthProvider.credential(
+      verificationId: _verificationId,
+      smsCode: _codeController.text,
+    );
+    User? user = await signInWithPhoneAuthCredential(credential);
+    if (user != null && mounted) {
+      _navigateToBuyLand();
+    }
   }
 }

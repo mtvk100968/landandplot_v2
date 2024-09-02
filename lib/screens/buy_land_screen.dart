@@ -1,26 +1,60 @@
 import 'package:flutter/material.dart';
 import '../services/property_service.dart';
 import '../models/property_model.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+class BuyLandScreen extends StatefulWidget {
+  const BuyLandScreen({super.key});
 
+  @override
+  BuyLandScreenState createState() => BuyLandScreenState();
+}
+
+class BuyLandScreenState extends State<BuyLandScreen> {
   Future<List<Property>> fetchProperties() async {
     PropertyService propertyService = PropertyService();
     return await propertyService.getAllProperties();
+  }
+
+  Future<bool> isLoggedIn() async {
+    User? user = FirebaseAuth.instance.currentUser;
+    return user != null;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Home'),
+        title: const Text('LANDANDPLOT'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () {
-              // Navigate to the sign-in screen
-              Navigator.pushReplacementNamed(context, '/sign_in');
+          FutureBuilder<bool>(
+            future: isLoggedIn(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const SizedBox.shrink(); // Or a placeholder widget
+              } else if (snapshot.hasData && snapshot.data!) {
+                // User is logged in, show logout icon
+                return IconButton(
+                  icon: const Icon(Icons.logout),
+                  onPressed: () async {
+                    if (!mounted) return;
+
+                    // Perform navigation first, before the async operation
+                    Navigator.pushReplacementNamed(context, '/profile');
+
+                    // Perform async operation after navigation
+                    await FirebaseAuth.instance.signOut();
+                  },
+                );
+              } else {
+                // User is not logged in, show login icon
+                return IconButton(
+                  icon: const Icon(Icons.login),
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/login');
+                  },
+                );
+              }
             },
           ),
         ],
@@ -31,7 +65,7 @@ class HomeScreen extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Text('Welcome to the Home Screen!'),
+                const Text('Search through available land listings!'),
                 const SizedBox(height: 20),
                 ElevatedButton(
                   onPressed: () {
