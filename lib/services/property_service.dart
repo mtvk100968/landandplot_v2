@@ -37,4 +37,14 @@ class PropertyService {
   Future<void> deleteProperty(String propertyId) async {
     await _firestore.collection('properties').doc(propertyId).delete();
   }
+
+  // Fetch all properties from Firestore
+  Future<List<Property>> getAllProperties() async {
+    QuerySnapshot<Map<String, dynamic>> snapshot =
+        await _firestore.collection('properties').get();
+
+    return snapshot.docs
+        .map((doc) => Property.fromMap(doc.id, doc.data()))
+        .toList();
+  }
 }
