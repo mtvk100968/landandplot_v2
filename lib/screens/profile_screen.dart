@@ -13,6 +13,7 @@ class ProfileScreenState extends State<ProfileScreen> {
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _codeController = TextEditingController();
   String _verificationId = '';
+  String? _welcomeMessage;
 
   @override
   void dispose() {
@@ -24,18 +25,20 @@ class ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Profile')),
+      appBar: AppBar(title: const Text('rentloapp')),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            if (_welcomeMessage != null)
+              Text(_welcomeMessage!, style: const TextStyle(fontSize: 20)),
             ElevatedButton(
-              onPressed: () => _signInWithGoogleAndNavigate(),
+              onPressed: () => _signInWithGoogle(),
               child: const Text('Sign in with Google'),
             ),
             ElevatedButton(
               onPressed: () {
-                _showPhoneNumberDialog(context);
+                _showPhoneNumberDialog();
               },
               child: const Text('Sign in with Phone Number'),
             ),
@@ -45,18 +48,20 @@ class ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Future<void> _signInWithGoogleAndNavigate() async {
-    User? user = await signInWithGoogle();
-    if (user != null && mounted) {
-      _navigateToBuyLand();
+  Future<void> _signInWithGoogle() async {
+    try {
+      User? user = await signInWithGoogle();
+      if (user != null && mounted) {
+        setState(() {
+          _welcomeMessage = 'Welcome, ${user.email}';
+        });
+      }
+    } catch (e) {
+      _showErrorSnackBar('Failed to sign in with Google');
     }
   }
 
-  void _navigateToBuyLand() {
-    Navigator.pushReplacementNamed(context, '/buy_land');
-  }
-
-  void _showPhoneNumberDialog(BuildContext context) {
+  void _showPhoneNumberDialog() {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -85,7 +90,7 @@ class ProfileScreenState extends State<ProfileScreen> {
             ),
             TextButton(
               onPressed: () async {
-                await _signInWithPhoneAndNavigate();
+                await _signInWithPhone();
               },
               child: const Text('Sign In'),
             ),
@@ -96,35 +101,50 @@ class ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _sendCode() async {
-    await signInWithPhoneNumber(
-      _phoneController.text,
-      (String verId) {
-        if (mounted) {
-          setState(() {
-            _verificationId = verId;
-          });
-        }
-      },
-      (FirebaseAuthException e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Failed to verify phone number: ${e.message}'),
-            ),
-          );
-        }
-      },
-    );
+    try {
+      await signInWithPhoneNumber(
+        _phoneController.text,
+        (String verId) {
+          if (mounted) {
+            setState(() {
+              _verificationId = verId;
+            });
+          }
+        },
+        (FirebaseAuthException e) {
+          _showErrorSnackBar('Failed to verify phone number: ${e.message}');
+        },
+      );
+    } catch (e) {
+      _showErrorSnackBar('Failed to send verification code');
+    }
   }
 
-  Future<void> _signInWithPhoneAndNavigate() async {
-    final PhoneAuthCredential credential = PhoneAuthProvider.credential(
-      verificationId: _verificationId,
-      smsCode: _codeController.text,
-    );
-    User? user = await signInWithPhoneAuthCredential(credential);
-    if (user != null && mounted) {
-      _navigateToBuyLand();
+  Future<void> _signInWithPhone() async {
+    try {
+      final PhoneAuthCredential credential = PhoneAuthProvider.credential(
+        verificationId: _verificationId,
+        smsCode: _codeController.text,
+      );
+      User? user = await signInWithPhoneAuthCredential(credential);
+      if (user != null && mounted) {
+        setState(() {
+          _welcomeMessage = 'Welcome, ${user.phoneNumber}';
+        });
+        if (mounted) {
+          Navigator.pop(context); // Close the dialog
+        }
+      }
+    } catch (e) {
+      _showErrorSnackBar('Failed to sign in with phone number');
+    }
+  }
+
+  void _showErrorSnackBar(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
     }
   }
 }
