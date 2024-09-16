@@ -4,7 +4,7 @@ import '../models/property_model.dart';
 class PropertyService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // Add a property to Firestore
+  // Add a property to Firestore, including the location data
   Future<String> addProperty(Property property) async {
     try {
       DocumentReference docRef =

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import '../models/property_model.dart';
+import '../../models/property_model.dart';
 
 class PropertyMapView extends StatefulWidget {
   final List<Property> properties;
@@ -43,8 +43,7 @@ class _PropertyMapViewState extends State<PropertyMapView> {
       onMapCreated: (controller) {
         mapController = controller;
       },
-      markers: _buildMarkers(
-          widget.properties), // Ensure markers are added correctly
+      markers: _buildMarkers(widget.properties),
     );
   }
 }
