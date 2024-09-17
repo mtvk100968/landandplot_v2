@@ -7,8 +7,7 @@ class SellLandForm extends StatefulWidget {
   final TextEditingController priceController;
   final TextEditingController pricePerSqYardController;
   final VoidCallback onSubmit;
-  final Function(LatLng)
-      onLocationSelected; // New callback for location selection
+  final Function(LatLng) onLocationSelected;
 
   const SellLandForm({
     super.key,
@@ -17,7 +16,7 @@ class SellLandForm extends StatefulWidget {
     required this.priceController,
     required this.pricePerSqYardController,
     required this.onSubmit,
-    required this.onLocationSelected, // New required callback parameter
+    required this.onLocationSelected,
   });
 
   @override
@@ -25,15 +24,18 @@ class SellLandForm extends StatefulWidget {
 }
 
 class _SellLandFormState extends State<SellLandForm> {
-  LatLng? selectedLocation;
   late GoogleMapController _mapController;
 
-  void _selectLocation(LatLng location) {
-    setState(() {
-      selectedLocation = location;
-    });
-    // Pass the selected location back to the parent widget
-    widget.onLocationSelected(location);
+  // Method to retrieve the center coordinates
+  Future<void> _getCenterLocation() async {
+    LatLng center = await _mapController.getLatLng(
+      ScreenCoordinate(
+        x: MediaQuery.of(context).size.width ~/ 2,
+        y: MediaQuery.of(context).size.height ~/ 3,
+      ),
+    );
+    // Pass the center location back to the parent widget
+    widget.onLocationSelected(center);
   }
 
   @override
@@ -85,48 +87,42 @@ class _SellLandFormState extends State<SellLandForm> {
                   : null,
             ),
             const SizedBox(height: 20),
-            // Google Map Widget
-            SizedBox(
-              height: 300,
-              child: GoogleMap(
-                initialCameraPosition: const CameraPosition(
-                  target: LatLng(20.5937, 78.9629), // Default to India
-                  zoom: 5,
+
+            // Google Map with the overlay marker in the center
+            Stack(
+              alignment: Alignment.center,
+              children: [
+                SizedBox(
+                  height: 300,
+                  child: GoogleMap(
+                    initialCameraPosition: const CameraPosition(
+                      target: LatLng(20.5937, 78.9629), // Default to India
+                      zoom: 5,
+                    ),
+                    onMapCreated: (controller) {
+                      _mapController = controller;
+                    },
+                  ),
                 ),
-                onMapCreated: (controller) {
-                  _mapController = controller;
-                },
-                onTap: _selectLocation,
-                markers: selectedLocation != null
-                    ? {
-                        Marker(
-                          markerId: const MarkerId('selected-location'),
-                          position: selectedLocation!,
-                        ),
-                      }
-                    : {},
-              ),
+                const Icon(
+                  Icons.location_on,
+                  size: 40,
+                  color: Colors.red,
+                ), // Static marker in the center of the map
+              ],
             ),
             const SizedBox(height: 10),
-            // Show selected location
-            selectedLocation != null
-                ? Text(
-                    'Location: (${selectedLocation!.latitude}, ${selectedLocation!.longitude})',
-                    style: const TextStyle(fontSize: 16),
-                  )
-                : const Text(
-                    'Tap on the map to select a location',
-                    style: TextStyle(fontSize: 16),
-                  ),
-            const SizedBox(height: 20),
+
             ElevatedButton(
-              onPressed: () {
-                if (widget.formKey.currentState!.validate() &&
-                    selectedLocation != null) {
+              onPressed: () async {
+                if (widget.formKey.currentState!.validate()) {
+                  // Get the center location of the map
+                  await _getCenterLocation();
                   widget.onSubmit();
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Please pick a location')),
+                    const SnackBar(
+                        content: Text('Please fill in the required fields')),
                   );
                 }
               },
