@@ -15,6 +15,5 @@ service cloud.firestore {
       // and the user ID in the property matches the authenticated user's ID
       allow write: if request.auth != null && request.resource.data.userId == request.auth.uid;
     }
-
   }
 }

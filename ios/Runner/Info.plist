@@ -62,5 +62,11 @@
 	<string>This app needs access to your location.</string>
 	<key>io.flutter.embedded_views_preview</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>We need to access your camera to allow you to take photos of your land.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>We need to access your photo library to allow you to upload images of your land.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>We need access to your microphone to record videos.</string>
 </dict>
 </plist>

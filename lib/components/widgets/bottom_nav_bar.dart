@@ -5,19 +5,22 @@ import '../../screens/alerts_screen.dart';
 import '../../screens/profile_screen.dart';
 import '../../screens/favorites_screen.dart';
 
-// Public class
 class BottomNavBar extends StatefulWidget {
-  // Use super parameter for the key
-  const BottomNavBar({super.key});
+  const BottomNavBar({Key? key}) : super(key: key);
 
   @override
-  BottomNavBarState createState() =>
-      BottomNavBarState(); // Make this class public
+  BottomNavBarState createState() => BottomNavBarState();
 }
 
-// Public class for state
 class BottomNavBarState extends State<BottomNavBar> {
   int _selectedIndex = 0;
+
+  // Method to switch tabs
+  void switchTab(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
 
   final List<Widget> _widgetOptions = [
     const BuyLandScreen(), // Buy Land screen
@@ -27,59 +30,45 @@ class BottomNavBarState extends State<BottomNavBar> {
     const ProfileScreen(), // Profile Screen
   ];
 
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _widgetOptions[_selectedIndex],
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: _widgetOptions,
+      ),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
-        items: <BottomNavigationBarItem>[
+        items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
-            icon: Icon(
-              Icons.search_outlined,
-              color: _selectedIndex == 0 ? Colors.black : Colors.grey,
-            ),
+            icon: Icon(Icons.search_outlined),
             label: 'Buy Land',
           ),
           BottomNavigationBarItem(
-            icon: Icon(
-              Icons.favorite_border,
-              color: _selectedIndex == 1 ? Colors.black : Colors.grey,
-            ),
+            icon: Icon(Icons.favorite_border),
             label: 'Favorites',
           ),
           BottomNavigationBarItem(
-            icon: Icon(
-              Icons.place_outlined,
-              color: _selectedIndex == 2 ? Colors.black : Colors.grey,
-            ),
+            icon: Icon(Icons.place_outlined),
             label: 'Sell Land',
           ),
           BottomNavigationBarItem(
-            icon: Icon(
-              Icons.notifications_active_outlined,
-              color: _selectedIndex == 3 ? Colors.black : Colors.grey,
-            ),
+            icon: Icon(Icons.notifications_active_outlined),
             label: 'Alerts',
           ),
           BottomNavigationBarItem(
-            icon: Icon(
-              Icons.account_circle_outlined,
-              color: _selectedIndex == 4 ? Colors.black : Colors.grey,
-            ),
+            icon: Icon(Icons.account_circle_outlined),
             label: 'Profile',
           ),
         ],
         currentIndex: _selectedIndex,
-        selectedItemColor: Colors.black, // Color when selected
-        unselectedItemColor: Colors.grey, // Outline color when not selected
-        onTap: _onItemTapped,
+        selectedItemColor: Colors.black,
+        unselectedItemColor: Colors.grey,
+        onTap: (index) {
+          setState(() {
+            _selectedIndex = index;
+          });
+        },
       ),
     );
   }
