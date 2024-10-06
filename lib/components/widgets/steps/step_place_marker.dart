@@ -9,11 +9,11 @@ class StepPlaceMarker extends StatelessWidget {
   final Function(LatLng) onMapTapped;
 
   const StepPlaceMarker({
-    Key? key,
+    super.key,
     required this.mapController,
     required this.selectedMarker,
     required this.onMapTapped,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

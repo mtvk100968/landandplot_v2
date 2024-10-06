@@ -15,14 +15,14 @@ class StepUploadMedia extends StatelessWidget {
   final Function(int) onRemoveVideo;
 
   const StepUploadMedia({
-    Key? key,
+    super.key,
     required this.images,
     required this.videos,
     required this.onPickImages,
     required this.onPickVideos,
     required this.onRemoveImage,
     required this.onRemoveVideo,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

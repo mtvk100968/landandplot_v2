@@ -271,13 +271,13 @@ class PropertyService {
     String mandalCode =
         mandal.length >= 2 ? mandal.substring(0, 2).toUpperCase() : 'YY';
 
-    String prefix = 'TG${districtCode}${mandalCode}';
+    String prefix = 'TG$districtCode$mandalCode';
 
     // Firestore transaction to ensure atomicity
     return await _firestore.runTransaction<String>((transaction) async {
       DocumentReference counterRef = _firestore
           .collection('property_counters')
-          .doc('${districtCode}${mandalCode}');
+          .doc('$districtCode$mandalCode');
 
       DocumentSnapshot counterSnapshot = await transaction.get(counterRef);
 

@@ -13,7 +13,7 @@ class StepOtherDetails extends StatelessWidget {
   final Function(String?) onLandFacingChanged;
 
   const StepOtherDetails({
-    Key? key,
+    super.key,
     required this.formKey,
     required this.roadAccess,
     required this.onRoadAccessChanged,
@@ -22,7 +22,7 @@ class StepOtherDetails extends StatelessWidget {
     required this.roadWidthController,
     required this.landFacing,
     required this.onLandFacingChanged,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

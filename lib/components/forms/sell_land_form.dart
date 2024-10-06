@@ -19,7 +19,7 @@ import 'package:file_picker/file_picker.dart';
 class SellLandForm extends StatefulWidget {
   final Function(SellLandFormData) onSubmit;
 
-  const SellLandForm({Key? key, required this.onSubmit}) : super(key: key);
+  const SellLandForm({super.key, required this.onSubmit});
 
   @override
   SellLandFormState createState() => SellLandFormState();
@@ -103,7 +103,7 @@ class SellLandFormState extends State<SellLandForm> {
   // Image Picker Method
   Future<void> _pickImages() async {
     try {
-      final List<XFile>? pickedFiles = await _picker.pickMultiImage();
+      final List<XFile> pickedFiles = await _picker.pickMultiImage();
 
       if (!mounted) return;
 
@@ -305,7 +305,6 @@ class SellLandFormState extends State<SellLandForm> {
           children: <Widget>[
             ElevatedButton(
               onPressed: details.onStepContinue,
-              child: Text(isLastStep ? 'Submit' : 'Next'),
               style: ElevatedButton.styleFrom(
                 backgroundColor:
                     Colors.green, // Updated from 'primary' to 'backgroundColor'
@@ -313,6 +312,7 @@ class SellLandFormState extends State<SellLandForm> {
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
+              child: Text(isLastStep ? 'Submit' : 'Next'),
             ),
             const SizedBox(width: 10),
             if (_currentStep > 0)

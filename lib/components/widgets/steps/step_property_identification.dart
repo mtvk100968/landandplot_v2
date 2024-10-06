@@ -9,12 +9,12 @@ class StepPropertyIdentification extends StatelessWidget {
   final TextEditingController plotNumbersController;
 
   const StepPropertyIdentification({
-    Key? key,
+    super.key,
     required this.formKey,
     required this.propertyType,
     required this.surveyNumberController,
     required this.plotNumbersController,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

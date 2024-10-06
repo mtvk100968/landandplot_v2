@@ -11,14 +11,14 @@ class StepAreaPricing extends StatelessWidget {
   final TextEditingController totalPriceController;
 
   const StepAreaPricing({
-    Key? key,
+    super.key,
     required this.formKey,
     required this.propertyType,
     required this.onPropertyTypeChanged,
     required this.landAreaController,
     required this.pricePerUnitController,
     required this.totalPriceController,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

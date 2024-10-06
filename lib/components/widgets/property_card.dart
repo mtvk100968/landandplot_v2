@@ -156,7 +156,7 @@ class PropertyCardState extends State<PropertyCard> {
                           ),
                           onPressed: () {
                             // Define the text to share
-                            final String shareText =
+                            const String shareText =
                                 "Hey, see this property I found on LandAndPlot!";
 
                             // Optionally, include property details

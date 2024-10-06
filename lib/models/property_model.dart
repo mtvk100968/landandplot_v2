@@ -1,9 +1,5 @@
 // lib/models/property_model.dart
 
-import 'dart:io';
-
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 class Property {
   final String id;
   final String userId;

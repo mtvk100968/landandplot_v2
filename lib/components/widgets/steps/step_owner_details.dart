@@ -7,10 +7,10 @@ class StepOwnerDetails extends StatelessWidget {
   final TextEditingController propertyRegisteredByController;
 
   const StepOwnerDetails({
-    Key? key,
+    super.key,
     required this.propertyOwnerController,
     required this.propertyRegisteredByController,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

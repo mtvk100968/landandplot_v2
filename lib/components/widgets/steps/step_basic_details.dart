@@ -8,11 +8,11 @@ class StepBasicDetails extends StatelessWidget {
   final TextEditingController mobileNumberController;
 
   const StepBasicDetails({
-    Key? key,
+    super.key,
     required this.formKey,
     required this.nameController,
     required this.mobileNumberController,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

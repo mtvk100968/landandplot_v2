@@ -6,7 +6,7 @@ import '../../screens/profile_screen.dart';
 import '../../screens/favorites_screen.dart';
 
 class BottomNavBar extends StatefulWidget {
-  const BottomNavBar({Key? key}) : super(key: key);
+  const BottomNavBar({super.key});
 
   @override
   BottomNavBarState createState() => BottomNavBarState();

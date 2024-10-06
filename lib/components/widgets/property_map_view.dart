@@ -9,9 +9,9 @@ class PropertyMapView extends StatefulWidget {
   final List<Property> properties;
 
   const PropertyMapView({
-    Key? key,
+    super.key,
     required this.properties,
-  }) : super(key: key);
+  });
 
   @override
   PropertyMapViewState createState() => PropertyMapViewState();
@@ -48,7 +48,7 @@ class PropertyMapViewState extends State<PropertyMapView> {
           icon: customIcon,
           infoWindow: InfoWindow(
             title: 'Land Area: ${property.landArea} Sq Yards',
-            snippet: 'Price: ${priceText}',
+            snippet: 'Price: $priceText',
           ),
         ),
       );

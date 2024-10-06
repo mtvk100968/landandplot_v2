@@ -11,11 +11,11 @@ class StepUploadDocuments extends StatelessWidget {
   final Function(int) onRemoveDocument;
 
   const StepUploadDocuments({
-    Key? key,
+    super.key,
     required this.documents,
     required this.onPickDocuments,
     required this.onRemoveDocument,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

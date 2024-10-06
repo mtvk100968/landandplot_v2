@@ -13,7 +13,7 @@ class StepAddressDetails extends StatelessWidget {
   final Function() onPincodeSubmitted;
 
   const StepAddressDetails({
-    Key? key,
+    super.key,
     required this.formKey,
     required this.pincodeController,
     required this.villageController,
@@ -22,7 +22,7 @@ class StepAddressDetails extends StatelessWidget {
     required this.districtController,
     required this.stateController,
     required this.onPincodeSubmitted,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
