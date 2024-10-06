@@ -11,7 +11,7 @@ import '../services/property_service.dart';
 import '../utils/keys.dart';
 
 class SellLandScreen extends StatelessWidget {
-  const SellLandScreen({Key? key}) : super(key: key);
+  const SellLandScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +21,7 @@ class SellLandScreen extends StatelessWidget {
         final user = FirebaseAuth.instance.currentUser;
 
         // Validate user authentication and selected location
-        if (user != null && data.selectedLocation != null) {
+        if (user != null) {
           // Ensure at least one image is uploaded
           if (data.images.isEmpty) {
             ScaffoldMessenger.of(context).showSnackBar(
