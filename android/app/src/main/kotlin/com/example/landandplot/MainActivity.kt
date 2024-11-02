@@ -1,4 +1,4 @@
-package com.example.landandplot
+package com.landandplotv2.app
 
 import io.flutter.embedding.android.FlutterActivity
 
