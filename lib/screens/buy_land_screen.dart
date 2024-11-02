@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import '../services/property_service.dart';
 import '../models/property_model.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../../components/widgets/property_list_view.dart';
-import '../../components/widgets/property_map_view.dart';
+import '../../components/views/property_list_view.dart';
+import '../../components/views/property_map_view.dart';
 
 class BuyLandScreen extends StatefulWidget {
   const BuyLandScreen({super.key});
