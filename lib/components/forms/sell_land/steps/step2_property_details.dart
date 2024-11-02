@@ -12,7 +12,7 @@ class Step2PropertyDetails extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final propertyProvider = Provider.of<PropertyProvider>(context);
-    final isAgri = propertyProvider.propertyType == 'agri land';
+    final isAgri = propertyProvider.propertyType.toLowerCase() == 'agri land';
 
     return SafeArea(
       child: SingleChildScrollView(
@@ -29,11 +29,12 @@ class Step2PropertyDetails extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Area Field
                 TextFormField(
                   decoration: InputDecoration(
                     labelText: isAgri ? 'Area (in acres)' : 'Area (in sqyds)',
                   ),
-                  keyboardType: TextInputType.number,
+                  keyboardType: TextInputType.numberWithOptions(decimal: true),
                   initialValue: propertyProvider.area > 0
                       ? propertyProvider.area.toString()
                       : '',
@@ -50,11 +51,13 @@ class Step2PropertyDetails extends StatelessWidget {
                   },
                 ),
                 SizedBox(height: 20),
+
+                // Price per Unit Field
                 TextFormField(
                   decoration: InputDecoration(
                     labelText: isAgri ? 'Price per acre' : 'Price per sqyd',
                   ),
-                  keyboardType: TextInputType.number,
+                  keyboardType: TextInputType.numberWithOptions(decimal: true),
                   initialValue: propertyProvider.pricePerUnit > 0
                       ? propertyProvider.pricePerUnit.toString()
                       : '',
@@ -71,23 +74,35 @@ class Step2PropertyDetails extends StatelessWidget {
                   },
                 ),
                 SizedBox(height: 20),
-                TextFormField(
-                  decoration: InputDecoration(
-                      labelText: 'Total Land Price (auto-calculated)'),
-                  keyboardType: TextInputType.number,
-                  initialValue: propertyProvider.totalPrice > 0
-                      ? propertyProvider.totalPrice.toString()
-                      : '',
-                  enabled: false, // Auto-calculated
+
+                // Total Land Price Field (Auto-calculated)
+                Consumer<PropertyProvider>(
+                  builder: (context, provider, child) {
+                    return TextFormField(
+                      decoration: InputDecoration(
+                        labelText: 'Total Land Price (auto-calculated)',
+                      ),
+                      keyboardType:
+                          TextInputType.numberWithOptions(decimal: true),
+                      initialValue: provider.totalPrice > 0
+                          ? provider.totalPrice.toStringAsFixed(2)
+                          : '',
+                      enabled: false, // Auto-calculated
+                    );
+                  },
                 ),
                 SizedBox(height: 20),
+
+                // Survey Number Field
                 TextFormField(
                   decoration: InputDecoration(labelText: 'Survey Number'),
                   initialValue: propertyProvider.surveyNumber,
                   validator: Validators.surveyNumberValidator,
                   onChanged: (value) => propertyProvider.setSurveyNumber(value),
                 ),
-                if (propertyProvider.propertyType == 'plot') ...[
+
+                // Conditional Plot Numbers Field
+                if (propertyProvider.propertyType.toLowerCase() == 'plot') ...[
                   SizedBox(height: 20),
                   TextFormField(
                     decoration: InputDecoration(labelText: 'Plot Numbers'),

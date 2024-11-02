@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../components/forms/sell_land/form.dart';
 import '../providers/property_provider.dart';
 import '../services/property_service.dart';
-import '../providers/auth_provider.dart';
+// import '../providers/auth_provider.dart';
 
 class SellLandScreen extends StatelessWidget {
   const SellLandScreen({Key? key}) : super(key: key);
