@@ -20,7 +20,7 @@ class PropertyService {
     try {
       // Step 1: Generate Custom Property ID
       String propertyId =
-          await _generatePropertyId(property.district, property.mandal);
+          await _generatePropertyId(property.district!, property.mandal!);
 
       // Step 2: Upload Media Files with Custom Naming
       List<String> imageUrls =
@@ -55,7 +55,7 @@ class PropertyService {
         pincode: property.pincode,
         village: property.village,
         mandal: property.mandal,
-        town: property.town,
+        // town: property.town,
         district: property.district,
         state: property.state,
         roadAccess: property.roadAccess,
@@ -66,7 +66,6 @@ class PropertyService {
         videos: videoUrls,
         documents: documentUrls,
         propertyOwner: property.propertyOwner,
-        propertyRegisteredBy: property.propertyRegisteredBy,
       );
 
       // Step 4: Add the property to Firestore with the custom property ID
@@ -271,7 +270,7 @@ class PropertyService {
     String mandalCode =
         mandal.length >= 2 ? mandal.substring(0, 2).toUpperCase() : 'YY';
 
-    String prefix = 'TG$districtCode$mandalCode';
+    String prefix = '$districtCode$mandalCode';
 
     // Firestore transaction to ensure atomicity
     return await _firestore.runTransaction<String>((transaction) async {

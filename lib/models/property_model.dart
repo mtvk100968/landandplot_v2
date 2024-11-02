@@ -5,32 +5,31 @@ class Property {
   final String userId;
   final String name;
   final String mobileNumber;
-  final String propertyType; // Agricultural Land, Farm Land, Plot
+  final String propertyType;
   final double landArea;
-  final double pricePerUnit; // Price/Acre or Price/SqYd
+  final double pricePerUnit;
   final double totalPrice;
-  final String? surveyNumber; // Applicable for Agri and Farm
-  final List<String>? plotNumbers; // Applicable for Plot
+  final String surveyNumber;
+  final List<String> plotNumbers;
+  final String? district; // Made nullable
+  final String? mandal; // Made nullable
+  // final String town;
+  final String village;
+  final String pincode;
   final double latitude;
   final double longitude;
-  final String pincode;
-  final String village;
-  final String mandal;
-  final String town;
-  final String district;
   final String state;
-  final bool roadAccess;
-  final String roadType;
-  final double roadWidth;
-  final String landFacing;
+  final String roadAccess; // Optional
+  final String roadType; // Optional
+  final double roadWidth; // Optional
+  final String landFacing; // Optional
+  final String propertyOwner;
   final List<String> images;
   final List<String> videos;
   final List<String> documents;
-  final String propertyOwner;
-  final String propertyRegisteredBy;
 
   Property({
-    required this.id,
+    this.id = '',
     required this.userId,
     required this.name,
     required this.mobileNumber,
@@ -38,30 +37,29 @@ class Property {
     required this.landArea,
     required this.pricePerUnit,
     required this.totalPrice,
-    this.surveyNumber,
-    this.plotNumbers,
+    required this.surveyNumber,
+    required this.plotNumbers,
+    this.district, // Updated
+    this.mandal, // Updated
+    // required this.town,
+    required this.village,
+    required this.pincode,
     required this.latitude,
     required this.longitude,
-    required this.pincode,
-    required this.village,
-    required this.mandal,
-    required this.town,
-    required this.district,
     required this.state,
-    required this.roadAccess,
-    required this.roadType,
-    required this.roadWidth,
-    required this.landFacing,
+    this.roadAccess = '',
+    this.roadType = '',
+    this.roadWidth = 0.0,
+    this.landFacing = '',
+    required this.propertyOwner,
     required this.images,
     required this.videos,
     required this.documents,
-    required this.propertyOwner,
-    required this.propertyRegisteredBy,
   });
 
-  /// Converts the Property instance to a Map for Firestore.
   Map<String, dynamic> toMap() {
     return {
+      'id': id,
       'userId': userId,
       'name': name,
       'mobileNumber': mobileNumber,
@@ -71,60 +69,53 @@ class Property {
       'totalPrice': totalPrice,
       'surveyNumber': surveyNumber,
       'plotNumbers': plotNumbers,
+      'district': district,
+      'mandal': mandal,
+      // 'town': town,
+      'village': village,
+      'pincode': pincode,
       'latitude': latitude,
       'longitude': longitude,
-      'pincode': pincode,
-      'village': village,
-      'mandal': mandal,
-      'town': town,
-      'district': district,
       'state': state,
       'roadAccess': roadAccess,
       'roadType': roadType,
       'roadWidth': roadWidth,
       'landFacing': landFacing,
+      'propertyOwner': propertyOwner,
       'images': images,
       'videos': videos,
       'documents': documents,
-      'propertyOwner': propertyOwner,
-      'propertyRegisteredBy': propertyRegisteredBy,
     };
   }
 
-  /// Creates a Property instance from a Firestore document.
   factory Property.fromMap(String id, Map<String, dynamic> map) {
     return Property(
       id: id,
       userId: map['userId'] ?? '',
       name: map['name'] ?? '',
       mobileNumber: map['mobileNumber'] ?? '',
-      propertyType: map['propertyType'] ?? 'Plot',
-      landArea: (map['landArea'] != null) ? map['landArea'].toDouble() : 0.0,
-      pricePerUnit:
-          (map['pricePerUnit'] != null) ? map['pricePerUnit'].toDouble() : 0.0,
-      totalPrice:
-          (map['totalPrice'] != null) ? map['totalPrice'].toDouble() : 0.0,
-      surveyNumber: map['surveyNumber'],
-      plotNumbers: map['plotNumbers'] != null
-          ? List<String>.from(map['plotNumbers'])
-          : null,
-      latitude: (map['latitude'] != null) ? map['latitude'].toDouble() : 0.0,
-      longitude: (map['longitude'] != null) ? map['longitude'].toDouble() : 0.0,
-      pincode: map['pincode'] ?? '',
+      propertyType: map['propertyType'] ?? '',
+      landArea: map['landArea']?.toDouble() ?? 0.0,
+      pricePerUnit: map['pricePerUnit']?.toDouble() ?? 0.0,
+      totalPrice: map['totalPrice']?.toDouble() ?? 0.0,
+      surveyNumber: map['surveyNumber'] ?? '',
+      plotNumbers: List<String>.from(map['plotNumbers'] ?? []),
+      district: map['district'], // Updated
+      mandal: map['mandal'], // Updated
+      // town: map['town'] ?? '',
       village: map['village'] ?? '',
-      mandal: map['mandal'] ?? '',
-      town: map['town'] ?? '',
-      district: map['district'] ?? '',
+      pincode: map['pincode'] ?? '',
+      latitude: map['latitude']?.toDouble() ?? 0.0,
+      longitude: map['longitude']?.toDouble() ?? 0.0,
       state: map['state'] ?? '',
-      roadAccess: map['roadAccess'] ?? false,
+      roadAccess: map['roadAccess'] ?? '',
       roadType: map['roadType'] ?? '',
-      roadWidth: (map['roadWidth'] != null) ? map['roadWidth'].toDouble() : 0.0,
+      roadWidth: map['roadWidth']?.toDouble() ?? 0.0,
       landFacing: map['landFacing'] ?? '',
+      propertyOwner: map['propertyOwner'] ?? '',
       images: List<String>.from(map['images'] ?? []),
       videos: List<String>.from(map['videos'] ?? []),
       documents: List<String>.from(map['documents'] ?? []),
-      propertyOwner: map['propertyOwner'] ?? '',
-      propertyRegisteredBy: map['propertyRegisteredBy'] ?? '',
     );
   }
 }
