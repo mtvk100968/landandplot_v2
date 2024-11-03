@@ -3,11 +3,48 @@ import 'package:provider/provider.dart';
 import '../../../../providers/property_provider.dart';
 import '../../../../utils/validators.dart';
 
-class Step2PropertyDetails extends StatelessWidget {
+class Step2PropertyDetails extends StatefulWidget {
   final GlobalKey<FormState> formKey;
 
   const Step2PropertyDetails({Key? key, required this.formKey})
       : super(key: key);
+
+  @override
+  _Step2PropertyDetailsState createState() => _Step2PropertyDetailsState();
+}
+
+class _Step2PropertyDetailsState extends State<Step2PropertyDetails> {
+  late TextEditingController _totalPriceController;
+
+  @override
+  void initState() {
+    super.initState();
+    final provider = Provider.of<PropertyProvider>(context, listen: false);
+    _totalPriceController = TextEditingController(
+      text:
+          provider.totalPrice > 0 ? provider.totalPrice.toStringAsFixed(2) : '',
+    );
+
+    // Listen to changes in totalPrice and update the controller
+    provider.addListener(_updateTotalPrice);
+  }
+
+  void _updateTotalPrice() {
+    final provider = Provider.of<PropertyProvider>(context, listen: false);
+    String newText =
+        provider.totalPrice > 0 ? provider.totalPrice.toStringAsFixed(2) : '';
+    if (_totalPriceController.text != newText) {
+      _totalPriceController.text = newText;
+    }
+  }
+
+  @override
+  void dispose() {
+    final provider = Provider.of<PropertyProvider>(context, listen: false);
+    provider.removeListener(_updateTotalPrice);
+    _totalPriceController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +60,7 @@ class Step2PropertyDetails extends StatelessWidget {
           bottom: MediaQuery.of(context).viewInsets.bottom + 16.0,
         ),
         child: Form(
-          key: formKey,
+          key: widget.formKey,
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
@@ -76,20 +113,13 @@ class Step2PropertyDetails extends StatelessWidget {
                 SizedBox(height: 20),
 
                 // Total Land Price Field (Auto-calculated)
-                Consumer<PropertyProvider>(
-                  builder: (context, provider, child) {
-                    return TextFormField(
-                      decoration: InputDecoration(
-                        labelText: 'Total Land Price (auto-calculated)',
-                      ),
-                      keyboardType:
-                          TextInputType.numberWithOptions(decimal: true),
-                      initialValue: provider.totalPrice > 0
-                          ? provider.totalPrice.toStringAsFixed(2)
-                          : '',
-                      enabled: false, // Auto-calculated
-                    );
-                  },
+                TextFormField(
+                  controller: _totalPriceController,
+                  decoration: InputDecoration(
+                    labelText: 'Total Land Price (auto-calculated)',
+                  ),
+                  keyboardType: TextInputType.numberWithOptions(decimal: true),
+                  enabled: false, // Auto-calculated
                 ),
                 SizedBox(height: 20),
 

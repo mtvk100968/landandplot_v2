@@ -70,7 +70,7 @@ class PropertyProvider with ChangeNotifier {
   // Getters and Setters for Step 2
   double get area => _area;
   void setArea(double value) {
-    if (value <= 0) throw ArgumentError('Area must be greater than zero');
+    // Removed the constraint to allow 0.0
     _area = value;
     calculateTotalPrice();
     notifyListeners();
@@ -78,7 +78,7 @@ class PropertyProvider with ChangeNotifier {
 
   double get pricePerUnit => _pricePerUnit;
   void setPricePerUnit(double value) {
-    if (value < 0) throw ArgumentError('Price per unit cannot be negative');
+    // Removed the constraint to allow 0.0
     _pricePerUnit = value;
     calculateTotalPrice();
     notifyListeners();
