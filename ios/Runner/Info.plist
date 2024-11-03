@@ -56,6 +56,10 @@
 			</array>
 		</dict>
 	</array>
+
+	<key>FirebaseAppDelegateProxyEnabled</key>
+	<false/>
+
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>This app needs access to your location to show property markers.</string>
 	<key>NSLocationAlwaysUsageDescription</key>
