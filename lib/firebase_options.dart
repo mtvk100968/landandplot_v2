@@ -63,6 +63,8 @@ class DefaultFirebaseOptions {
     messagingSenderId: '423847166550',
     projectId: 'landandplot-v2',
     storageBucket: 'landandplot-v2.appspot.com',
+    androidClientId: '423847166550-06umbqp3nen07e50a88nhis2hiqhk1io.apps.googleusercontent.com',
+    iosClientId: '423847166550-sddpkmpf1knger600lq2c8m04p336kr7.apps.googleusercontent.com',
     iosBundleId: 'com.example.landandplot',
   );
 
