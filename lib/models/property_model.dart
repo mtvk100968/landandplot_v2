@@ -11,14 +11,15 @@ class Property {
   final double totalPrice;
   final String surveyNumber;
   final List<String> plotNumbers;
-  final String? district; // Made nullable
-  final String? mandal; // Made nullable
+  final String? district; // Kept for backward compatibility
+  final String? mandal;
+  final String? city;
   // final String town;
   final String village;
   final String pincode;
   final double latitude;
   final double longitude;
-  final String state;
+  final String? state;
   final String roadAccess; // Optional
   final String roadType; // Optional
   final double roadWidth; // Optional
@@ -39,14 +40,16 @@ class Property {
     required this.totalPrice,
     required this.surveyNumber,
     required this.plotNumbers,
+    this.city, // Added
     this.district, // Updated
     this.mandal, // Updated
+    this.state,
     // required this.town,
     required this.village,
     required this.pincode,
     required this.latitude,
     required this.longitude,
-    required this.state,
+    // Updated
     this.roadAccess = '',
     this.roadType = '',
     this.roadWidth = 0.0,
@@ -71,6 +74,7 @@ class Property {
       'plotNumbers': plotNumbers,
       'district': district,
       'mandal': mandal,
+      'city': city,
       // 'town': town,
       'village': village,
       'pincode': pincode,
@@ -102,6 +106,7 @@ class Property {
       plotNumbers: List<String>.from(map['plotNumbers'] ?? []),
       district: map['district'], // Updated
       mandal: map['mandal'], // Updated
+      city: map['city'], // Added
       // town: map['town'] ?? '',
       village: map['village'] ?? '',
       pincode: map['pincode'] ?? '',

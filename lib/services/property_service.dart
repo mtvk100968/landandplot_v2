@@ -66,6 +66,7 @@ class PropertyService {
         videos: videoUrls,
         documents: documentUrls,
         propertyOwner: property.propertyOwner,
+        city: property.city,
       );
 
       // Step 4: Add the property to Firestore with the custom property ID

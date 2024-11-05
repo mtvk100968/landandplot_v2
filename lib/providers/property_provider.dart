@@ -3,7 +3,8 @@ import '../models/property_model.dart';
 import 'dart:io';
 import '../data/districts_data.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:geocoding/geocoding.dart';
+import 'package:http/http.dart' as http; // Import http package
+import 'dart:convert'; // Import convert for JSON decoding
 import 'dart:developer' as developer;
 
 class PropertyProvider with ChangeNotifier {
@@ -25,7 +26,8 @@ class PropertyProvider with ChangeNotifier {
   String? _mandal;
   String _village = '';
   String _pincode = '';
-  String _state = 'Telangana'; // Default value
+  String _state = '';
+  String _city = '';
 
   // Step 4: Map Location
   double _latitude = 17.385044; // Default to Hyderabad latitude
@@ -42,7 +44,14 @@ class PropertyProvider with ChangeNotifier {
   List<String> _videoUrls = []; // Separate list for videos
   List<String> _documentUrls = []; // Separate list for documents
 
-  // Getters and Setters for Step 1
+  bool _isGeocoding = false;
+  bool get isGeocoding => _isGeocoding;
+
+  // API Key for Google Maps Geocoding API
+  final String _apiKey =
+      "AIzaSyC9TbKldN2qRj91FxHl1KC3r7KjUlBXOSk"; // Replace with your actual API key
+
+// Getters and Setters for Step 1
   String get phoneNumber => _phoneNumber;
   void setPhoneNumber(String value) {
     _phoneNumber = value;
@@ -124,6 +133,12 @@ class PropertyProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  String get city => _city;
+  void setCity(String value) {
+    _city = value;
+    notifyListeners();
+  }
+
   String get village => _village;
   void setVillage(String value) {
     _village = value;
@@ -137,7 +152,7 @@ class PropertyProvider with ChangeNotifier {
 
     if (_pincode.length == 6) {
       try {
-        await geocodePincode();
+        await geocodePincode(_pincode);
       } catch (e) {
         developer.log('Geocoding failed: $e');
       }
@@ -145,7 +160,8 @@ class PropertyProvider with ChangeNotifier {
   }
 
   String get state => _state;
-  void setState(String value) {
+  void setStateField(String value) {
+    // Renamed to avoid conflict with setState
     _state = value;
     notifyListeners();
   }
@@ -242,25 +258,65 @@ class PropertyProvider with ChangeNotifier {
     return [];
   }
 
-  /// Geocode the current pincode to obtain latitude and longitude
-  Future<void> geocodePincode() async {
-    if (_pincode.isEmpty) {
-      throw ArgumentError('Pincode cannot be empty.');
-    }
+  /// Geocode the current pincode to obtain city, district, and state
+
+  Future<void> geocodePincode(String pincode) async {
+    _isGeocoding = true;
+    notifyListeners();
 
     try {
-      List<Location> locations = await locationFromAddress(_pincode);
+      final Uri uri = Uri.parse(
+          'https://maps.googleapis.com/maps/api/geocode/json?address=$pincode&components=country:IN&key=$_apiKey');
 
-      if (locations.isNotEmpty) {
-        _latitude = locations.first.latitude;
-        _longitude = locations.first.longitude;
-        notifyListeners();
+      final response = await http.get(uri);
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['status'] == 'OK') {
+          String city = '';
+          String district = '';
+          String state = '';
+
+          List<dynamic> results = data['results'];
+          if (results.isNotEmpty) {
+            List<dynamic> addressComponents = results[0]['address_components'];
+            for (var component in addressComponents) {
+              List<dynamic> types = component['types'];
+              if (types.contains('locality')) {
+                city = component['long_name'];
+              } else if (types.contains('administrative_area_level_2') ||
+                  types.contains('administrative_area_level_3')) {
+                district = component['long_name'];
+              } else if (types.contains('administrative_area_level_1')) {
+                state = component['long_name'];
+              }
+            }
+
+            // Update the provider fields
+            setCity(city);
+            setDistrict(district);
+            setStateField(state);
+
+            // Optionally, update latitude and longitude
+            if (results[0]['geometry'] != null &&
+                results[0]['geometry']['location'] != null) {
+              double lat = results[0]['geometry']['location']['lat'];
+              double lng = results[0]['geometry']['location']['lng'];
+              setLatitude(lat);
+              setLongitude(lng);
+            }
+          } else {
+            throw Exception('No results found for the provided pincode.');
+          }
+        } else {
+          throw Exception('Geocoding API error: ${data['status']}');
+        }
       } else {
-        throw Exception('No location found for the provided pincode.');
+        throw Exception('Failed to fetch location details.');
       }
-    } catch (e) {
-      developer.log('Error in geocoding pincode: $e');
-      throw e;
+    } finally {
+      _isGeocoding = false;
+      notifyListeners();
     }
   }
 
@@ -289,6 +345,7 @@ class PropertyProvider with ChangeNotifier {
       plotNumbers: _propertyType == 'plot' ? _plotNumbers : [],
       district: _district,
       mandal: _mandal,
+      city: _city,
       village: _village,
       pincode: _pincode,
       state: _state,
@@ -318,9 +375,10 @@ class PropertyProvider with ChangeNotifier {
     _plotNumbers = [];
     _district = null;
     _mandal = null;
+    _city = '';
     _village = '';
     _pincode = '';
-    _state = 'Telangana';
+    _state = '';
     _latitude = 17.385044;
     _longitude = 78.486671;
     _roadAccess = '';

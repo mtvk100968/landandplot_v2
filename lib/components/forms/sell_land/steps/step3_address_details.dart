@@ -6,18 +6,86 @@ import '../../../../providers/property_provider.dart';
 import '../../../../utils/validators.dart';
 import 'package:flutter/services.dart';
 
-class Step3AddressDetails extends StatelessWidget {
+class Step3AddressDetails extends StatefulWidget {
   final GlobalKey<FormState> formKey;
 
   const Step3AddressDetails({Key? key, required this.formKey})
       : super(key: key);
 
   @override
+  _Step3AddressDetailsState createState() => _Step3AddressDetailsState();
+}
+
+class _Step3AddressDetailsState extends State<Step3AddressDetails> {
+  late TextEditingController _pincodeController;
+  late TextEditingController _districtController;
+  late TextEditingController _cityController;
+  late TextEditingController _stateController;
+  late TextEditingController _villageController;
+
+  @override
+  void initState() {
+    super.initState();
+    final propertyProvider =
+        Provider.of<PropertyProvider>(context, listen: false);
+    _pincodeController = TextEditingController(text: propertyProvider.pincode);
+    _districtController =
+        TextEditingController(text: propertyProvider.district ?? '');
+    _cityController = TextEditingController(text: propertyProvider.city);
+    _stateController = TextEditingController(text: propertyProvider.state);
+    _villageController = TextEditingController(text: propertyProvider.village);
+
+    // Listen to provider changes and update controllers
+    propertyProvider.addListener(_updateControllers);
+  }
+
+  void _updateControllers() {
+    final propertyProvider =
+        Provider.of<PropertyProvider>(context, listen: false);
+
+    if (_pincodeController.text != propertyProvider.pincode) {
+      _pincodeController.text = propertyProvider.pincode;
+    }
+
+    if (_districtController.text != (propertyProvider.district ?? '')) {
+      _districtController.text = propertyProvider.district ?? '';
+    }
+
+    if (_cityController.text != propertyProvider.city) {
+      _cityController.text = propertyProvider.city;
+    }
+
+    if (_stateController.text != propertyProvider.state) {
+      _stateController.text = propertyProvider.state;
+    }
+
+    if (_villageController.text != propertyProvider.village) {
+      _villageController.text = propertyProvider.village;
+    }
+
+    // Force rebuild to update mandal dropdown
+    setState(() {});
+  }
+
+  @override
+  void dispose() {
+    final propertyProvider =
+        Provider.of<PropertyProvider>(context, listen: false);
+    propertyProvider.removeListener(_updateControllers);
+    _pincodeController.dispose();
+    _districtController.dispose();
+    _cityController.dispose();
+    _stateController.dispose();
+    _villageController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final propertyProvider = Provider.of<PropertyProvider>(context);
 
     return Form(
-      key: formKey,
+      key: widget.formKey,
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: SingleChildScrollView(
@@ -27,11 +95,11 @@ class Step3AddressDetails extends StatelessWidget {
             children: [
               // Pincode Field
               TextFormField(
+                controller: _pincodeController,
                 decoration: InputDecoration(
                   labelText: 'Pincode',
                 ),
                 keyboardType: TextInputType.number,
-                initialValue: propertyProvider.pincode,
                 validator: Validators.pincodeValidator,
                 onChanged: (value) {
                   propertyProvider.setPincode(value);
@@ -43,63 +111,78 @@ class Step3AddressDetails extends StatelessWidget {
               ),
               SizedBox(height: 20),
 
-              // District Dropdown
-              DropdownButtonFormField<String>(
-                decoration: InputDecoration(labelText: 'District'),
-                value: propertyProvider.district != null &&
-                        propertyProvider.district!.isNotEmpty
-                    ? propertyProvider.district
-                    : null,
-                items: propertyProvider.districtList.map((district) {
-                  return DropdownMenuItem(
-                    value: district,
-                    child: Text(district),
-                  );
-                }).toList(),
-                onChanged: propertyProvider.pincode.length == 6
-                    ? (value) {
-                        if (value != null) {
-                          propertyProvider.setDistrict(value);
-                        }
-                      }
-                    : null, // Disable if pincode is not entered
-                validator: Validators.requiredValidator,
-                hint: Text('Select District'),
-              ),
-              SizedBox(height: 20),
+              // Show loading indicator if geocoding is in progress
+              if (propertyProvider.isGeocoding)
+                Center(child: CircularProgressIndicator()),
+              if (!propertyProvider.isGeocoding) ...[
+                // District Field (Read-only)
+                if (propertyProvider.pincode.length == 6)
+                  TextFormField(
+                    controller: _districtController,
+                    decoration: InputDecoration(
+                      labelText: 'District',
+                    ),
+                    readOnly: true,
+                  ),
+                SizedBox(height: 20),
 
-              // Mandal Dropdown
-              DropdownButtonFormField<String>(
-                decoration: InputDecoration(labelText: 'Mandal'),
-                value: propertyProvider.mandal != null &&
-                        propertyProvider.mandal!.isNotEmpty
-                    ? propertyProvider.mandal
-                    : null,
-                items: propertyProvider.mandalList.map((mandal) {
-                  return DropdownMenuItem(
-                    value: mandal,
-                    child: Text(mandal),
-                  );
-                }).toList(),
-                onChanged: propertyProvider.district != null
-                    ? (value) {
-                        if (value != null) {
-                          propertyProvider.setMandal(value);
-                        }
-                      }
-                    : null, // Disable if no district selected
-                validator: Validators.requiredValidator,
-                hint: Text('Select Mandal'),
-              ),
-              SizedBox(height: 20),
+                // City Field (Read-only)
+                if (propertyProvider.pincode.length == 6)
+                  TextFormField(
+                    controller: _cityController,
+                    decoration: InputDecoration(
+                      labelText: 'City',
+                    ),
+                    readOnly: true,
+                  ),
+                SizedBox(height: 20),
 
-              // Village Field
-              TextFormField(
-                decoration: InputDecoration(labelText: 'Village'),
-                initialValue: propertyProvider.village,
-                validator: Validators.requiredValidator,
-                onChanged: (value) => propertyProvider.setVillage(value),
-              ),
+                // State Field (Read-only)
+                if (propertyProvider.pincode.length == 6)
+                  TextFormField(
+                    controller: _stateController,
+                    decoration: InputDecoration(
+                      labelText: 'State',
+                    ),
+                    readOnly: true,
+                  ),
+                SizedBox(height: 20),
+
+                // Mandal Dropdown
+                if (propertyProvider.district != null &&
+                    propertyProvider.district!.isNotEmpty)
+                  DropdownButtonFormField<String>(
+                    decoration: InputDecoration(labelText: 'Mandal'),
+                    value: propertyProvider.mandal != null &&
+                            propertyProvider.mandal!.isNotEmpty
+                        ? propertyProvider.mandal
+                        : null,
+                    items: propertyProvider.mandalList.map((mandal) {
+                      return DropdownMenuItem(
+                        value: mandal,
+                        child: Text(mandal),
+                      );
+                    }).toList(),
+                    onChanged: propertyProvider.district != null
+                        ? (value) {
+                            if (value != null) {
+                              propertyProvider.setMandal(value);
+                            }
+                          }
+                        : null, // Disable if no district selected
+                    validator: Validators.requiredValidator,
+                    hint: Text('Select Mandal'),
+                  ),
+                SizedBox(height: 20),
+
+                // Village Field
+                TextFormField(
+                  controller: _villageController,
+                  decoration: InputDecoration(labelText: 'Village'),
+                  validator: Validators.requiredValidator,
+                  onChanged: (value) => propertyProvider.setVillage(value),
+                ),
+              ],
             ],
           ),
         ),

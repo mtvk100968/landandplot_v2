@@ -1,5 +1,5 @@
 // Example data structure for districts and mandals
-const districtData = {
+const Map<String, List<String>> districtData = {
   'Adilabad': [
     'Adilabad (Rural)',
     'Adilabad (Urban)',

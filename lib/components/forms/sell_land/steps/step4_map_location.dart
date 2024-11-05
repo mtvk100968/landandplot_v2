@@ -36,7 +36,7 @@ class _Step4MapLocationState extends State<Step4MapLocation> {
 
     // Ensure pincode is set before geocoding
     if (propertyProvider.pincode.isNotEmpty) {
-      await propertyProvider.geocodePincode();
+      await propertyProvider.geocodePincode(propertyProvider.pincode);
     }
 
     setState(() {
@@ -105,7 +105,10 @@ class _Step4MapLocationState extends State<Step4MapLocation> {
                 ),
                 onMapCreated: (controller) {
                   _mapController = controller;
-                  // Optionally move the camera here if not already done in _initializeMap
+                  // Move the camera to the initial position if not already done
+                  _mapController!.animateCamera(
+                    CameraUpdate.newLatLng(initialCenter),
+                  );
                 },
                 onCameraMove: (CameraPosition position) {
                   _currentMapCenter = position.target;
