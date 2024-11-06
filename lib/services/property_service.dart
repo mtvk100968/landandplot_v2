@@ -19,6 +19,10 @@ class PropertyService {
       {List<File>? videos, List<File>? documents}) async {
     try {
       // Step 1: Generate Custom Property ID
+      if (property.district == null || property.mandal == null) {
+        throw ArgumentError("District and Mandal are required fields.");
+      }
+
       String propertyId =
           await _generatePropertyId(property.district!, property.mandal!);
 
@@ -79,9 +83,11 @@ class PropertyService {
       await _userService.addPropertyToUser(property.userId, propertyId);
 
       return propertyId;
-    } catch (e) {
+    } catch (e, stacktrace) {
       print('Error adding property: $e');
-      throw Exception('Failed to add property');
+      print(stacktrace); // Print stack trace for debugging
+      Error.throwWithStackTrace(
+          Exception('Failed to add property'), stacktrace);
     }
   }
 
@@ -94,9 +100,11 @@ class PropertyService {
         return Property.fromMap(doc.id, doc.data()!);
       }
       return null;
-    } catch (e) {
+    } catch (e, stacktrace) {
       print('Error fetching property: $e');
-      throw Exception('Failed to fetch property');
+      print(stacktrace); // Print stack trace for debugging
+      Error.throwWithStackTrace(
+          Exception('Failed to fetch property'), stacktrace);
     }
   }
 
@@ -110,6 +118,10 @@ class PropertyService {
       List<String> updatedImageUrls = property.images;
       List<String> updatedVideoUrls = property.videos;
       List<String> updatedDocumentUrls = property.documents;
+
+      if (property.id == null) {
+        throw ArgumentError("Property ID is required to update a property.");
+      }
 
       // Upload new images if provided
       if (newImages != null && newImages.isNotEmpty) {
@@ -143,9 +155,11 @@ class PropertyService {
           .collection('properties')
           .doc(property.id)
           .update(updatedData);
-    } catch (e) {
+    } catch (e, stacktrace) {
       print('Error updating property: $e');
-      throw Exception('Failed to update property');
+      print(stacktrace); // Print stack trace for debugging
+      Error.throwWithStackTrace(
+          Exception('Failed to update property'), stacktrace);
     }
   }
 
@@ -179,9 +193,11 @@ class PropertyService {
           'postedPropertyIds': FieldValue.arrayRemove([propertyId])
         });
       }
-    } catch (e) {
+    } catch (e, stacktrace) {
       print('Error deleting property: $e');
-      throw Exception('Failed to delete property');
+      print(stacktrace); // Print stack trace for debugging
+      Error.throwWithStackTrace(
+          Exception('Failed to delete property'), stacktrace);
     }
   }
 
@@ -194,9 +210,11 @@ class PropertyService {
       return snapshot.docs
           .map((doc) => Property.fromMap(doc.id, doc.data()))
           .toList();
-    } catch (e) {
+    } catch (e, stacktrace) {
       print('Error fetching all properties: $e');
-      throw Exception('Failed to fetch properties');
+      print(stacktrace); // Print stack trace for debugging
+      Error.throwWithStackTrace(
+          Exception('Failed to fetch properties'), stacktrace);
     }
   }
 
@@ -228,9 +246,9 @@ class PropertyService {
         downloadUrls.add(downloadUrl);
 
         index++;
-      } catch (e) {
+      } catch (e, stacktrace) {
         print('Error uploading $mediaType file: $e');
-        // Optionally handle specific errors or continue uploading other files
+        print(stacktrace); // Print stack trace for debugging
       }
     }
 
@@ -243,12 +261,13 @@ class PropertyService {
       try {
         Reference ref = _storage.refFromURL(url);
         await ref.delete();
-      } catch (e) {
+      } catch (e, stacktrace) {
         print('Error deleting file $url: $e');
-        // Continue deleting other files even if one fails
+        print(stacktrace); // Print stack trace for debugging
       }
     }
   }
+  // Continue deleting other files even if one fails
 
   /// Private helper method to generate a random string for unique file naming.
   String _generateRandomString(int length) {

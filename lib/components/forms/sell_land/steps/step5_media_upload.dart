@@ -490,15 +490,19 @@ class _FullScreenVideoPlayerState extends State<FullScreenVideoPlayer> {
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.done) {
                     return AspectRatio(
-                      aspectRatio: _controller.value.aspectRatio,
+                      aspectRatio: _controller.value.isInitialized
+                          ? _controller.value.aspectRatio
+                          : 16 / 9, // Default aspect ratio if not initialized
                       child: VideoPlayer(_controller),
                     );
+                  } else if (snapshot.hasError) {
+                    return Text('Error loading video');
                   } else {
                     return CircularProgressIndicator();
                   }
                 },
               )
-            : CircularProgressIndicator(),
+            : Text('Unable to load video'), // Message if future is null
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {

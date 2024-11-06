@@ -122,6 +122,12 @@ class PropertyProvider with ChangeNotifier {
   // Getters and Setters for Step 3
   String? get district => _district;
   void setDistrict(String value) {
+    if (value == _district) {
+      developer.log('District unchanged: $value');
+      return;
+    }
+
+    developer.log('Setting new district: $value');
     _district = value;
     _mandal = null; // Reset mandal when district changes
     notifyListeners();
@@ -129,6 +135,12 @@ class PropertyProvider with ChangeNotifier {
 
   String? get mandal => _mandal;
   void setMandal(String value) {
+    if (value == _mandal) {
+      developer.log('Mandal unchanged: $value');
+      return;
+    }
+
+    developer.log('Setting new mandal: $value');
     _mandal = value;
     notifyListeners();
   }
@@ -141,6 +153,12 @@ class PropertyProvider with ChangeNotifier {
 
   String get pincode => _pincode;
   Future<void> setPincode(String value) async {
+    if (value == _pincode) {
+      developer.log('Pincode unchanged: $value');
+      return;
+    }
+
+    developer.log('Setting new pincode: $value');
     _pincode = value;
     notifyListeners();
 
