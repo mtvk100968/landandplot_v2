@@ -53,7 +53,6 @@ class PropertyService {
         latitude: property.latitude,
         longitude: property.longitude,
         pincode: property.pincode,
-        village: property.village,
         mandal: property.mandal,
         // town: property.town,
         district: property.district,
@@ -67,6 +66,7 @@ class PropertyService {
         documents: documentUrls,
         propertyOwner: property.propertyOwner,
         city: property.city,
+        address: property.address,
       );
 
       // Step 4: Add the property to Firestore with the custom property ID

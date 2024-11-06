@@ -15,7 +15,6 @@ class Property {
   final String? mandal;
   final String? city;
   // final String town;
-  final String village;
   final String pincode;
   final double latitude;
   final double longitude;
@@ -28,6 +27,7 @@ class Property {
   final List<String> images;
   final List<String> videos;
   final List<String> documents;
+  final String? address; // <--- Added Address Field
 
   Property({
     this.id = '',
@@ -45,7 +45,6 @@ class Property {
     this.mandal, // Updated
     this.state,
     // required this.town,
-    required this.village,
     required this.pincode,
     required this.latitude,
     required this.longitude,
@@ -58,6 +57,7 @@ class Property {
     required this.images,
     required this.videos,
     required this.documents,
+    this.address, // <--- Added Address Field
   });
 
   Map<String, dynamic> toMap() {
@@ -76,7 +76,6 @@ class Property {
       'mandal': mandal,
       'city': city,
       // 'town': town,
-      'village': village,
       'pincode': pincode,
       'latitude': latitude,
       'longitude': longitude,
@@ -89,6 +88,7 @@ class Property {
       'images': images,
       'videos': videos,
       'documents': documents,
+      'address': address, // <--- Added Address Field
     };
   }
 
@@ -108,7 +108,6 @@ class Property {
       mandal: map['mandal'], // Updated
       city: map['city'], // Added
       // town: map['town'] ?? '',
-      village: map['village'] ?? '',
       pincode: map['pincode'] ?? '',
       latitude: map['latitude']?.toDouble() ?? 0.0,
       longitude: map['longitude']?.toDouble() ?? 0.0,
@@ -121,6 +120,7 @@ class Property {
       images: List<String>.from(map['images'] ?? []),
       videos: List<String>.from(map['videos'] ?? []),
       documents: List<String>.from(map['documents'] ?? []),
+      address: map['address'], // <--- Added Address Field
     );
   }
 }

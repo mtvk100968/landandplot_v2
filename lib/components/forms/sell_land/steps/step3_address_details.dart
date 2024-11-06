@@ -18,10 +18,10 @@ class Step3AddressDetails extends StatefulWidget {
 
 class _Step3AddressDetailsState extends State<Step3AddressDetails> {
   late TextEditingController _pincodeController;
+  late TextEditingController _addressController; // New controller
   late TextEditingController _districtController;
   late TextEditingController _cityController;
   late TextEditingController _stateController;
-  late TextEditingController _villageController;
 
   @override
   void initState() {
@@ -29,11 +29,12 @@ class _Step3AddressDetailsState extends State<Step3AddressDetails> {
     final propertyProvider =
         Provider.of<PropertyProvider>(context, listen: false);
     _pincodeController = TextEditingController(text: propertyProvider.pincode);
+    _addressController = TextEditingController(
+        text: propertyProvider.address ?? ''); // Initialize
     _districtController =
         TextEditingController(text: propertyProvider.district ?? '');
     _cityController = TextEditingController(text: propertyProvider.city);
     _stateController = TextEditingController(text: propertyProvider.state);
-    _villageController = TextEditingController(text: propertyProvider.village);
 
     // Listen to provider changes and update controllers
     propertyProvider.addListener(_updateControllers);
@@ -45,6 +46,11 @@ class _Step3AddressDetailsState extends State<Step3AddressDetails> {
 
     if (_pincodeController.text != propertyProvider.pincode) {
       _pincodeController.text = propertyProvider.pincode;
+    }
+
+    if (_addressController.text != (propertyProvider.address ?? '')) {
+      // Update address
+      _addressController.text = propertyProvider.address ?? '';
     }
 
     if (_districtController.text != (propertyProvider.district ?? '')) {
@@ -59,10 +65,6 @@ class _Step3AddressDetailsState extends State<Step3AddressDetails> {
       _stateController.text = propertyProvider.state;
     }
 
-    if (_villageController.text != propertyProvider.village) {
-      _villageController.text = propertyProvider.village;
-    }
-
     // Force rebuild to update mandal dropdown
     setState(() {});
   }
@@ -73,10 +75,10 @@ class _Step3AddressDetailsState extends State<Step3AddressDetails> {
         Provider.of<PropertyProvider>(context, listen: false);
     propertyProvider.removeListener(_updateControllers);
     _pincodeController.dispose();
+    _addressController.dispose(); // Dispose address controller
     _districtController.dispose();
     _cityController.dispose();
     _stateController.dispose();
-    _villageController.dispose();
     super.dispose();
   }
 
@@ -111,38 +113,34 @@ class _Step3AddressDetailsState extends State<Step3AddressDetails> {
               ),
               SizedBox(height: 20),
 
+              // Address Field (New)
+              TextFormField(
+                controller: _addressController,
+                decoration: InputDecoration(
+                  labelText: 'Address',
+                  hintText: 'Enter your address',
+                ),
+                keyboardType: TextInputType.streetAddress,
+                validator:
+                    Validators.requiredValidator, // Ensure address is entered
+                onChanged: (value) {
+                  propertyProvider.setAddress(value);
+                },
+                maxLines: 3, // Allow multiple lines for address
+              ),
+              SizedBox(height: 20),
+
               // Show loading indicator if geocoding is in progress
+
               if (propertyProvider.isGeocoding)
                 Center(child: CircularProgressIndicator()),
               if (!propertyProvider.isGeocoding) ...[
-                // District Field (Read-only)
-                if (propertyProvider.pincode.length == 6)
-                  TextFormField(
-                    controller: _districtController,
-                    decoration: InputDecoration(
-                      labelText: 'District',
-                    ),
-                    readOnly: true,
-                  ),
-                SizedBox(height: 20),
-
                 // City Field (Read-only)
                 if (propertyProvider.pincode.length == 6)
                   TextFormField(
                     controller: _cityController,
                     decoration: InputDecoration(
                       labelText: 'City',
-                    ),
-                    readOnly: true,
-                  ),
-                SizedBox(height: 20),
-
-                // State Field (Read-only)
-                if (propertyProvider.pincode.length == 6)
-                  TextFormField(
-                    controller: _stateController,
-                    decoration: InputDecoration(
-                      labelText: 'State',
                     ),
                     readOnly: true,
                   ),
@@ -175,13 +173,27 @@ class _Step3AddressDetailsState extends State<Step3AddressDetails> {
                   ),
                 SizedBox(height: 20),
 
-                // Village Field
-                TextFormField(
-                  controller: _villageController,
-                  decoration: InputDecoration(labelText: 'Village'),
-                  validator: Validators.requiredValidator,
-                  onChanged: (value) => propertyProvider.setVillage(value),
-                ),
+                // District Field (Read-only)
+                if (propertyProvider.pincode.length == 6)
+                  TextFormField(
+                    controller: _districtController,
+                    decoration: InputDecoration(
+                      labelText: 'District',
+                    ),
+                    readOnly: true,
+                  ),
+                SizedBox(height: 20),
+
+                // State Field (Read-only)
+                if (propertyProvider.pincode.length == 6)
+                  TextFormField(
+                    controller: _stateController,
+                    decoration: InputDecoration(
+                      labelText: 'State',
+                    ),
+                    readOnly: true,
+                  ),
+                SizedBox(height: 20),
               ],
             ],
           ),

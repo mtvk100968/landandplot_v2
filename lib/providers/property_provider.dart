@@ -24,10 +24,10 @@ class PropertyProvider with ChangeNotifier {
   // Step 3: Address Details
   String? _district;
   String? _mandal;
-  String _village = '';
   String _pincode = '';
   String _state = '';
   String _city = '';
+  String? _address;
 
   // Step 4: Map Location
   double _latitude = 17.385044; // Default to Hyderabad latitude
@@ -139,12 +139,6 @@ class PropertyProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  String get village => _village;
-  void setVillage(String value) {
-    _village = value;
-    notifyListeners();
-  }
-
   String get pincode => _pincode;
   Future<void> setPincode(String value) async {
     _pincode = value;
@@ -163,6 +157,13 @@ class PropertyProvider with ChangeNotifier {
   void setStateField(String value) {
     // Renamed to avoid conflict with setState
     _state = value;
+    notifyListeners();
+  }
+
+  // New Getter and Setter for Address
+  String? get address => _address;
+  void setAddress(String value) {
+    _address = value;
     notifyListeners();
   }
 
@@ -346,7 +347,6 @@ class PropertyProvider with ChangeNotifier {
       district: _district,
       mandal: _mandal,
       city: _city,
-      village: _village,
       pincode: _pincode,
       state: _state,
       latitude: _latitude,
@@ -359,6 +359,7 @@ class PropertyProvider with ChangeNotifier {
       images: _imageUrls, // Pass the image URLs to the model
       videos: _videoUrls, // Pass the video URLs to the model
       documents: _documentUrls, // Pass the document URLs to the model
+      address: _address,
     );
   }
 
@@ -376,7 +377,6 @@ class PropertyProvider with ChangeNotifier {
     _district = null;
     _mandal = null;
     _city = '';
-    _village = '';
     _pincode = '';
     _state = '';
     _latitude = 17.385044;
@@ -388,6 +388,7 @@ class PropertyProvider with ChangeNotifier {
     _imageUrls.clear();
     _videoUrls.clear();
     _documentUrls.clear();
+    _address = '';
     notifyListeners();
   }
 }
