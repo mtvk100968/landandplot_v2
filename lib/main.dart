@@ -11,13 +11,21 @@ Future<void> main() async {
   // Ensure Flutter bindings are initialized
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Load environment variables from the .env file
-  // await dotenv.load(fileName: ".env");
+  try {
+    // Load environment variables from the .env file
+    await dotenv.dotenv.load(fileName: ".env");
+  } catch (e) {
+    print("Error loading .env file: $e");
+  }
 
-  // Initialize Firebase with the default options for the current platform
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  try {
+    // Initialize Firebase with the default options for the current platform
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  } catch (e) {
+    print("Error initializing Firebase: $e");
+  }
 
   // Run the Flutter application
   runApp(const MyApp());

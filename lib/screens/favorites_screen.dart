@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../services/user_service.dart';
+import '../models/user_model.dart';
+import '../models/property_model.dart';
+import '../services/property_service.dart';
+import '../components/cards/property_card.dart';
 
 class FavoritesScreen extends StatefulWidget {
   const FavoritesScreen({super.key});
@@ -10,6 +15,9 @@ class FavoritesScreen extends StatefulWidget {
 
 class FavoritesScreenState extends State<FavoritesScreen> {
   User? _currentUser;
+  final UserService _userService = UserService();
+  final PropertyService _propertyService = PropertyService();
+  Future<List<Property>>? _favoritePropertiesFuture;
 
   @override
   void initState() {
@@ -19,6 +27,20 @@ class FavoritesScreenState extends State<FavoritesScreen> {
 
   void _checkLoginStatus() {
     _currentUser = FirebaseAuth.instance.currentUser;
+    if (_currentUser != null) {
+      _favoritePropertiesFuture = _loadFavoriteProperties();
+    }
+  }
+
+  Future<List<Property>> _loadFavoriteProperties() async {
+    AppUser? appUser = await _userService.getUserById(_currentUser!.uid);
+    if (appUser != null && appUser.favoritedPropertyIds.isNotEmpty) {
+      List<Property> favoriteProperties = await _propertyService
+          .getPropertiesByIds(appUser.favoritedPropertyIds);
+      return favoriteProperties;
+    } else {
+      return [];
+    }
   }
 
   @override
@@ -57,16 +79,33 @@ class FavoritesScreenState extends State<FavoritesScreen> {
   }
 
   Widget _buildFavoritesContent() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: <Widget>[
-        Text(
-          'Find all your saved properties here!',
-          style: Theme.of(context).textTheme.headlineMedium,
-          textAlign: TextAlign.center,
-        ),
-        // Add more widgets here that represent the user's favorite properties
-      ],
+    return FutureBuilder<List<Property>>(
+      future: _favoritePropertiesFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          // Show loading indicator while fetching data
+          return const CircularProgressIndicator();
+        } else if (snapshot.hasError) {
+          // Handle error
+          return Text('Error: ${snapshot.error}');
+        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          // No favorite properties
+          return Text(
+            'No favorite properties found!',
+            style: Theme.of(context).textTheme.headlineMedium,
+            textAlign: TextAlign.center,
+          );
+        } else {
+          // Display list of favorite properties
+          List<Property> favoriteProperties = snapshot.data!;
+          return ListView.builder(
+            itemCount: favoriteProperties.length,
+            itemBuilder: (context, index) {
+              return PropertyCard(property: favoriteProperties[index]);
+            },
+          );
+        }
+      },
     );
   }
 }

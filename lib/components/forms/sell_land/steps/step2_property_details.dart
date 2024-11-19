@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart'; // For number formatting
 import '../../../../providers/property_provider.dart';
 import '../../../../utils/validators.dart';
 
@@ -15,35 +16,59 @@ class Step2PropertyDetails extends StatefulWidget {
 
 class _Step2PropertyDetailsState extends State<Step2PropertyDetails> {
   late TextEditingController _totalPriceController;
+  late TextEditingController _areaController;
+  late TextEditingController _pricePerUnitController;
+
+  final indianFormat = NumberFormat.decimalPattern('en_IN');
 
   @override
   void initState() {
     super.initState();
     final provider = Provider.of<PropertyProvider>(context, listen: false);
-    _totalPriceController = TextEditingController(
-      text:
-          provider.totalPrice > 0 ? provider.totalPrice.toStringAsFixed(2) : '',
+
+    _areaController = TextEditingController(
+      text: provider.area > 0 ? indianFormat.format(provider.area) : '',
     );
 
-    // Listen to changes in totalPrice and update the controller
-    provider.addListener(_updateTotalPrice);
+    _pricePerUnitController = TextEditingController(
+      text: provider.pricePerUnit > 0
+          ? indianFormat.format(provider.pricePerUnit)
+          : '',
+    );
+
+    _totalPriceController = TextEditingController(
+      text: provider.totalPrice > 0
+          ? indianFormat.format(provider.totalPrice)
+          : '',
+    );
+
+    provider.addListener(_updateFields);
   }
 
-  void _updateTotalPrice() {
+  void _updateFields() {
     final provider = Provider.of<PropertyProvider>(context, listen: false);
-    String newText =
-        provider.totalPrice > 0 ? provider.totalPrice.toStringAsFixed(2) : '';
-    if (_totalPriceController.text != newText) {
-      _totalPriceController.text = newText;
-    }
+
+    setState(() {
+      _totalPriceController.text = provider.totalPrice > 0
+          ? indianFormat.format(provider.totalPrice)
+          : '';
+    });
   }
 
   @override
   void dispose() {
     final provider = Provider.of<PropertyProvider>(context, listen: false);
-    provider.removeListener(_updateTotalPrice);
+    provider.removeListener(_updateFields);
+    _areaController.dispose();
+    _pricePerUnitController.dispose();
     _totalPriceController.dispose();
     super.dispose();
+  }
+
+  String _formatToIndianSystem(String value) {
+    if (value.isEmpty) return '';
+    double? parsedValue = double.tryParse(value.replaceAll(',', ''));
+    return parsedValue != null ? indianFormat.format(parsedValue) : value;
   }
 
   @override
@@ -68,46 +93,46 @@ class _Step2PropertyDetailsState extends State<Step2PropertyDetails> {
               children: [
                 // Area Field
                 TextFormField(
+                  controller: _areaController,
                   decoration: InputDecoration(
                     labelText: isAgri ? 'Area (in acres)' : 'Area (in sqyds)',
                   ),
                   keyboardType: TextInputType.numberWithOptions(decimal: true),
-                  initialValue: propertyProvider.area > 0
-                      ? propertyProvider.area.toString()
-                      : '',
                   validator: Validators.areaValidator,
                   onChanged: (value) {
-                    if (value.isEmpty) {
-                      propertyProvider.setArea(0.0);
-                    } else {
-                      double? parsedValue = double.tryParse(value);
-                      if (parsedValue != null) {
-                        propertyProvider.setArea(parsedValue);
-                      }
-                    }
+                    String formattedValue = _formatToIndianSystem(value);
+                    _areaController.value = TextEditingValue(
+                      text: formattedValue,
+                      selection: TextSelection.collapsed(
+                        offset: formattedValue.length,
+                      ),
+                    );
+                    double? parsedValue =
+                        double.tryParse(value.replaceAll(',', ''));
+                    propertyProvider.setArea(parsedValue ?? 0.0);
                   },
                 ),
                 SizedBox(height: 20),
 
                 // Price per Unit Field
                 TextFormField(
+                  controller: _pricePerUnitController,
                   decoration: InputDecoration(
                     labelText: isAgri ? 'Price per acre' : 'Price per sqyd',
                   ),
                   keyboardType: TextInputType.numberWithOptions(decimal: true),
-                  initialValue: propertyProvider.pricePerUnit > 0
-                      ? propertyProvider.pricePerUnit.toString()
-                      : '',
                   validator: Validators.priceValidator,
                   onChanged: (value) {
-                    if (value.isEmpty) {
-                      propertyProvider.setPricePerUnit(0.0);
-                    } else {
-                      double? parsedValue = double.tryParse(value);
-                      if (parsedValue != null) {
-                        propertyProvider.setPricePerUnit(parsedValue);
-                      }
-                    }
+                    String formattedValue = _formatToIndianSystem(value);
+                    _pricePerUnitController.value = TextEditingValue(
+                      text: formattedValue,
+                      selection: TextSelection.collapsed(
+                        offset: formattedValue.length,
+                      ),
+                    );
+                    double? parsedValue =
+                        double.tryParse(value.replaceAll(',', ''));
+                    propertyProvider.setPricePerUnit(parsedValue ?? 0.0);
                   },
                 ),
                 SizedBox(height: 20),

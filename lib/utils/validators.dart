@@ -13,19 +13,27 @@ class Validators {
   static String? phoneValidator(String? value) {
     if (value == null || value.isEmpty) {
       return 'Phone number is required';
-    } else if (!RegExp(r'^[0-9]{10}$').hasMatch(value)) {
+    } else if (!RegExp(r'^\+91[0-9]{10}$').hasMatch(value)) {
       return 'Enter a valid 10-digit phone number';
     }
     return null;
   }
 
-  // Validator for price (positive numbers only)
+// Validator for price (positive numbers only, supports Indian number system formatting)
   static String? priceValidator(String? value) {
     if (value == null || value.isEmpty) {
       return 'Price is required';
-    } else if (double.tryParse(value) == null || double.parse(value) <= 0) {
+    }
+
+    // Remove commas for validation
+    String sanitizedValue = value.replaceAll(',', '');
+
+    // Check if the sanitized value is a valid positive number
+    if (double.tryParse(sanitizedValue) == null ||
+        double.parse(sanitizedValue) <= 0) {
       return 'Enter a valid price';
     }
+
     return null;
   }
 
@@ -33,7 +41,15 @@ class Validators {
   static String? areaValidator(String? value) {
     if (value == null || value.isEmpty) {
       return 'Area is required';
-    } else if (double.tryParse(value) == null || double.parse(value) <= 0) {
+    }
+
+    // Remove commas for validation
+    String sanitizedValue = value.replaceAll(',', '');
+
+    // Check if the sanitized value is a valid positive number
+
+    if (double.tryParse(sanitizedValue) == null ||
+        double.parse(sanitizedValue) <= 0) {
       return 'Enter a valid area';
     }
     return null;

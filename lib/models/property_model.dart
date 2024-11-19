@@ -1,5 +1,7 @@
 // lib/models/property_model.dart
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class Property {
   final String id;
   final String userId;
@@ -28,6 +30,9 @@ class Property {
   final List<String> videos;
   final List<String> documents;
   final String? address; // <--- Added Address Field
+
+  // New field for creation timestamp
+  final Timestamp createdAt;
 
   Property({
     this.id = '',
@@ -58,6 +63,7 @@ class Property {
     required this.videos,
     required this.documents,
     this.address, // <--- Added Address Field
+    required this.createdAt, // Initialize in constructor
   });
 
   Map<String, dynamic> toMap() {
@@ -89,6 +95,7 @@ class Property {
       'videos': videos,
       'documents': documents,
       'address': address, // <--- Added Address Field
+      'createdAt': createdAt, // Include in map
     };
   }
 
@@ -121,6 +128,13 @@ class Property {
       videos: List<String>.from(map['videos'] ?? []),
       documents: List<String>.from(map['documents'] ?? []),
       address: map['address'], // <--- Added Address Field
+      createdAt: map['createdAt'] ?? Timestamp.now(), // Initialize from map
     );
+  }
+
+  // Added fromDocument factory constructor
+  factory Property.fromDocument(DocumentSnapshot<Map<String, dynamic>> doc) {
+    final data = doc.data()!;
+    return Property.fromMap(doc.id, data);
   }
 }

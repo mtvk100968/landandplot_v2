@@ -6,8 +6,15 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http; // Import http package
 import 'dart:convert'; // Import convert for JSON decoding
 import 'dart:developer' as developer;
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class PropertyProvider with ChangeNotifier {
+  Timestamp getCurrentTimestampInIST() {
+    DateTime nowUtc = DateTime.now().toUtc();
+    DateTime nowIst = nowUtc.add(Duration(hours: 5, minutes: 30));
+    return Timestamp.fromDate(nowIst);
+  }
+
   // Step 1: Basic Details
   String _phoneNumber = '';
   String _name = '';
@@ -40,9 +47,9 @@ class PropertyProvider with ChangeNotifier {
   String _landFacing = ''; // e.g., "North", "South", etc.
 
   // Step 5: Media Upload
-  List<String> _imageUrls = []; // Separate list for images
-  List<String> _videoUrls = []; // Separate list for videos
-  List<String> _documentUrls = []; // Separate list for documents
+  List<File> _imageFiles = []; // List to store image files
+  List<File> _videoFiles = []; // List to store video files
+  List<File> _documentFiles = []; // List to store document files
 
   bool _isGeocoding = false;
   bool get isGeocoding => _isGeocoding;
@@ -173,7 +180,6 @@ class PropertyProvider with ChangeNotifier {
 
   String get state => _state;
   void setStateField(String value) {
-    // Renamed to avoid conflict with setState
     _state = value;
     notifyListeners();
   }
@@ -225,44 +231,42 @@ class PropertyProvider with ChangeNotifier {
   }
 
   // Getters and Setters for Step 5
-  List<String> get imageUrls => _imageUrls;
-  void addImageUrl(String url) {
-    if (!_imageUrls.contains(url)) {
-      _imageUrls.add(url);
+  List<File> get imageFiles => _imageFiles;
+  void addImageFile(File file) {
+    if (!_imageFiles.contains(file)) {
+      _imageFiles.add(file);
       notifyListeners();
     }
   }
 
-  void removeImageUrl(String url) {
-    // Changed from removeImageUrls to removeImageUrl
-    _imageUrls.remove(url);
+  void removeImageFile(File file) {
+    _imageFiles.remove(file);
     notifyListeners();
   }
 
-  List<String> get videoUrls => _videoUrls;
-  void addVideoUrl(String url) {
-    if (!_videoUrls.contains(url)) {
-      _videoUrls.add(url);
+  List<File> get videoFiles => _videoFiles;
+  void addVideoFile(File file) {
+    if (!_videoFiles.contains(file)) {
+      _videoFiles.add(file);
       notifyListeners();
     }
   }
 
-  void removeVideoUrl(String url) {
-    // Changed from removeVideoUrls to removeVideoUrl
-    _videoUrls.remove(url);
+  void removeVideoFile(File file) {
+    _videoFiles.remove(file);
     notifyListeners();
   }
 
-  List<String> get documentUrls => _documentUrls;
-  void addDocumentUrl(String url) {
-    if (!_documentUrls.contains(url)) {
-      _documentUrls.add(url);
+  List<File> get documentFiles => _documentFiles;
+  void addDocumentFile(File file) {
+    if (!_documentFiles.contains(file)) {
+      _documentFiles.add(file);
       notifyListeners();
     }
   }
 
-  void removeDocumentUrl(String url) {
-    _documentUrls.remove(url);
+  void removeDocumentFile(File file) {
+    _documentFiles.remove(file);
     notifyListeners();
   }
 
@@ -341,16 +345,9 @@ class PropertyProvider with ChangeNotifier {
 
   // Convert provider data to Property model
   Property toProperty() {
-    // Process each image and video URL if needed
-    _imageUrls.forEach((url) {
-      developer.log("Adding image URL to property: $url");
-      // Replace this log with any processing you need
-    });
-
-    _videoUrls.forEach((url) {
-      developer.log("Adding video URL to property: $url");
-      // Replace this log with any processing you need
-    });
+    // Note: The actual upload of media files is handled separately.
+    // This method should only convert the non-media fields.
+    Timestamp createdAt = getCurrentTimestampInIST();
 
     return Property(
       userId: FirebaseAuth.instance.currentUser?.uid ?? 'unknown',
@@ -374,10 +371,11 @@ class PropertyProvider with ChangeNotifier {
       roadWidth: _roadWidth,
       landFacing: _landFacing,
       propertyOwner: _propertyOwnerName,
-      images: _imageUrls, // Pass the image URLs to the model
-      videos: _videoUrls, // Pass the video URLs to the model
-      documents: _documentUrls, // Pass the document URLs to the model
+      images: [], // Will be set after uploading
+      videos: [], // Will be set after uploading
+      documents: [], // Will be set after uploading
       address: _address,
+      createdAt: createdAt, // Set the current time in IST
     );
   }
 
@@ -403,9 +401,9 @@ class PropertyProvider with ChangeNotifier {
     _roadType = '';
     _roadWidth = 0.0;
     _landFacing = '';
-    _imageUrls.clear();
-    _videoUrls.clear();
-    _documentUrls.clear();
+    _imageFiles.clear();
+    _videoFiles.clear();
+    _documentFiles.clear();
     _address = '';
     notifyListeners();
   }

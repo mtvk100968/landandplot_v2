@@ -26,12 +26,14 @@ class Step1BasicDetails extends StatelessWidget {
             TextFormField(
               decoration: InputDecoration(labelText: 'Your Phone Number'),
               keyboardType: TextInputType.phone,
-              initialValue: propertyProvider.phoneNumber,
+              initialValue: propertyProvider.phoneNumber.isNotEmpty
+                  ? propertyProvider.phoneNumber
+                  : '+91',
               validator: Validators.phoneValidator,
               onChanged: (value) => propertyProvider.setPhoneNumber(value),
               inputFormatters: [
                 FilteringTextInputFormatter.allow(RegExp(r'^\+?[0-9]*$')),
-                LengthLimitingTextInputFormatter(12),
+                LengthLimitingTextInputFormatter(13),
               ],
             ),
             SizedBox(height: 20),

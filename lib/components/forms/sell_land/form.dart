@@ -74,32 +74,36 @@ class _SellLandFormState extends State<SellLandForm> {
 
     final property = propertyProvider.toProperty();
 
+    // Retrieve media files directly from the provider
+    List<File> images = propertyProvider.imageFiles;
+    List<File> videos = propertyProvider.videoFiles;
+    List<File> documents = propertyProvider.documentFiles;
+
+    if (images.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Please add at least one image.')),
+      );
+      return;
+    }
+
     try {
-      // Handle media files
-      // Convert media URLs to Files if necessary
-      // Assuming mediaUrls of imageUrls , videoUrls and documentUrls are file paths
-      List<File> images = propertyProvider.imageUrls
-          .where((url) =>
-              url.endsWith('.jpg') ||
-              url.endsWith('.jpeg') ||
-              url.endsWith('.png'))
-          .map((url) => File(url))
-          .toList();
+      // Show a loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => Center(child: CircularProgressIndicator()),
+      );
 
-      List<File> videos = propertyProvider.videoUrls
-          .where((url) => url.endsWith('.mp4'))
-          .map((url) => File(url))
-          .toList();
-
-      List<File> documents =
-          propertyProvider.documentUrls.map((url) => File(url)).toList();
-
+      // Upload property with media files
       String propertyId = await propertyService.addProperty(
         property,
         images,
         videos: videos,
         documents: documents,
       );
+
+      // Dismiss the loading indicator
+      // Navigator.of(context).pop();
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -111,6 +115,9 @@ class _SellLandFormState extends State<SellLandForm> {
 
       // Navigate to another screen if desired
     } catch (e) {
+      // Dismiss the loading indicator
+      // Navigator.of(context).pop();
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to list property: $e')),
       );

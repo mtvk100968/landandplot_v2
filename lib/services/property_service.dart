@@ -6,11 +6,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import '../models/property_model.dart';
 import 'user_service.dart';
+import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class PropertyService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseStorage _storage = FirebaseStorage.instance;
   final UserService _userService = UserService();
+  static const String collectionPath = 'properties';
 
   /// Adds a new property to Firestore along with uploading its images, videos, and documents.
   /// Generates a custom property ID based on the district and mandal.
@@ -42,7 +45,12 @@ class PropertyService {
             propertyId, documents, 'property_documents', 'doc');
       }
 
-      // Step 3: Create a new Property instance with the uploaded URLs and custom ID
+      // Step 3: Set the creation time to IST
+      DateTime nowUtc = DateTime.now().toUtc();
+      DateTime nowIst = nowUtc.add(Duration(hours: 5, minutes: 30));
+      Timestamp createdAt = Timestamp.fromDate(nowIst);
+
+      // Step 4: Create a new Property instance with the uploaded URLs and custom ID
       Property propertyWithMedia = Property(
         id: propertyId,
         userId: property.userId,
@@ -58,7 +66,6 @@ class PropertyService {
         longitude: property.longitude,
         pincode: property.pincode,
         mandal: property.mandal,
-        // town: property.town,
         district: property.district,
         state: property.state,
         roadAccess: property.roadAccess,
@@ -71,15 +78,16 @@ class PropertyService {
         propertyOwner: property.propertyOwner,
         city: property.city,
         address: property.address,
+        createdAt: createdAt, // Set the creation time
       );
 
-      // Step 4: Add the property to Firestore with the custom property ID
+      // Step 5: Add the property to Firestore with the custom property ID
       await _firestore
           .collection('properties')
           .doc(propertyId)
           .set(propertyWithMedia.toMap());
 
-      // Step 5: Link the property to the user's posted properties
+      // Step 6: Link the property to the user's posted properties
       await _userService.addPropertyToUser(property.userId, propertyId);
 
       return propertyId;
@@ -126,21 +134,21 @@ class PropertyService {
       // Upload new images if provided
       if (newImages != null && newImages.isNotEmpty) {
         List<String> newImageUrls = await _uploadMediaFiles(
-            property.id, newImages, 'property_images', 'img');
+            property.id!, newImages, 'property_images', 'img');
         updatedImageUrls.addAll(newImageUrls);
       }
 
       // Upload new videos if provided
       if (newVideos != null && newVideos.isNotEmpty) {
         List<String> newVideoUrls = await _uploadMediaFiles(
-            property.id, newVideos, 'property_videos', 'vid');
+            property.id!, newVideos, 'property_videos', 'vid');
         updatedVideoUrls.addAll(newVideoUrls);
       }
 
       // Upload new documents if provided
       if (newDocuments != null && newDocuments.isNotEmpty) {
         List<String> newDocumentUrls = await _uploadMediaFiles(
-            property.id, newDocuments, 'property_documents', 'doc');
+            property.id!, newDocuments, 'property_documents', 'doc');
         updatedDocumentUrls.addAll(newDocumentUrls);
       }
 
@@ -232,8 +240,12 @@ class PropertyService {
             '${propertyId}_$mediaType$index${_getFileExtension(file.path)}';
 
         // Define the storage path
-        Reference ref =
-            _storage.ref().child('$folder/$propertyId').child(fileName);
+        // Reference ref =
+        // _storage.ref().child('$folder/$propertyId').child(fileName);
+        final String userId =
+            FirebaseAuth.instance.currentUser?.uid ?? 'unknown';
+        Reference ref = _storage.ref().child('$folder/$userId').child(fileName);
+// Path: /property_images/{userId}/{imageName}
 
         // Upload the file
         UploadTask uploadTask = ref.putFile(file);
@@ -266,8 +278,8 @@ class PropertyService {
         print(stacktrace); // Print stack trace for debugging
       }
     }
+    // Continue deleting other files even if one fails
   }
-  // Continue deleting other files even if one fails
 
   /// Private helper method to generate a random string for unique file naming.
   String _generateRandomString(int length) {
@@ -318,5 +330,60 @@ class PropertyService {
 
       return propertyId;
     });
+  }
+
+  /// Fetches filtered properties from Firestore based on provided criteria.
+  Future<List<Property>> getFilteredProperties({
+    String? propertyType,
+    RangeValues? landAreaRange,
+    RangeValues? priceRange,
+  }) async {
+    try {
+      CollectionReference propertiesRef = _firestore.collection('properties');
+      Query query = propertiesRef;
+
+      if (propertyType != null && propertyType.isNotEmpty) {
+        query = query.where('propertyType', isEqualTo: propertyType);
+      }
+
+      if (landAreaRange != null) {
+        query = query
+            .where('landArea', isGreaterThanOrEqualTo: landAreaRange.start)
+            .where('landArea', isLessThanOrEqualTo: landAreaRange.end);
+      }
+
+      if (priceRange != null) {
+        query = query
+            .where('pricePerUnit', isGreaterThanOrEqualTo: priceRange.start)
+            .where('pricePerUnit', isLessThanOrEqualTo: priceRange.end);
+      }
+
+      // Execute the query
+      // QuerySnapshot<Map<String, dynamic>> snapshot = await query.get();
+      QuerySnapshot<Map<String, dynamic>> snapshot =
+          await query.get() as QuerySnapshot<Map<String, dynamic>>;
+
+      return snapshot.docs
+          .map((doc) => Property.fromMap(doc.id, doc.data()))
+          .toList();
+    } catch (e, stacktrace) {
+      print('Error fetching filtered properties: $e');
+      print(stacktrace);
+      return [];
+    }
+  }
+
+// Fetch properties by a list of IDs
+  Future<List<Property>> getPropertiesByIds(List<String> propertyIds) async {
+    if (propertyIds.isEmpty) {
+      return [];
+    }
+
+    QuerySnapshot<Map<String, dynamic>> snapshot = await _firestore
+        .collection(collectionPath)
+        .where(FieldPath.documentId, whereIn: propertyIds)
+        .get();
+
+    return snapshot.docs.map((doc) => Property.fromDocument(doc)).toList();
   }
 }

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../../models/property_model.dart';
 import '../map_related/marker.dart'; // Ensure correct import path
+import '../../utils/format.dart';
 
 class PropertyMapView extends StatefulWidget {
   final List<Property> properties;
@@ -34,7 +35,8 @@ class PropertyMapViewState extends State<PropertyMapView> {
 
     for (Property property in widget.properties) {
       // Format the price (ensure "L" or "C" is added based on the value)
-      final String priceText = _formatPrice(property.totalPrice);
+      final String priceText =
+          formatPrice(property.totalPrice, property.propertyType);
 
       // Create custom marker with the formatted price (including L/C)
       final BitmapDescriptor customIcon =
@@ -47,7 +49,8 @@ class PropertyMapViewState extends State<PropertyMapView> {
           position: LatLng(property.latitude, property.longitude),
           icon: customIcon,
           infoWindow: InfoWindow(
-            title: 'Land Area: ${property.landArea} Sq Yards',
+            title:
+                'Land Area: ${property.landArea} ${property.propertyType == 'agri land' ? 'Acres' : 'Sq Yards'}',
             snippet: 'Price: $priceText',
           ),
         ),
@@ -58,17 +61,6 @@ class PropertyMapViewState extends State<PropertyMapView> {
     setState(() {
       _markers = markers;
     });
-  }
-
-  /// Formats the price to display in 'L' for lakh or 'C' for crore.
-  String _formatPrice(double price) {
-    if (price >= 10000000) {
-      return '${(price / 10000000).toStringAsFixed(1)}C'; // Crore
-    } else if (price >= 100000) {
-      return '${(price / 100000).toStringAsFixed(1)}L'; // Lakh
-    } else {
-      return price.toStringAsFixed(0); // Below 1 lakh
-    }
   }
 
   void _onMapCreated(GoogleMapController controller) {

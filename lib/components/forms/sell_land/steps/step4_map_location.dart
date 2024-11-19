@@ -26,6 +26,7 @@ class _Step4MapLocationState extends State<Step4MapLocation> {
   @override
   void initState() {
     super.initState();
+    FocusManager.instance.primaryFocus?.unfocus();
     _initializeMap();
   }
 

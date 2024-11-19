@@ -93,7 +93,7 @@ class _Step5MediaUploadState extends State<Step5MediaUpload> {
         imageQuality: 100, // Ensures high quality
       );
       if (photo != null) {
-        propertyProvider.addImageUrl(photo.path);
+        propertyProvider.addImageFile(File(photo.path));
         setState(() {});
       }
     } else {
@@ -105,7 +105,7 @@ class _Step5MediaUploadState extends State<Step5MediaUpload> {
       if (result != null) {
         for (var file in result.files) {
           if (file.path != null) {
-            propertyProvider.addImageUrl(file.path!);
+            propertyProvider.addImageFile(File(file.path!));
           }
         }
         setState(() {}); // Refresh UI after adding images
@@ -125,8 +125,8 @@ class _Step5MediaUploadState extends State<Step5MediaUpload> {
         maxDuration: Duration(minutes: 10), // Adjust as needed
       );
       if (video != null) {
-        propertyProvider.addVideoUrl(video.path);
-        _generateVideoThumbnail(video.path);
+        propertyProvider.addVideoFile(File(video.path));
+        _generateVideoThumbnail(video.path!);
         setState(() {});
       }
     } else {
@@ -138,7 +138,7 @@ class _Step5MediaUploadState extends State<Step5MediaUpload> {
       if (result != null) {
         for (var file in result.files) {
           if (file.path != null) {
-            propertyProvider.addVideoUrl(file.path!);
+            propertyProvider.addVideoFile(File(file.path!));
             _generateVideoThumbnail(file.path!);
           }
         }
@@ -158,7 +158,7 @@ class _Step5MediaUploadState extends State<Step5MediaUpload> {
     if (result != null) {
       for (var file in result.files) {
         if (file.path != null) {
-          propertyProvider.addDocumentUrl(file.path!);
+          propertyProvider.addDocumentFile(File(file.path!));
         }
       }
       setState(() {}); // Refresh UI after adding documents
@@ -183,17 +183,17 @@ class _Step5MediaUploadState extends State<Step5MediaUpload> {
   }
 
   /// Widget to build image thumbnails
-  Widget _buildImageThumbnail(String url) {
+  Widget _buildImageThumbnail(File file) {
     return GestureDetector(
       onTap: () {
         Navigator.of(context).push(MaterialPageRoute(
-          builder: (_) => FullScreenImageViewer(imagePath: url),
+          builder: (_) => FullScreenImageViewer(imagePath: file.path),
         ));
       },
       child: ClipRRect(
         borderRadius: BorderRadius.circular(8.0),
         child: Image.file(
-          File(url),
+          file,
           width: 100,
           height: 100,
           fit: BoxFit.cover,
@@ -203,7 +203,8 @@ class _Step5MediaUploadState extends State<Step5MediaUpload> {
   }
 
   /// Widget to build video thumbnails
-  Widget _buildVideoThumbnail(String url) {
+  Widget _buildVideoThumbnail(File file) {
+    String url = file.path;
     return FutureBuilder<String?>(
       future: _videoThumbnails[url],
       builder: (context, snapshot) {
@@ -294,20 +295,20 @@ class _Step5MediaUploadState extends State<Step5MediaUpload> {
             SizedBox(height: 10),
 
             // Display selected images
-            propertyProvider.imageUrls.isNotEmpty
+            propertyProvider.imageFiles.isNotEmpty
                 ? Wrap(
                     spacing: 10,
                     runSpacing: 10,
-                    children: propertyProvider.imageUrls.map((url) {
+                    children: propertyProvider.imageFiles.map((file) {
                       return Stack(
                         children: [
-                          _buildImageThumbnail(url),
+                          _buildImageThumbnail(file),
                           Positioned(
                             right: 0,
                             top: 0,
                             child: GestureDetector(
                               onTap: () {
-                                propertyProvider.removeImageUrl(url);
+                                propertyProvider.removeImageFile(file);
                                 setState(() {}); // Refresh UI after removal
                               },
                               child: Container(
@@ -350,20 +351,20 @@ class _Step5MediaUploadState extends State<Step5MediaUpload> {
             SizedBox(height: 10),
 
             // Display selected videos
-            propertyProvider.videoUrls.isNotEmpty
+            propertyProvider.videoFiles.isNotEmpty
                 ? Wrap(
                     spacing: 10,
                     runSpacing: 10,
-                    children: propertyProvider.videoUrls.map((url) {
+                    children: propertyProvider.videoFiles.map((file) {
                       return Stack(
                         children: [
-                          _buildVideoThumbnail(url),
+                          _buildVideoThumbnail(file),
                           Positioned(
                             right: 0,
                             top: 0,
                             child: GestureDetector(
                               onTap: () {
-                                propertyProvider.removeVideoUrl(url);
+                                propertyProvider.removeVideoFile(file);
                                 setState(() {}); // Refresh UI after removal
                               },
                               child: Container(
@@ -402,16 +403,16 @@ class _Step5MediaUploadState extends State<Step5MediaUpload> {
             SizedBox(height: 10),
 
             // Display selected documents
-            propertyProvider.documentUrls.isNotEmpty
+            propertyProvider.documentFiles.isNotEmpty
                 ? Column(
-                    children: propertyProvider.documentUrls.map((url) {
+                    children: propertyProvider.documentFiles.map((file) {
                       return ListTile(
                         leading: Icon(Icons.insert_drive_file),
-                        title: Text(url.split('/').last),
+                        title: Text(file.path.split('/').last),
                         trailing: IconButton(
                           icon: Icon(Icons.delete, color: Colors.red),
                           onPressed: () {
-                            propertyProvider.removeDocumentUrl(url);
+                            propertyProvider.removeDocumentFile(file);
                             setState(() {}); // Refresh UI after removal
                           },
                         ),
