@@ -103,7 +103,7 @@ class _SellLandFormState extends State<SellLandForm> {
       );
 
       // Dismiss the loading indicator
-      // Navigator.of(context).pop();
+      Navigator.of(context).pop();
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -116,7 +116,7 @@ class _SellLandFormState extends State<SellLandForm> {
       // Navigate to another screen if desired
     } catch (e) {
       // Dismiss the loading indicator
-      // Navigator.of(context).pop();
+      Navigator.of(context).pop();
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to list property: $e')),

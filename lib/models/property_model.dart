@@ -15,6 +15,7 @@ class Property {
   final List<String> plotNumbers;
   final String? district; // Kept for backward compatibility
   final String? mandal;
+  final String? village; // <--- Added Village Field
   final String? city;
   // final String town;
   final String pincode;
@@ -31,7 +32,10 @@ class Property {
   final List<String> documents;
   final String? address; // <--- Added Address Field
 
-  // New field for creation timestamp
+  // **New Fields**
+  final String userType; // 'Owner' or 'Agent'
+  final String? ventureName; // Required for 'Plot' or 'Farm Land'
+
   final Timestamp createdAt;
 
   Property({
@@ -47,7 +51,8 @@ class Property {
     required this.plotNumbers,
     this.city, // Added
     this.district, // Updated
-    this.mandal, // Updated
+    this.mandal,
+    this.village, // Updated
     this.state,
     // required this.town,
     required this.pincode,
@@ -62,8 +67,12 @@ class Property {
     required this.images,
     required this.videos,
     required this.documents,
-    this.address, // <--- Added Address Field
-    required this.createdAt, // Initialize in constructor
+    this.address,
+
+    // **Initialize New Fields**
+    required this.userType,
+    this.ventureName,
+    required this.createdAt,
   });
 
   Map<String, dynamic> toMap() {
@@ -80,6 +89,7 @@ class Property {
       'plotNumbers': plotNumbers,
       'district': district,
       'mandal': mandal,
+      'village': village,
       'city': city,
       // 'town': town,
       'pincode': pincode,
@@ -94,8 +104,13 @@ class Property {
       'images': images,
       'videos': videos,
       'documents': documents,
-      'address': address, // <--- Added Address Field
-      'createdAt': createdAt, // Include in map
+      'address': address,
+
+      // **Include New Fields**
+      'userType': userType,
+      'ventureName': ventureName,
+
+      'createdAt': createdAt,
     };
   }
 
@@ -112,7 +127,8 @@ class Property {
       surveyNumber: map['surveyNumber'] ?? '',
       plotNumbers: List<String>.from(map['plotNumbers'] ?? []),
       district: map['district'], // Updated
-      mandal: map['mandal'], // Updated
+      mandal: map['mandal'],
+      village: map['village'], // Updated
       city: map['city'], // Added
       // town: map['town'] ?? '',
       pincode: map['pincode'] ?? '',
@@ -127,8 +143,13 @@ class Property {
       images: List<String>.from(map['images'] ?? []),
       videos: List<String>.from(map['videos'] ?? []),
       documents: List<String>.from(map['documents'] ?? []),
-      address: map['address'], // <--- Added Address Field
-      createdAt: map['createdAt'] ?? Timestamp.now(), // Initialize from map
+      address: map['address'],
+
+      // **Initialize New Fields from Map**
+      userType: map['userType'] ?? 'Owner',
+      ventureName: map['ventureName'],
+
+      createdAt: map['createdAt'] ?? Timestamp.now(),
     );
   }
 

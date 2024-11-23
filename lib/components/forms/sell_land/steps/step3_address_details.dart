@@ -22,6 +22,8 @@ class _Step3AddressDetailsState extends State<Step3AddressDetails> {
   late TextEditingController _districtController;
   late TextEditingController _cityController;
   late TextEditingController _stateController;
+  late TextEditingController _villageController; // <--- Added Controller
+  late TextEditingController _ventureNameController; // Existing Controller
 
   @override
   void initState() {
@@ -29,12 +31,18 @@ class _Step3AddressDetailsState extends State<Step3AddressDetails> {
     final propertyProvider =
         Provider.of<PropertyProvider>(context, listen: false);
     _pincodeController = TextEditingController(text: propertyProvider.pincode);
-    _addressController = TextEditingController(
-        text: propertyProvider.address ?? ''); // Initialize
+    _addressController =
+        TextEditingController(text: propertyProvider.address ?? '');
     _districtController =
         TextEditingController(text: propertyProvider.district ?? '');
     _cityController = TextEditingController(text: propertyProvider.city);
     _stateController = TextEditingController(text: propertyProvider.state);
+    _villageController = TextEditingController(
+        text: propertyProvider.village ?? ''); // Initialize Village Controller
+
+    // **Initialize Venture Name Controller**
+    _ventureNameController =
+        TextEditingController(text: propertyProvider.ventureName ?? '');
 
     // Listen to provider changes and update controllers
     propertyProvider.addListener(_updateControllers);
@@ -65,6 +73,16 @@ class _Step3AddressDetailsState extends State<Step3AddressDetails> {
       _stateController.text = propertyProvider.state;
     }
 
+    // **Update Village Controller**
+    if (_villageController.text != (propertyProvider.village ?? '')) {
+      _villageController.text = propertyProvider.village ?? '';
+    }
+
+    // **Update Venture Name Controller**
+    if (_ventureNameController.text != (propertyProvider.ventureName ?? '')) {
+      _ventureNameController.text = propertyProvider.ventureName ?? '';
+    }
+
     // Force rebuild to update mandal dropdown
     setState(() {});
   }
@@ -75,16 +93,20 @@ class _Step3AddressDetailsState extends State<Step3AddressDetails> {
         Provider.of<PropertyProvider>(context, listen: false);
     propertyProvider.removeListener(_updateControllers);
     _pincodeController.dispose();
-    _addressController.dispose(); // Dispose address controller
+    _addressController.dispose();
     _districtController.dispose();
     _cityController.dispose();
     _stateController.dispose();
+    _villageController.dispose(); // Dispose Village Controller
+    _ventureNameController.dispose(); // Dispose Venture Name Controller
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final propertyProvider = Provider.of<PropertyProvider>(context);
+    bool showVentureName = propertyProvider.propertyType == 'Plot' ||
+        propertyProvider.propertyType == 'Farm Land';
 
     return Form(
       key: widget.formKey,
@@ -126,12 +148,49 @@ class _Step3AddressDetailsState extends State<Step3AddressDetails> {
                 onChanged: (value) {
                   propertyProvider.setAddress(value);
                 },
-                maxLines: 3, // Allow multiple lines for address
+                maxLines: 2, // Allow multiple lines for address
               ),
               SizedBox(height: 20),
 
-              // Show loading indicator if geocoding is in progress
+              // Village Field (New)
+              TextFormField(
+                controller: _villageController,
+                decoration: InputDecoration(
+                  labelText: 'Village',
+                  hintText: 'Enter village name',
+                ),
+                keyboardType: TextInputType.text,
+                validator:
+                    Validators.requiredValidator, // Ensure village is entered
+                onChanged: (value) {
+                  propertyProvider.setVillage(value);
+                },
+              ),
+              SizedBox(height: 20),
 
+              // **Venture Name Field (Conditional)**
+              if (showVentureName)
+                TextFormField(
+                  controller: _ventureNameController,
+                  decoration: InputDecoration(
+                    labelText: 'Venture Name',
+                    hintText: 'Enter venture name',
+                  ),
+                  keyboardType: TextInputType.text,
+                  validator: (value) {
+                    if (showVentureName &&
+                        (value == null || value.trim().isEmpty)) {
+                      return 'Venture Name is required for Plot or Farm Land.';
+                    }
+                    return null;
+                  },
+                  onChanged: (value) {
+                    propertyProvider.setVentureName(value);
+                  },
+                ),
+              if (showVentureName) SizedBox(height: 20),
+
+              // Show loading indicator if geocoding is in progress
               if (propertyProvider.isGeocoding)
                 Center(child: CircularProgressIndicator()),
               if (!propertyProvider.isGeocoding) ...[

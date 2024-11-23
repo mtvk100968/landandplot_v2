@@ -67,6 +67,7 @@ class PropertyService {
         pincode: property.pincode,
         mandal: property.mandal,
         district: property.district,
+        village: property.village, // <--- Include Village
         state: property.state,
         roadAccess: property.roadAccess,
         roadType: property.roadType,
@@ -78,6 +79,11 @@ class PropertyService {
         propertyOwner: property.propertyOwner,
         city: property.city,
         address: property.address,
+
+        // **Set New Fields**
+        userType: property.userType,
+        ventureName: property.ventureName,
+
         createdAt: createdAt, // Set the creation time
       );
 
@@ -134,21 +140,21 @@ class PropertyService {
       // Upload new images if provided
       if (newImages != null && newImages.isNotEmpty) {
         List<String> newImageUrls = await _uploadMediaFiles(
-            property.id!, newImages, 'property_images', 'img');
+            property.id, newImages, 'property_images', 'img');
         updatedImageUrls.addAll(newImageUrls);
       }
 
       // Upload new videos if provided
       if (newVideos != null && newVideos.isNotEmpty) {
         List<String> newVideoUrls = await _uploadMediaFiles(
-            property.id!, newVideos, 'property_videos', 'vid');
+            property.id, newVideos, 'property_videos', 'vid');
         updatedVideoUrls.addAll(newVideoUrls);
       }
 
       // Upload new documents if provided
       if (newDocuments != null && newDocuments.isNotEmpty) {
         List<String> newDocumentUrls = await _uploadMediaFiles(
-            property.id!, newDocuments, 'property_documents', 'doc');
+            property.id, newDocuments, 'property_documents', 'doc');
         updatedDocumentUrls.addAll(newDocumentUrls);
       }
 

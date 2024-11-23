@@ -157,7 +157,8 @@ class _Step2PropertyDetailsState extends State<Step2PropertyDetails> {
                 ),
 
                 // Conditional Plot Numbers Field
-                if (propertyProvider.propertyType.toLowerCase() == 'plot') ...[
+                if (['plot', 'farm land']
+                    .contains(propertyProvider.propertyType.toLowerCase())) ...[
                   SizedBox(height: 20),
                   TextFormField(
                     decoration: InputDecoration(labelText: 'Plot Numbers'),

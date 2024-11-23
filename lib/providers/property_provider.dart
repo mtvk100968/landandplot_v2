@@ -19,7 +19,10 @@ class PropertyProvider with ChangeNotifier {
   String _phoneNumber = '';
   String _name = '';
   String _propertyOwnerName = '';
-  String _propertyType = 'plot'; // Default value
+  String _propertyType = 'Plot'; // Default value
+
+  // **New Field: User Type**
+  String _userType = 'Owner'; // Default to 'Owner'
 
   // Step 2: Property Details
   double _area = 0.0;
@@ -31,6 +34,7 @@ class PropertyProvider with ChangeNotifier {
   // Step 3: Address Details
   String? _district;
   String? _mandal;
+  String? _village; // <--- Added Village Field
   String _pincode = '';
   String _state = '';
   String _city = '';
@@ -45,6 +49,9 @@ class PropertyProvider with ChangeNotifier {
   String _roadType = ''; // e.g., "Paved", "Gravel", "Dirt"
   double _roadWidth = 0.0; // in meters
   String _landFacing = ''; // e.g., "North", "South", etc.
+
+  // **New Field: Venture Name**
+  String? _ventureName; // Required for 'Plot' or 'Farm Land'
 
   // Step 5: Media Upload
   List<File> _imageFiles = []; // List to store image files
@@ -83,7 +90,23 @@ class PropertyProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  // Getters and Setters for Step 2
+  // **Getters and Setters for User Type**
+  String get userType => _userType;
+  void setUserType(String value) {
+    if (value != _userType) {
+      _userType = value;
+      notifyListeners();
+    }
+  }
+
+  // **Getters and Setters for Venture Name**
+  String? get ventureName => _ventureName;
+  void setVentureName(String value) {
+    _ventureName = value;
+    notifyListeners();
+  }
+
+  // **Getters and Setters for Step 2**
   double get area => _area;
   void setArea(double value) {
     // Removed the constraint to allow 0.0
@@ -102,8 +125,36 @@ class PropertyProvider with ChangeNotifier {
 
   double get totalPrice => _totalPrice;
 
+  // void calculateTotalPrice() {
+  //   _totalPrice = _area * _pricePerUnit;
+  //   notifyListeners();
+  // }
+
   void calculateTotalPrice() {
-    _totalPrice = _area * _pricePerUnit;
+    if (_propertyType.toLowerCase() == 'agri land') {
+      // Property type is measured in acres
+      int wholeAcres = _area.floor();
+      double fractionalAcres = _area - wholeAcres;
+      double guntas = 0.0;
+
+      if (fractionalAcres >= 0.40) {
+        // Round up to the next whole acre
+        wholeAcres += 1;
+        guntas = 0.0;
+      } else {
+        // Convert fractional acres to guntas
+        guntas = fractionalAcres * 40;
+      }
+
+      // Calculate price per gunta
+      double pricePerGunta = _pricePerUnit / 40;
+
+      // Calculate total price
+      _totalPrice = (wholeAcres * _pricePerUnit) + (guntas * pricePerGunta);
+    } else {
+      // Property type is in square yards (sqyds)
+      _totalPrice = _area * _pricePerUnit;
+    }
     notifyListeners();
   }
 
@@ -150,6 +201,14 @@ class PropertyProvider with ChangeNotifier {
     developer.log('Setting new mandal: $value');
     _mandal = value;
     notifyListeners();
+  }
+
+  String? get village => _village; // <--- Getter for Village
+  void setVillage(String value) {
+    if (value != _village) {
+      _village = value;
+      notifyListeners();
+    }
   }
 
   String get city => _city;
@@ -299,6 +358,7 @@ class PropertyProvider with ChangeNotifier {
           String city = '';
           String district = '';
           String state = '';
+          String village = ''; // Initialize village
 
           List<dynamic> results = data['results'];
           if (results.isNotEmpty) {
@@ -312,6 +372,9 @@ class PropertyProvider with ChangeNotifier {
                 district = component['long_name'];
               } else if (types.contains('administrative_area_level_1')) {
                 state = component['long_name'];
+              } else if (types.contains('sublocality_level_1') ||
+                  types.contains('neighborhood')) {
+                village = component['long_name'];
               }
             }
 
@@ -319,6 +382,9 @@ class PropertyProvider with ChangeNotifier {
             setCity(city);
             setDistrict(district);
             setStateField(state);
+            if (village.isNotEmpty) {
+              setVillage(village);
+            }
 
             // Optionally, update latitude and longitude
             if (results[0]['geometry'] != null &&
@@ -358,9 +424,10 @@ class PropertyProvider with ChangeNotifier {
       pricePerUnit: _pricePerUnit,
       totalPrice: _totalPrice,
       surveyNumber: _surveyNumber,
-      plotNumbers: _propertyType == 'plot' ? _plotNumbers : [],
+      plotNumbers: _propertyType == 'Plot' ? _plotNumbers : [],
       district: _district,
       mandal: _mandal,
+      village: _village, // <--- Include Village
       city: _city,
       pincode: _pincode,
       state: _state,
@@ -375,6 +442,11 @@ class PropertyProvider with ChangeNotifier {
       videos: [], // Will be set after uploading
       documents: [], // Will be set after uploading
       address: _address,
+
+      // **Set New Fields**
+      userType: _userType,
+      ventureName: _ventureName,
+
       createdAt: createdAt, // Set the current time in IST
     );
   }
@@ -384,7 +456,9 @@ class PropertyProvider with ChangeNotifier {
     _phoneNumber = '';
     _name = '';
     _propertyOwnerName = '';
-    _propertyType = 'plot';
+    _propertyType = 'Plot';
+    _userType = 'Owner'; // Reset User Type
+    _ventureName = null; // Reset Venture Name
     _area = 0.0;
     _pricePerUnit = 0.0;
     _totalPrice = 0.0;
@@ -392,6 +466,7 @@ class PropertyProvider with ChangeNotifier {
     _plotNumbers = [];
     _district = null;
     _mandal = null;
+    _village = null; // Reset Village
     _city = '';
     _pincode = '';
     _state = '';

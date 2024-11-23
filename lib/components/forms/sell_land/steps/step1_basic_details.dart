@@ -55,7 +55,7 @@ class Step1BasicDetails extends StatelessWidget {
             DropdownButtonFormField<String>(
               decoration: InputDecoration(labelText: 'Property Type'),
               value: propertyProvider.propertyType,
-              items: ['plot', 'farm land', 'agri land']
+              items: ['Plot', 'Farm Land', 'Agri Land']
                   .map((type) => DropdownMenuItem(
                         value: type,
                         child: Text(type[0].toUpperCase() +
