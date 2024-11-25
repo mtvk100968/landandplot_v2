@@ -338,47 +338,6 @@ class PropertyService {
     });
   }
 
-  /// Fetches filtered properties from Firestore based on provided criteria.
-  Future<List<Property>> getFilteredProperties({
-    String? propertyType,
-    RangeValues? landAreaRange,
-    RangeValues? priceRange,
-  }) async {
-    try {
-      CollectionReference propertiesRef = _firestore.collection('properties');
-      Query query = propertiesRef;
-
-      if (propertyType != null && propertyType.isNotEmpty) {
-        query = query.where('propertyType', isEqualTo: propertyType);
-      }
-
-      if (landAreaRange != null) {
-        query = query
-            .where('landArea', isGreaterThanOrEqualTo: landAreaRange.start)
-            .where('landArea', isLessThanOrEqualTo: landAreaRange.end);
-      }
-
-      if (priceRange != null) {
-        query = query
-            .where('pricePerUnit', isGreaterThanOrEqualTo: priceRange.start)
-            .where('pricePerUnit', isLessThanOrEqualTo: priceRange.end);
-      }
-
-      // Execute the query
-      // QuerySnapshot<Map<String, dynamic>> snapshot = await query.get();
-      QuerySnapshot<Map<String, dynamic>> snapshot =
-          await query.get() as QuerySnapshot<Map<String, dynamic>>;
-
-      return snapshot.docs
-          .map((doc) => Property.fromMap(doc.id, doc.data()))
-          .toList();
-    } catch (e, stacktrace) {
-      print('Error fetching filtered properties: $e');
-      print(stacktrace);
-      return [];
-    }
-  }
-
 // Fetch properties by a list of IDs
   Future<List<Property>> getPropertiesByIds(List<String> propertyIds) async {
     if (propertyIds.isEmpty) {
