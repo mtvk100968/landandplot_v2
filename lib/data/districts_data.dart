@@ -664,5 +664,24 @@ const Map<String, List<String>> districtData = {
     'Thurkapally',
     'Valigonda',
     'Yadagirigutta'
+  ],
+  'Hyderabad': [
+    'Amberpet',
+    'Asif Nagar',
+    'Bahadurpura',
+    'Bandlaguda',
+    'Charminar',
+    'Golkonda',
+    'Himayathnagar',
+    'Nampally',
+    'Saidabad',
+    'Ameerpet',
+    'Khairtabad',
+    'Maredpally',
+    'Musheerabad',
+    'Secunderabad',
+    'Shaikpet',
+    'Tirumalgiri'
   ]
+  // got Hyd list from https://en.wikipedia.org/wiki/List_of_mandals_in_Telangana
 };
