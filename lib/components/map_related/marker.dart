@@ -19,7 +19,7 @@ class CustomMarker {
     }
 
     // Define the fixed marker height and pointer height.
-    const double height = 60; // Fixed height as requested
+    const double height = 80; // Fixed height as requested
     const double pointerHeight = 10; // Triangle pointer height
     const double cornerRadius = 15; // Corner radius for rounded corners
 
@@ -113,7 +113,7 @@ class CustomMarker {
   /// Dynamically calculates the width of the rectangle based on the price text length.
   static double _calculateWidthBasedOnText(String price) {
     // Base width for short prices
-    double baseWidth = 100;
+    double baseWidth = 200;
 
     // Additional width per character
     double additionalWidthPerChar = 1;

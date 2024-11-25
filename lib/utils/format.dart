@@ -8,19 +8,13 @@ extension StringExtension on String {
 }
 
 String formatPrice(double price, String propertyType) {
-  if (propertyType == 'agri land') {
-    if (price >= 10000000) {
-      return '${(price / 10000000).toStringAsFixed(1)}C';
-    } else if (price >= 100000) {
-      return '${(price / 100000).toStringAsFixed(1)}L';
-    } else {
-      return price.toStringAsFixed(0);
-    }
+  if (price >= 10000000) {
+    return '₹${(price / 10000000).toStringAsFixed(1)}C';
+  } else if (price >= 100000) {
+    return '₹${(price / 100000).toStringAsFixed(1)}L';
+  } else if (price >= 1000) {
+    return '₹${(price / 1000).toStringAsFixed(1)}K';
   } else {
-    if (price >= 100000) {
-      return '${(price / 100000).toStringAsFixed(1)}L';
-    } else {
-      return price.toStringAsFixed(0);
-    }
+    return '₹${price.toStringAsFixed(0)}';
   }
 }
