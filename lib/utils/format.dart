@@ -8,13 +8,21 @@ extension StringExtension on String {
 }
 
 String formatPrice(double price, String propertyType) {
+  String formatValue(double value) {
+    // Format value and remove .0 if it exists
+    String formatted = value.toStringAsFixed(1);
+    return formatted.endsWith('.0')
+        ? formatted.substring(0, formatted.length - 2)
+        : formatted;
+  }
+
   if (price >= 10000000) {
-    return '₹${(price / 10000000).toStringAsFixed(1)}C';
+    return '₹${formatValue(price / 10000000)}C';
   } else if (price >= 100000) {
-    return '₹${(price / 100000).toStringAsFixed(1)}L';
+    return '₹${formatValue(price / 100000)}L';
   } else if (price >= 1000) {
-    return '₹${(price / 1000).toStringAsFixed(1)}K';
+    return '₹${formatValue(price / 1000)}K';
   } else {
-    return '₹${price.toStringAsFixed(0)}';
+    return '₹${formatValue(price)}';
   }
 }
