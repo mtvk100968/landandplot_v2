@@ -216,19 +216,25 @@ class PropertyService {
   }
 
   /// Fetches all properties from Firestore.
-  Future<List<Property>> getAllProperties() async {
+  Future<List<Property>> getAllProperties({String? searchQuery}) async {
     try {
-      QuerySnapshot<Map<String, dynamic>> snapshot =
-          await _firestore.collection('properties').get();
+      Query<Map<String, dynamic>> query = _firestore.collection('properties');
+
+      // Apply search filter
+      if (searchQuery != null && searchQuery.isNotEmpty) {
+        query = query
+            .where('name', isGreaterThanOrEqualTo: searchQuery)
+            .where('name', isLessThanOrEqualTo: searchQuery + '\uf8ff');
+      }
+
+      QuerySnapshot<Map<String, dynamic>> snapshot = await query.get();
 
       return snapshot.docs
           .map((doc) => Property.fromMap(doc.id, doc.data()))
           .toList();
-    } catch (e, stacktrace) {
+    } catch (e) {
       print('Error fetching all properties: $e');
-      print(stacktrace); // Print stack trace for debugging
-      Error.throwWithStackTrace(
-          Exception('Failed to fetch properties'), stacktrace);
+      throw Exception('Failed to fetch properties');
     }
   }
 
@@ -350,5 +356,53 @@ class PropertyService {
         .get();
 
     return snapshot.docs.map((doc) => Property.fromDocument(doc)).toList();
+  }
+
+  Future<List<Property>> getPropertiesWithFilters({
+    List<String>? propertyTypes,
+    double? minPricePerUnit,
+    double? maxPricePerUnit,
+    double? minLandArea,
+    double? maxLandArea,
+    String? searchQuery,
+  }) async {
+    try {
+      Query<Map<String, dynamic>> query = _firestore.collection('properties');
+
+      // Apply property type filter
+      if (propertyTypes != null && propertyTypes.isNotEmpty) {
+        query = query.where('propertyType', whereIn: propertyTypes);
+      }
+
+      // Apply price per unit filter
+      if (minPricePerUnit != null && maxPricePerUnit != null) {
+        query = query.where('pricePerUnit',
+            isGreaterThanOrEqualTo: minPricePerUnit);
+        query =
+            query.where('pricePerUnit', isLessThanOrEqualTo: maxPricePerUnit);
+      }
+
+      // Apply land area filter
+      if (minLandArea != null && maxLandArea != null) {
+        query = query.where('landArea', isGreaterThanOrEqualTo: minLandArea);
+        query = query.where('landArea', isLessThanOrEqualTo: maxLandArea);
+      }
+
+      // Apply search filter
+      if (searchQuery != null && searchQuery.isNotEmpty) {
+        query = query
+            .where('name', isGreaterThanOrEqualTo: searchQuery)
+            .where('name', isLessThanOrEqualTo: searchQuery + '\uf8ff');
+      }
+
+      QuerySnapshot<Map<String, dynamic>> snapshot = await query.get();
+
+      return snapshot.docs
+          .map((doc) => Property.fromMap(doc.id, doc.data()))
+          .toList();
+    } catch (e) {
+      print('Error fetching properties with filters: $e');
+      throw Exception('Failed to fetch properties with filters');
+    }
   }
 }
