@@ -32,7 +32,8 @@ class CustomMarker {
 
     // Define the paint for the rectangle and pointer.
     final Paint rectPaint = Paint()
-      ..color = const ui.Color.fromARGB(255, 30, 67, 31)
+      // ..color = const ui.Color.fromARGB(255, 30, 67, 31)
+      ..color = Colors.green
       ..style = PaintingStyle.fill;
 
     // Define the paint for the border.
