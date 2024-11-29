@@ -43,39 +43,6 @@ class PropertyMapViewState extends State<PropertyMapView> {
     _addCustomMarkers();
   }
 
-  // Future<void> _addCustomMarkers() async {
-  //   Set<Marker> markers = {};
-
-  //   for (Property property in widget.properties) {
-  //     // Format the price (ensure "L" or "C" is added based on the value)
-  //     final String priceText =
-  //         formatPrice(property.totalPrice, property.propertyType);
-
-  //     // Create custom marker with the formatted price (including L/C)
-  //     final BitmapDescriptor customIcon =
-  //         await CustomMarker.createMarker(priceText);
-
-  //     // Add marker for each property
-  //     markers.add(
-  //       Marker(
-  //         markerId: MarkerId(property.id),
-  //         position: LatLng(property.latitude, property.longitude),
-  //         icon: customIcon,
-  //         infoWindow: InfoWindow(
-  //           title:
-  //               'Land Area: ${property.landArea} ${property.propertyType == 'agri land' ? 'Acres' : 'Sq Yards'}',
-  //           snippet: 'Price: $priceText',
-  //         ),
-  //       ),
-  //     );
-  //   }
-
-  //   // Update state to display the markers
-  //   setState(() {
-  //     _markers = markers;
-  //   });
-  // }
-
   Future<void> _addCustomMarkers() async {
     Set<Marker> markers = {};
 
