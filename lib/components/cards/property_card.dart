@@ -5,6 +5,7 @@ import '../../../models/property_model.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../services/user_service.dart';
 import '../../../models/user_model.dart';
+import '../../../utils/format.dart';
 
 class PropertyCard extends StatefulWidget {
   final Property property;
@@ -326,16 +327,8 @@ class PropertyCardState extends State<PropertyCard> {
                     padding: const EdgeInsets.only(top: 8.0),
                     child: Row(
                       children: [
-                        const Text(
-                          '₹',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
                         Text(
-                          widget.property.totalPrice.toStringAsFixed(2),
+                          '₹ ${formatIndianPrice(widget.property.totalPrice)}',
                           style: const TextStyle(
                             fontSize: 20,
                             color: Colors.black,

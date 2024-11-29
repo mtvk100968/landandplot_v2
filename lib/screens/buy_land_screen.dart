@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import '../services/property_service.dart';
 import '../models/property_model.dart';
@@ -7,18 +6,18 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../components/views/property_list_view.dart';
 import '../../components/views/property_map_view.dart';
 import '../../components/filter_bottom_sheet.dart';
+import '../../components/location_search_bar.dart';
 
 class BuyLandScreen extends StatefulWidget {
-  const BuyLandScreen({super.key});
+  const BuyLandScreen({Key? key}) : super(key: key);
 
   @override
   BuyLandScreenState createState() => BuyLandScreenState();
 }
 
 class BuyLandScreenState extends State<BuyLandScreen> {
-  bool showMap = false; // Toggle between list and map view
+  bool showMap = false;
   Timer? _debounce;
-  TextEditingController _searchController = TextEditingController();
 
   // Define filter variables
   List<String> selectedPropertyTypes = [];
@@ -27,21 +26,65 @@ class BuyLandScreenState extends State<BuyLandScreen> {
   RangeValues selectedLandAreaRange = const RangeValues(0, 0);
   String landAreaUnit = '';
 
+  // New variables for location search
+  Map<String, dynamic>? selectedPlace;
+  double searchRadius = 10; // in kilometers
+
+  // Administrative area filters
+  String? selectedCity;
+  String? selectedDistrict;
+  String? selectedPincode;
+  String? selectedState;
+
   @override
   void dispose() {
     _debounce?.cancel();
-    _searchController.dispose();
     super.dispose();
   }
 
   Future<List<Property>> fetchProperties() async {
+    print('fetchProperties called with filters:');
+    print('selectedPropertyTypes: $selectedPropertyTypes');
+    print('selectedPriceRange: $selectedPriceRange');
+    print('selectedLandAreaRange: $selectedLandAreaRange');
+    print('selectedCity: $selectedCity');
+    print('selectedDistrict: $selectedDistrict');
+    print('selectedPincode: $selectedPincode');
+    print('selectedPlace: $selectedPlace');
+    print('searchRadius: $searchRadius');
+
     PropertyService propertyService = PropertyService();
 
-    // Get the search query
-    final searchQuery = _searchController.text.trim();
-
     // Check if filters are applied
-    if (selectedPropertyTypes.isNotEmpty) {
+    if (selectedPropertyTypes.isNotEmpty ||
+        selectedPlace != null ||
+        selectedCity != null ||
+        selectedDistrict != null ||
+        selectedPincode != null) {
+      double? minLat;
+      double? maxLat;
+      double? minLon;
+      double? maxLon;
+
+      // For point searches
+      if (selectedPlace != null &&
+          selectedCity == null &&
+          selectedDistrict == null &&
+          selectedPincode == null) {
+        if (selectedPlace!['geometry'] != null) {
+          double lat = selectedPlace!['geometry']['location']['lat'];
+          double lon = selectedPlace!['geometry']['location']['lng'];
+
+          // Calculate bounding box for radius-based search
+          double radiusInDegrees = searchRadius / 111; // Approximate conversion
+
+          minLat = lat - radiusInDegrees;
+          maxLat = lat + radiusInDegrees;
+          minLon = lon - radiusInDegrees;
+          maxLon = lon + radiusInDegrees;
+        }
+      }
+
       return await propertyService.getPropertiesWithFilters(
         propertyTypes: selectedPropertyTypes,
         minPricePerUnit:
@@ -53,12 +96,16 @@ class BuyLandScreenState extends State<BuyLandScreen> {
             : null,
         maxLandArea:
             selectedLandAreaRange.end > 0 ? selectedLandAreaRange.end : null,
-        searchQuery: searchQuery.isNotEmpty ? searchQuery : null,
+        minLat: minLat,
+        maxLat: maxLat,
+        minLon: minLon,
+        maxLon: maxLon,
+        city: selectedCity,
+        district: selectedDistrict,
+        pincode: selectedPincode,
       );
     } else {
-      return await propertyService.getAllProperties(
-        searchQuery: searchQuery.isNotEmpty ? searchQuery : null,
-      );
+      return await propertyService.getAllProperties();
     }
   }
 
@@ -97,6 +144,47 @@ class BuyLandScreenState extends State<BuyLandScreen> {
         landAreaUnit = result['landAreaUnit'] ?? '';
       });
     }
+  }
+
+  void _handlePlaceSelected(Map<String, dynamic> place) {
+    setState(() {
+      selectedPlace = place;
+
+      // Reset administrative filters
+      selectedCity = null;
+      selectedDistrict = null;
+      selectedPincode = null;
+      selectedState = null;
+
+      // Extract administrative components
+      if (place['address_components'] != null) {
+        for (var component in place['address_components']) {
+          var types = component['types'] as List<dynamic>;
+          if (types.contains('locality')) {
+            selectedCity = component['long_name'];
+          } else if (types.contains('administrative_area_level_2')) {
+            selectedDistrict = component['long_name'];
+          } else if (types.contains('postal_code')) {
+            selectedPincode = component['long_name'];
+          } else if (types.contains('administrative_area_level_1')) {
+            selectedState = component['long_name'];
+          }
+        }
+      }
+
+      // If the place is an area (e.g., city, district), clear the point location
+      if (selectedCity != null ||
+          selectedDistrict != null ||
+          selectedPincode != null) {
+        selectedPlace = null;
+      }
+
+      print('Place selected: $place');
+      print('Selected City: $selectedCity');
+      print('Selected District: $selectedDistrict');
+      print('Selected Pincode: $selectedPincode');
+      print('Selected State: $selectedState');
+    });
   }
 
   @override
@@ -142,59 +230,42 @@ class BuyLandScreenState extends State<BuyLandScreen> {
           // **Search and Filter Section**
           Padding(
             padding: const EdgeInsets.all(8.0),
-            child: Row(
+            child: Column(
               children: [
-                // **Search Bar**
-                Expanded(
-                  child: TextField(
-                    controller: _searchController,
-                    decoration: InputDecoration(
-                      hintText: 'Search properties...',
-                      prefixIcon: const Icon(Icons.search),
-                      contentPadding: const EdgeInsets.symmetric(
-                          vertical: 0, horizontal: 16),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(30.0),
-                        borderSide: BorderSide.none,
+                // **Location Search Bar**
+                LocationSearchBar(
+                  onPlaceSelected: _handlePlaceSelected,
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    // **Filter Button**
+                    CircleAvatar(
+                      backgroundColor: Colors.green,
+                      child: IconButton(
+                        icon: const Icon(Icons.tune, color: Colors.white),
+                        onPressed: () async {
+                          await openFilterBottomSheet();
+                        },
                       ),
-                      filled: true,
-                      fillColor: Colors.grey[200],
                     ),
-                    onChanged: (value) {
-                      // Debounce the search input
-                      if (_debounce?.isActive ?? false) _debounce!.cancel();
-                      _debounce = Timer(const Duration(milliseconds: 500), () {
-                        setState(() {});
-                      });
-                    },
-                  ),
-                ),
-                const SizedBox(width: 8),
-                // **Filter Button**
-                CircleAvatar(
-                  backgroundColor: Colors.green,
-                  child: IconButton(
-                    icon: const Icon(Icons.tune, color: Colors.white),
-                    onPressed: () async {
-                      await openFilterBottomSheet();
-                    },
-                  ),
-                ),
-                const SizedBox(width: 8),
-                // **Toggle Button (Map/List)**
-                CircleAvatar(
-                  backgroundColor: Colors.green,
-                  child: IconButton(
-                    icon: Icon(
-                      showMap ? Icons.view_list : Icons.map,
-                      color: Colors.white,
+                    const SizedBox(width: 8),
+                    // **Toggle Button (Map/List)**
+                    CircleAvatar(
+                      backgroundColor: Colors.green,
+                      child: IconButton(
+                        icon: Icon(
+                          showMap ? Icons.view_list : Icons.map,
+                          color: Colors.white,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            showMap = !showMap;
+                          });
+                        },
+                      ),
                     ),
-                    onPressed: () {
-                      setState(() {
-                        showMap = !showMap;
-                      });
-                    },
-                  ),
+                  ],
                 ),
               ],
             ),
@@ -203,12 +274,53 @@ class BuyLandScreenState extends State<BuyLandScreen> {
           if (selectedPropertyTypes.isNotEmpty ||
               (selectedPriceRange.start > 0 && selectedPriceRange.end > 0) ||
               (selectedLandAreaRange.start > 0 &&
-                  selectedLandAreaRange.end > 0))
+                  selectedLandAreaRange.end > 0) ||
+              selectedPlace != null ||
+              selectedCity != null ||
+              selectedDistrict != null ||
+              selectedPincode != null)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Wrap(
                 spacing: 8.0,
                 children: [
+                  if (selectedCity != null)
+                    Chip(
+                      label: Text('City: $selectedCity'),
+                      onDeleted: () {
+                        setState(() {
+                          selectedCity = null;
+                        });
+                      },
+                    ),
+                  if (selectedDistrict != null)
+                    Chip(
+                      label: Text('District: $selectedDistrict'),
+                      onDeleted: () {
+                        setState(() {
+                          selectedDistrict = null;
+                        });
+                      },
+                    ),
+                  if (selectedPincode != null)
+                    Chip(
+                      label: Text('Pincode: $selectedPincode'),
+                      onDeleted: () {
+                        setState(() {
+                          selectedPincode = null;
+                        });
+                      },
+                    ),
+                  if (selectedPlace != null)
+                    Chip(
+                      label: Text(
+                          'Location: ${selectedPlace!['formatted_address']}'),
+                      onDeleted: () {
+                        setState(() {
+                          selectedPlace = null;
+                        });
+                      },
+                    ),
                   for (var type in selectedPropertyTypes)
                     Chip(label: Text(type)),
                   if (pricePerUnitUnit.isNotEmpty &&
@@ -239,11 +351,13 @@ class BuyLandScreenState extends State<BuyLandScreen> {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 } else if (snapshot.hasError) {
+                  print('Error in FutureBuilder: ${snapshot.error}');
                   return const Center(child: Text('Error loading properties'));
                 } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
                   return const Center(child: Text('No properties found'));
                 } else {
                   final properties = snapshot.data!;
+                  print('Number of properties fetched: ${properties.length}');
                   // Toggle between Map View and List View
                   return showMap
                       ? PropertyMapView(properties: properties) // Map View

@@ -1,12 +1,12 @@
 // lib/services/property_service.dart
 
 import 'dart:io';
+import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import '../models/property_model.dart';
 import 'user_service.dart';
-import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class PropertyService {
@@ -18,8 +18,12 @@ class PropertyService {
   /// Adds a new property to Firestore along with uploading its images, videos, and documents.
   /// Generates a custom property ID based on the district and mandal.
   /// Returns the generated property ID upon successful completion.
-  Future<String> addProperty(Property property, List<File> images,
-      {List<File>? videos, List<File>? documents}) async {
+  Future<String> addProperty(
+    Property property,
+    List<File> images, {
+    List<File>? videos,
+    List<File>? documents,
+  }) async {
     try {
       // Step 1: Generate Custom Property ID
       if (property.district == null || property.mandal == null) {
@@ -89,7 +93,7 @@ class PropertyService {
 
       // Step 5: Add the property to Firestore with the custom property ID
       await _firestore
-          .collection('properties')
+          .collection(collectionPath)
           .doc(propertyId)
           .set(propertyWithMedia.toMap());
 
@@ -109,7 +113,7 @@ class PropertyService {
   Future<Property?> getPropertyById(String propertyId) async {
     try {
       DocumentSnapshot<Map<String, dynamic>> doc =
-          await _firestore.collection('properties').doc(propertyId).get();
+          await _firestore.collection(collectionPath).doc(propertyId).get();
       if (doc.exists) {
         return Property.fromMap(doc.id, doc.data()!);
       }
@@ -124,16 +128,18 @@ class PropertyService {
 
   /// Updates an existing property in Firestore.
   /// Optionally handles new image, video, or document uploads if provided.
-  Future<void> updateProperty(Property property,
-      {List<File>? newImages,
-      List<File>? newVideos,
-      List<File>? newDocuments}) async {
+  Future<void> updateProperty(
+    Property property, {
+    List<File>? newImages,
+    List<File>? newVideos,
+    List<File>? newDocuments,
+  }) async {
     try {
-      List<String> updatedImageUrls = property.images;
-      List<String> updatedVideoUrls = property.videos;
-      List<String> updatedDocumentUrls = property.documents;
+      List<String> updatedImageUrls = List.from(property.images);
+      List<String> updatedVideoUrls = List.from(property.videos);
+      List<String> updatedDocumentUrls = List.from(property.documents);
 
-      if (property.id == null) {
+      if (property.id.isEmpty) {
         throw ArgumentError("Property ID is required to update a property.");
       }
 
@@ -166,7 +172,7 @@ class PropertyService {
 
       // Update the property document in Firestore
       await _firestore
-          .collection('properties')
+          .collection(collectionPath)
           .doc(property.id)
           .update(updatedData);
     } catch (e, stacktrace) {
@@ -178,10 +184,13 @@ class PropertyService {
   }
 
   /// Deletes a property from Firestore and removes its images, videos, and documents from Firebase Storage.
-  Future<void> deleteProperty(String propertyId, List<String> imageUrls,
-      {List<String>? videoUrls,
-      List<String>? documentUrls,
-      String? userId}) async {
+  Future<void> deleteProperty(
+    String propertyId,
+    List<String> imageUrls, {
+    List<String>? videoUrls,
+    List<String>? documentUrls,
+    String? userId,
+  }) async {
     try {
       // Step 1: Delete images from Firebase Storage
       if (imageUrls.isNotEmpty) {
@@ -199,10 +208,10 @@ class PropertyService {
       }
 
       // Step 4: Delete the property document from Firestore
-      await _firestore.collection('properties').doc(propertyId).delete();
+      await _firestore.collection(collectionPath).doc(propertyId).delete();
 
       // Step 5: Remove the property from the user's posted properties
-      if (userId != null) {
+      if (userId != null && userId.isNotEmpty) {
         await _firestore.collection('users').doc(userId).update({
           'postedPropertyIds': FieldValue.arrayRemove([propertyId])
         });
@@ -216,12 +225,15 @@ class PropertyService {
   }
 
   /// Fetches all properties from Firestore.
+  /// Optionally applies a search query on the property name.
   Future<List<Property>> getAllProperties({String? searchQuery}) async {
     try {
-      Query<Map<String, dynamic>> query = _firestore.collection('properties');
+      Query<Map<String, dynamic>> query = _firestore.collection(collectionPath);
 
       // Apply search filter
       if (searchQuery != null && searchQuery.isNotEmpty) {
+        // Firestore doesn't support full-text search; this is a basic implementation.
+        // For more advanced search, consider integrating with Algolia or Firebase Extensions.
         query = query
             .where('name', isGreaterThanOrEqualTo: searchQuery)
             .where('name', isLessThanOrEqualTo: searchQuery + '\uf8ff');
@@ -232,9 +244,142 @@ class PropertyService {
       return snapshot.docs
           .map((doc) => Property.fromMap(doc.id, doc.data()))
           .toList();
-    } catch (e) {
+    } catch (e, stacktrace) {
       print('Error fetching all properties: $e');
-      throw Exception('Failed to fetch properties');
+      print(stacktrace); // Print stack trace for debugging
+      Error.throwWithStackTrace(
+          Exception('Failed to fetch properties'), stacktrace);
+    }
+  }
+
+  /// Fetch properties by a list of IDs.
+  Future<List<Property>> getPropertiesByIds(List<String> propertyIds) async {
+    if (propertyIds.isEmpty) {
+      return [];
+    }
+
+    try {
+      QuerySnapshot<Map<String, dynamic>> snapshot = await _firestore
+          .collection(collectionPath)
+          .where(FieldPath.documentId, whereIn: propertyIds)
+          .get();
+
+      return snapshot.docs.map((doc) => Property.fromDocument(doc)).toList();
+    } catch (e, stacktrace) {
+      print('Error fetching properties by IDs: $e');
+      print(stacktrace); // Print stack trace for debugging
+      Error.throwWithStackTrace(
+          Exception('Failed to fetch properties by IDs'), stacktrace);
+    }
+  }
+
+  /// Fetches properties based on various filters.
+  /// Supports both area-based and point-based searches.
+  Future<List<Property>> getPropertiesWithFilters({
+    List<String>? propertyTypes,
+    double? minPricePerUnit,
+    double? maxPricePerUnit,
+    double? minLandArea,
+    double? maxLandArea,
+    double? minLat,
+    double? maxLat,
+    double? minLon,
+    double? maxLon,
+    String? city,
+    String? district,
+    String? pincode,
+    String? searchQuery,
+  }) async {
+    try {
+      print('getPropertiesWithFilters called with:');
+      print('propertyTypes: $propertyTypes');
+      print('minPricePerUnit: $minPricePerUnit');
+      print('maxPricePerUnit: $maxPricePerUnit');
+      print('minLandArea: $minLandArea');
+      print('maxLandArea: $maxLandArea');
+      print('minLat: $minLat');
+      print('maxLat: $maxLat');
+      print('minLon: $minLon');
+      print('maxLon: $maxLon');
+      print('city: $city');
+      print('district: $district');
+      print('pincode: $pincode');
+      print('searchQuery: $searchQuery');
+
+      Query<Map<String, dynamic>> query = _firestore.collection(collectionPath);
+
+      // Apply equality filters first
+      if (propertyTypes != null && propertyTypes.isNotEmpty) {
+        query = query.where('propertyType', whereIn: propertyTypes);
+      }
+      if (city != null && city.isNotEmpty) {
+        query = query.where('city', isEqualTo: city);
+      }
+      if (district != null && district.isNotEmpty) {
+        query = query.where('district', isEqualTo: district);
+      }
+      if (pincode != null && pincode.isNotEmpty) {
+        query = query.where('pincode', isEqualTo: pincode);
+      }
+
+      // Apply inequality filter on a single field (e.g., pricePerUnit)
+      if (minPricePerUnit != null || maxPricePerUnit != null) {
+        if (minPricePerUnit != null && maxPricePerUnit != null) {
+          query = query.where('pricePerUnit',
+              isGreaterThanOrEqualTo: minPricePerUnit,
+              isLessThanOrEqualTo: maxPricePerUnit);
+        } else if (minPricePerUnit != null) {
+          query = query.where('pricePerUnit',
+              isGreaterThanOrEqualTo: minPricePerUnit);
+        } else if (maxPricePerUnit != null) {
+          query =
+              query.where('pricePerUnit', isLessThanOrEqualTo: maxPricePerUnit);
+        }
+      }
+
+      // Fetch data
+      QuerySnapshot<Map<String, dynamic>> snapshot = await query.get();
+      print(
+          'Number of properties fetched from Firestore: ${snapshot.docs.length}');
+
+      // Map to Property objects
+      List<Property> properties = snapshot.docs
+          .map((doc) => Property.fromMap(doc.id, doc.data()))
+          .toList();
+
+      // Apply additional filters client-side
+      if (minLandArea != null || maxLandArea != null) {
+        properties = properties.where((property) {
+          bool matches = true;
+          if (minLandArea != null) {
+            matches = matches && property.landArea >= minLandArea;
+          }
+          if (maxLandArea != null) {
+            matches = matches && property.landArea <= maxLandArea;
+          }
+          return matches;
+        }).toList();
+        print('Properties after land area filter: ${properties.length}');
+      }
+
+      if (minLat != null &&
+          maxLat != null &&
+          minLon != null &&
+          maxLon != null) {
+        properties = properties.where((property) {
+          return property.latitude >= minLat &&
+              property.latitude <= maxLat &&
+              property.longitude >= minLon &&
+              property.longitude <= maxLon;
+        }).toList();
+        print('Properties after location filter: ${properties.length}');
+      }
+
+      return properties;
+    } catch (e, stacktrace) {
+      print('Error fetching properties with filters: $e');
+      print(stacktrace); // Print stack trace for debugging
+      throw Exception('Failed to fetch properties with filters');
     }
   }
 
@@ -252,12 +397,10 @@ class PropertyService {
             '${propertyId}_$mediaType$index${_getFileExtension(file.path)}';
 
         // Define the storage path
-        // Reference ref =
-        // _storage.ref().child('$folder/$propertyId').child(fileName);
         final String userId =
             FirebaseAuth.instance.currentUser?.uid ?? 'unknown';
         Reference ref = _storage.ref().child('$folder/$userId').child(fileName);
-// Path: /property_images/{userId}/{imageName}
+        // Path: /property_images/{userId}/{imageName}
 
         // Upload the file
         UploadTask uploadTask = ref.putFile(file);
@@ -273,6 +416,7 @@ class PropertyService {
       } catch (e, stacktrace) {
         print('Error uploading $mediaType file: $e');
         print(stacktrace); // Print stack trace for debugging
+        // Continue uploading other files even if one fails
       }
     }
 
@@ -288,9 +432,9 @@ class PropertyService {
       } catch (e, stacktrace) {
         print('Error deleting file $url: $e');
         print(stacktrace); // Print stack trace for debugging
+        // Continue deleting other files even if one fails
       }
     }
-    // Continue deleting other files even if one fails
   }
 
   /// Private helper method to generate a random string for unique file naming.
@@ -342,67 +486,5 @@ class PropertyService {
 
       return propertyId;
     });
-  }
-
-// Fetch properties by a list of IDs
-  Future<List<Property>> getPropertiesByIds(List<String> propertyIds) async {
-    if (propertyIds.isEmpty) {
-      return [];
-    }
-
-    QuerySnapshot<Map<String, dynamic>> snapshot = await _firestore
-        .collection(collectionPath)
-        .where(FieldPath.documentId, whereIn: propertyIds)
-        .get();
-
-    return snapshot.docs.map((doc) => Property.fromDocument(doc)).toList();
-  }
-
-  Future<List<Property>> getPropertiesWithFilters({
-    List<String>? propertyTypes,
-    double? minPricePerUnit,
-    double? maxPricePerUnit,
-    double? minLandArea,
-    double? maxLandArea,
-    String? searchQuery,
-  }) async {
-    try {
-      Query<Map<String, dynamic>> query = _firestore.collection('properties');
-
-      // Apply property type filter
-      if (propertyTypes != null && propertyTypes.isNotEmpty) {
-        query = query.where('propertyType', whereIn: propertyTypes);
-      }
-
-      // Apply price per unit filter
-      if (minPricePerUnit != null && maxPricePerUnit != null) {
-        query = query.where('pricePerUnit',
-            isGreaterThanOrEqualTo: minPricePerUnit);
-        query =
-            query.where('pricePerUnit', isLessThanOrEqualTo: maxPricePerUnit);
-      }
-
-      // Apply land area filter
-      if (minLandArea != null && maxLandArea != null) {
-        query = query.where('landArea', isGreaterThanOrEqualTo: minLandArea);
-        query = query.where('landArea', isLessThanOrEqualTo: maxLandArea);
-      }
-
-      // Apply search filter
-      if (searchQuery != null && searchQuery.isNotEmpty) {
-        query = query
-            .where('name', isGreaterThanOrEqualTo: searchQuery)
-            .where('name', isLessThanOrEqualTo: searchQuery + '\uf8ff');
-      }
-
-      QuerySnapshot<Map<String, dynamic>> snapshot = await query.get();
-
-      return snapshot.docs
-          .map((doc) => Property.fromMap(doc.id, doc.data()))
-          .toList();
-    } catch (e) {
-      print('Error fetching properties with filters: $e');
-      throw Exception('Failed to fetch properties with filters');
-    }
   }
 }
