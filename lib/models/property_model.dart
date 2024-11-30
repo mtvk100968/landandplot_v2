@@ -38,6 +38,9 @@ class Property {
 
   final Timestamp createdAt;
 
+  // **Add isFavorited field**
+  bool isFavorited;  // This field is used to manage the favorite status
+
   Property({
     this.id = '',
     required this.userId,
@@ -73,6 +76,7 @@ class Property {
     required this.userType,
     this.ventureName,
     required this.createdAt,
+    this.isFavorited = false,  // Default value is false
   });
 
   Map<String, dynamic> toMap() {
@@ -111,6 +115,7 @@ class Property {
       'ventureName': ventureName,
 
       'createdAt': createdAt,
+      'isFavorited': isFavorited, // Include isFavorited in toMap
     };
   }
 
@@ -150,6 +155,7 @@ class Property {
       ventureName: map['ventureName'],
 
       createdAt: map['createdAt'] ?? Timestamp.now(),
+      isFavorited: map['isFavorited'] ?? false, // Default to false if not found
     );
   }
 
@@ -191,6 +197,7 @@ class Property {
       userType: doc['userType'] ?? 'Owner',
       ventureName: doc['ventureName'],
       createdAt: doc['createdAt'] ?? Timestamp.now(),
+      isFavorited: doc['isFavorited'] ?? false, // Default to false if not found
     );
   }
 }

@@ -15,10 +15,31 @@ class UserService {
         );
   }
 
+  Future<void> toggleFavorite(String userId, String propertyId) async {
+    DocumentReference userRef = _firestore.collection('users').doc(userId);
+
+    // Fetch the current user data
+    DocumentSnapshot userSnapshot = await userRef.get();
+    if (userSnapshot.exists) {
+      List<dynamic> favoritedPropertyIds = List.from(userSnapshot['favoritedPropertyIds'] ?? []);
+
+      if (favoritedPropertyIds.contains(propertyId)) {
+        // Remove from favorites
+        favoritedPropertyIds.remove(propertyId);
+      } else {
+        // Add to favorites
+        favoritedPropertyIds.add(propertyId);
+      }
+
+      // Update the user's favorite list
+      await userRef.update({'favoritedPropertyIds': favoritedPropertyIds});
+    }
+  }
+
   // Fetch a user from Firestore by UID
   Future<AppUser?> getUserById(String uid) async {
     DocumentSnapshot<Map<String, dynamic>> doc =
-        await _firestore.collection(collectionPath).doc(uid).get();
+    await _firestore.collection(collectionPath).doc(uid).get();
     if (doc.exists) {
       return AppUser.fromDocument(doc.data()!);
     }
@@ -51,29 +72,31 @@ class UserService {
     }
   }
 
-  // Add property to user's favorited properties
+  // Add property to favorites
   Future<void> addFavoriteProperty(String userId, String propertyId) async {
     try {
-      DocumentReference userRef =
-          _firestore.collection(collectionPath).doc(userId);
+      DocumentReference userRef = _firestore.collection('users').doc(userId);
       await userRef.update({
-        'favoritedPropertyIds': FieldValue.arrayUnion([propertyId])
+        'favoritedPropertyIds': FieldValue.arrayUnion([propertyId]),
       });
+      print("Added $propertyId to favorites.");
     } catch (e) {
-      throw Exception('Failed to favorite property for user');
+      print("Failed to add favorite: $e");
+      throw Exception("Failed to add favorite property for user");
     }
   }
 
-  // Remove property from user's favorited properties
+  // Remove property from favorites
   Future<void> removeFavoriteProperty(String userId, String propertyId) async {
     try {
-      DocumentReference userRef =
-          _firestore.collection(collectionPath).doc(userId);
+      DocumentReference userRef = _firestore.collection('users').doc(userId);
       await userRef.update({
-        'favoritedPropertyIds': FieldValue.arrayRemove([propertyId])
+        'favoritedPropertyIds': FieldValue.arrayRemove([propertyId]),
       });
+      print("Removed $propertyId from favorites.");
     } catch (e) {
-      throw Exception('Failed to remove favorite property for user');
+      print("Failed to remove favorite: $e");
+      throw Exception("Failed to remove favorite property for user");
     }
   }
 

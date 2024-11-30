@@ -9,10 +9,10 @@ import '../../../utils/format.dart';
 
 class PropertyCard extends StatefulWidget {
   final Property property;
+  final Function(Property) onFavoriteToggle;
+  final bool isFavorited; // Add this parameter
 
-  const PropertyCard({
-    super.key,
-    required this.property,
+  const PropertyCard({super.key, required this.property, required this.onFavoriteToggle,     required this.isFavorited,  // Accept the favorite status
   });
 
   @override
@@ -30,20 +30,6 @@ class PropertyCardState extends State<PropertyCard> {
   void initState() {
     super.initState();
     _getCurrentUserAndFavorites();
-  }
-
-  Future<void> _getCurrentUserAndFavorites() async {
-    _currentUser = FirebaseAuth.instance.currentUser;
-    if (_currentUser != null) {
-      // Fetch the user's data from Firestore
-      _appUser = await _userService.getUserById(_currentUser!.uid);
-      if (_appUser != null) {
-        setState(() {
-          _isFavorited =
-              _appUser!.favoritedPropertyIds.contains(widget.property.id);
-        });
-      }
-    }
   }
 
   void _toggleFavorite() async {
@@ -78,6 +64,20 @@ class PropertyCardState extends State<PropertyCard> {
       setState(() {
         _isFavorited = !_isFavorited;
       });
+    }
+  }
+
+  Future<void> _getCurrentUserAndFavorites() async {
+    _currentUser = FirebaseAuth.instance.currentUser;
+    if (_currentUser != null) {
+      // Fetch the user's data from Firestore
+      _appUser = await _userService.getUserById(_currentUser!.uid);
+      if (_appUser != null) {
+        setState(() {
+          _isFavorited =
+              _appUser!.favoritedPropertyIds.contains(widget.property.id);
+        });
+      }
     }
   }
 

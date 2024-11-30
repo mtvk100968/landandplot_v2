@@ -7,6 +7,7 @@ import '../../components/views/property_list_view.dart';
 import '../../components/views/property_map_view.dart';
 import '../../components/filter_bottom_sheet.dart';
 import '../../components/location_search_bar.dart';
+import '../../../services/user_service.dart'; // Import the UserService
 
 class BuyLandScreen extends StatefulWidget {
   const BuyLandScreen({Key? key}) : super(key: key);
@@ -36,14 +37,26 @@ class BuyLandScreenState extends State<BuyLandScreen> {
   String? selectedPincode;
   String? selectedState;
 
+  final UserService _userService = UserService(); // Initialize the UserService
+
   @override
   void dispose() {
     _debounce?.cancel();
     super.dispose();
   }
 
+  // Define the toggleFavorite function in the BuyLandScreen
+  void toggleFavorite(Property property) {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      _userService.toggleFavorite(
+          user.uid, property.id); // Call UserService to toggle
+    }
+  }
+
   Future<List<Property>> fetchProperties() async {
-    print('Filters: $selectedPropertyTypes, $selectedPriceRange, $selectedLandAreaRange');
+    print(
+        'Filters: $selectedPropertyTypes, $selectedPriceRange, $selectedLandAreaRange');
     print('fetchProperties called with filters:');
     print('selectedPropertyTypes: $selectedPropertyTypes');
     print('selectedPriceRange: $selectedPriceRange');
@@ -145,7 +158,8 @@ class BuyLandScreenState extends State<BuyLandScreen> {
         landAreaUnit = result['landAreaUnit'] ?? '';
       });
       // Add the print statement here
-      print('Filters: $selectedPropertyTypes, $selectedPriceRange, $selectedLandAreaRange');
+      print(
+          'Filters: $selectedPropertyTypes, $selectedPriceRange, $selectedLandAreaRange');
     }
   }
 
@@ -230,19 +244,19 @@ class BuyLandScreenState extends State<BuyLandScreen> {
       ),
       body: Column(
         children: [
-          // **Search and Filter Section**
+// **Search and Filter Section**
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Column(
               children: [
-                // **Location Search Bar**
+// **Location Search Bar**
                 LocationSearchBar(
                   onPlaceSelected: _handlePlaceSelected,
                 ),
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    // **Filter Button**
+// **Filter Button**
                     CircleAvatar(
                       backgroundColor: Colors.green,
                       child: IconButton(
@@ -253,7 +267,7 @@ class BuyLandScreenState extends State<BuyLandScreen> {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    // **Toggle Button (Map/List)**
+// **Toggle Button (Map/List)**
                     CircleAvatar(
                       backgroundColor: Colors.green,
                       child: IconButton(
@@ -273,7 +287,7 @@ class BuyLandScreenState extends State<BuyLandScreen> {
               ],
             ),
           ),
-          // **Active Filters**
+// **Active Filters**
           if (selectedPropertyTypes.isNotEmpty ||
               (selectedPriceRange.start > 0 && selectedPriceRange.end > 0) ||
               (selectedLandAreaRange.start > 0 &&
@@ -346,7 +360,7 @@ class BuyLandScreenState extends State<BuyLandScreen> {
               ),
             ),
           const SizedBox(height: 10),
-          // **Property Listings**
+// **Property Listings**
           Expanded(
             child: FutureBuilder<List<Property>>(
               future: fetchProperties(),
@@ -361,10 +375,12 @@ class BuyLandScreenState extends State<BuyLandScreen> {
                 } else {
                   final properties = snapshot.data!;
                   print('Number of properties fetched: ${properties.length}');
-                  // Toggle between Map View and List View
+// Toggle between Map View and List View
                   return showMap
                       ? PropertyMapView(properties: properties) // Map View
-                      : PropertyListView(properties: properties); // List View
+                      : PropertyListView(
+                          properties: properties,
+                          onFavoriteToggle: toggleFavorite); // List View
                 }
               },
             ),
@@ -374,7 +390,7 @@ class BuyLandScreenState extends State<BuyLandScreen> {
     );
   }
 
-  // Helper method to format price
+// Helper method to format price
   String formatPrice(double value) {
     if (value >= 10000000) {
       return '${(value / 10000000).toStringAsFixed(1)}C'; // Crores
