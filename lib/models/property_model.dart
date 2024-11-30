@@ -95,7 +95,6 @@ class Property {
       'mandal': mandal,
       'village': village,
       'city': city,
-      // 'town': town,
       'pincode': pincode,
       'latitude': latitude,
       'longitude': longitude,
@@ -109,11 +108,8 @@ class Property {
       'videos': videos,
       'documents': documents,
       'address': address,
-
-      // **Include New Fields**
       'userType': userType,
       'ventureName': ventureName,
-
       'createdAt': createdAt,
       'isFavorited': isFavorited, // Include isFavorited in toMap
     };
@@ -159,45 +155,41 @@ class Property {
     );
   }
 
-  // Added fromDocument factory constructor
-  // factory Property.fromDocument(DocumentSnapshot<Map<String, dynamic>> doc) {
-  //   final data = doc.data()!;
-  //   return Property.fromMap(doc.id, data);
-  // }
-// In property_model.dart
+  // In property_model.dart
   factory Property.fromDocument(QueryDocumentSnapshot<Map<String, dynamic>> doc) {
+    final data = doc.data();
     return Property(
       id: doc.id,
-      userId: doc['userId'] ?? '',
-      name: doc['name'] ?? '',
-      mobileNumber: doc['mobileNumber'] ?? '',
-      propertyType: doc['propertyType'] ?? '',
-      landArea: doc['landArea']?.toDouble() ?? 0.0,
-      pricePerUnit: doc['pricePerUnit']?.toDouble() ?? 0.0,
-      totalPrice: doc['totalPrice']?.toDouble() ?? 0.0,
-      surveyNumber: doc['surveyNumber'] ?? '',
-      plotNumbers: List<String>.from(doc['plotNumbers'] ?? []),
-      district: doc['district'],
-      mandal: doc['mandal'],
-      village: doc['village'],
-      city: doc['city'],
-      pincode: doc['pincode'] ?? '',
-      latitude: doc['latitude']?.toDouble() ?? 0.0,
-      longitude: doc['longitude']?.toDouble() ?? 0.0,
-      state: doc['state'] ?? '',
-      roadAccess: doc['roadAccess'] ?? '',
-      roadType: doc['roadType'] ?? '',
-      roadWidth: doc['roadWidth']?.toDouble() ?? 0.0,
-      landFacing: doc['landFacing'] ?? '',
-      propertyOwner: doc['propertyOwner'] ?? '',
-      images: List<String>.from(doc['images'] ?? []),
-      videos: List<String>.from(doc['videos'] ?? []),
-      documents: List<String>.from(doc['documents'] ?? []),
-      address: doc['address'],
-      userType: doc['userType'] ?? 'Owner',
-      ventureName: doc['ventureName'],
-      createdAt: doc['createdAt'] ?? Timestamp.now(),
-      isFavorited: doc['isFavorited'] ?? false, // Default to false if not found
+      userId: data['userId'] ?? '',
+      name: data['name'] ?? '',
+      mobileNumber: data['mobileNumber'] ?? '',
+      propertyType: data['propertyType'] ?? '',
+      landArea: data['landArea']?.toDouble() ?? 0.0,
+      pricePerUnit: data['pricePerUnit']?.toDouble() ?? 0.0,
+      totalPrice: data['totalPrice']?.toDouble() ?? 0.0,
+      surveyNumber: data['surveyNumber'] ?? '',
+      plotNumbers: List<String>.from(data['plotNumbers'] ?? []),
+      district: data['district'],
+      mandal: data['mandal'],
+      village: data['village'],
+      city: data['city'],
+      pincode: data['pincode'] ?? '',
+      latitude: data['latitude']?.toDouble() ?? 0.0,
+      longitude: data['longitude']?.toDouble() ?? 0.0,
+      state: data['state'] ?? '',
+      roadAccess: data['roadAccess'] ?? '',
+      roadType: data['roadType'] ?? '',
+      roadWidth: data['roadWidth']?.toDouble() ?? 0.0,
+      landFacing: data['landFacing'] ?? '',
+      propertyOwner: data['propertyOwner'] ?? '',
+      images: List<String>.from(data['images'] ?? []),
+      videos: List<String>.from(data['videos'] ?? []),
+      documents: List<String>.from(data['documents'] ?? []),
+      address: data['address'],
+      userType: data['userType'] ?? 'Owner',
+      ventureName: data['ventureName'],
+      createdAt: data['createdAt'] ?? Timestamp.now(),
+      isFavorited: data.containsKey('isFavorited') ? data['isFavorited'] : false,
     );
   }
 }

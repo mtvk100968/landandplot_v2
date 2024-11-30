@@ -255,23 +255,14 @@ print('Query snapshot fetched: ${snapshot.docs.length} documents');
 
   /// Fetch properties by a list of IDs.
   Future<List<Property>> getPropertiesByIds(List<String> propertyIds) async {
-    if (propertyIds.isEmpty) {
-      return [];
-    }
+    if (propertyIds.isEmpty) return [];
 
-    try {
-      QuerySnapshot<Map<String, dynamic>> snapshot = await _firestore
-          .collection(collectionPath)
-          .where(FieldPath.documentId, whereIn: propertyIds)
-          .get();
+    QuerySnapshot<Map<String, dynamic>> snapshot = await _firestore
+        .collection(collectionPath)
+        .where(FieldPath.documentId, whereIn: propertyIds)
+        .get();
 
-      return snapshot.docs.map((doc) => Property.fromDocument(doc)).toList();
-    } catch (e, stacktrace) {
-      print('Error fetching properties by IDs: $e');
-      print(stacktrace); // Print stack trace for debugging
-      Error.throwWithStackTrace(
-          Exception('Failed to fetch properties by IDs'), stacktrace);
-    }
+    return snapshot.docs.map((doc) => Property.fromDocument(doc)).toList();
   }
 
   /// Fetches properties based on various filters.

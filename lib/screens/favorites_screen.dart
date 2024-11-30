@@ -1,5 +1,3 @@
-// lib/screens/favorites_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/user_service.dart';
@@ -101,7 +99,7 @@ class FavoritesScreenState extends State<FavoritesScreen> {
               return PropertyCard(
                 property: favoriteProperties[index],
                 onFavoriteToggle: toggleFavorite,
-                isFavorited: favoriteProperties[index].isFavorited,  // Pass isFavorited
+                isFavorited: true,
               );
             },
           );

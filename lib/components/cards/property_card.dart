@@ -29,12 +29,12 @@ class PropertyCardState extends State<PropertyCard> {
   @override
   void initState() {
     super.initState();
+    _isFavorited = widget.isFavorited; // Initialize with passed value
     _getCurrentUserAndFavorites();
   }
 
   void _toggleFavorite() async {
     if (_currentUser == null) {
-      // Show a dialog or prompt to sign in
       _showSignInDialog();
       return;
     }
@@ -45,41 +45,44 @@ class PropertyCardState extends State<PropertyCard> {
 
     try {
       if (_isFavorited) {
-        // Add property to favorites
         await _userService.addFavoriteProperty(
             _currentUser!.uid, widget.property.id);
-        // Optionally, update the local AppUser object
         _appUser?.favoritedPropertyIds.add(widget.property.id);
       } else {
-        // Remove property from favorites
         await _userService.removeFavoriteProperty(
             _currentUser!.uid, widget.property.id);
-        // Optionally, update the local AppUser object
         _appUser?.favoritedPropertyIds.remove(widget.property.id);
       }
     } catch (e) {
-      // Handle error
-      print('Error updating favorites: $e');
-      // Revert the state change
-      setState(() {
-        _isFavorited = !_isFavorited;
-      });
+      if (mounted) {
+        setState(() {
+          _isFavorited = !_isFavorited; // Revert state on error
+        });
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error updating favorites: $e')),
+      );
     }
   }
 
   Future<void> _getCurrentUserAndFavorites() async {
     _currentUser = FirebaseAuth.instance.currentUser;
     if (_currentUser != null) {
-      // Fetch the user's data from Firestore
-      _appUser = await _userService.getUserById(_currentUser!.uid);
-      if (_appUser != null) {
-        setState(() {
-          _isFavorited =
-              _appUser!.favoritedPropertyIds.contains(widget.property.id);
-        });
+      try {
+        // Fetch the user's data from Firestore
+        _appUser = await _userService.getUserById(_currentUser!.uid);
+        if (mounted && _appUser != null) {
+          setState(() {
+            _isFavorited =
+                _appUser!.favoritedPropertyIds.contains(widget.property.id);
+          });
+        }
+      } catch (e) {
+        print('Error fetching user data: $e');
       }
     }
   }
+
 
   void _showSignInDialog() {
     showDialog(
