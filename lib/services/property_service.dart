@@ -240,6 +240,7 @@ class PropertyService {
       }
 
       QuerySnapshot<Map<String, dynamic>> snapshot = await query.get();
+print('Query snapshot fetched: ${snapshot.docs.length} documents');
 
       return snapshot.docs
           .map((doc) => Property.fromMap(doc.id, doc.data()))
@@ -274,7 +275,6 @@ class PropertyService {
   }
 
   /// Fetches properties based on various filters.
-  /// Supports both area-based and point-based searches.
   Future<List<Property>> getPropertiesWithFilters({
     List<String>? propertyTypes,
     double? minPricePerUnit,
@@ -311,43 +311,57 @@ class PropertyService {
       // Apply equality filters first
       if (propertyTypes != null && propertyTypes.isNotEmpty) {
         query = query.where('propertyType', whereIn: propertyTypes);
+        print('Applied propertyType filter: $propertyTypes');
       }
       if (city != null && city.isNotEmpty) {
         query = query.where('city', isEqualTo: city);
+        print('Applied city filter: $city');
       }
       if (district != null && district.isNotEmpty) {
         query = query.where('district', isEqualTo: district);
+        print('Applied district filter: $district');
       }
       if (pincode != null && pincode.isNotEmpty) {
         query = query.where('pincode', isEqualTo: pincode);
+        print('Applied pincode filter: $pincode');
       }
 
-      // Apply inequality filter on a single field (e.g., pricePerUnit)
+      // Apply price range filter
       if (minPricePerUnit != null || maxPricePerUnit != null) {
         if (minPricePerUnit != null && maxPricePerUnit != null) {
           query = query.where('pricePerUnit',
               isGreaterThanOrEqualTo: minPricePerUnit,
               isLessThanOrEqualTo: maxPricePerUnit);
+          print('Applied pricePerUnit filter: $minPricePerUnit - $maxPricePerUnit');
         } else if (minPricePerUnit != null) {
-          query = query.where('pricePerUnit',
-              isGreaterThanOrEqualTo: minPricePerUnit);
+          query = query.where('pricePerUnit', isGreaterThanOrEqualTo: minPricePerUnit);
+          print('Applied min price filter: $minPricePerUnit');
         } else if (maxPricePerUnit != null) {
-          query =
-              query.where('pricePerUnit', isLessThanOrEqualTo: maxPricePerUnit);
+          query = query.where('pricePerUnit', isLessThanOrEqualTo: maxPricePerUnit);
+          print('Applied max price filter: $maxPricePerUnit');
         }
       }
 
       // Fetch data
       QuerySnapshot<Map<String, dynamic>> snapshot = await query.get();
-      print(
-          'Number of properties fetched from Firestore: ${snapshot.docs.length}');
+      print('Number of properties fetched from Firestore before land area filter: ${snapshot.docs.length}');
 
-      // Map to Property objects
+      // Log the fetched documents for debugging
+      snapshot.docs.forEach((doc) {
+        print('Fetched property data: ${doc.data()}');
+      });
+
+      // Convert Firestore documents to Property objects
       List<Property> properties = snapshot.docs
           .map((doc) => Property.fromMap(doc.id, doc.data()))
           .toList();
 
-      // Apply additional filters client-side
+      print('Properties before land area filter: ${properties.length}');
+      properties.forEach((property) {
+        print('Property data: landArea=${property.landArea}, pricePerUnit=${property.pricePerUnit}');
+      });
+
+// Apply land area filter
       if (minLandArea != null || maxLandArea != null) {
         properties = properties.where((property) {
           bool matches = true;
@@ -359,21 +373,8 @@ class PropertyService {
           }
           return matches;
         }).toList();
-        print('Properties after land area filter: ${properties.length}');
       }
-
-      if (minLat != null &&
-          maxLat != null &&
-          minLon != null &&
-          maxLon != null) {
-        properties = properties.where((property) {
-          return property.latitude >= minLat &&
-              property.latitude <= maxLat &&
-              property.longitude >= minLon &&
-              property.longitude <= maxLon;
-        }).toList();
-        print('Properties after location filter: ${properties.length}');
-      }
+      print('Properties after land area filter: ${properties.length}');
 
       return properties;
     } catch (e, stacktrace) {

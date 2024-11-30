@@ -154,8 +154,43 @@ class Property {
   }
 
   // Added fromDocument factory constructor
-  factory Property.fromDocument(DocumentSnapshot<Map<String, dynamic>> doc) {
-    final data = doc.data()!;
-    return Property.fromMap(doc.id, data);
+  // factory Property.fromDocument(DocumentSnapshot<Map<String, dynamic>> doc) {
+  //   final data = doc.data()!;
+  //   return Property.fromMap(doc.id, data);
+  // }
+// In property_model.dart
+  factory Property.fromDocument(QueryDocumentSnapshot<Map<String, dynamic>> doc) {
+    return Property(
+      id: doc.id,
+      userId: doc['userId'] ?? '',
+      name: doc['name'] ?? '',
+      mobileNumber: doc['mobileNumber'] ?? '',
+      propertyType: doc['propertyType'] ?? '',
+      landArea: doc['landArea']?.toDouble() ?? 0.0,
+      pricePerUnit: doc['pricePerUnit']?.toDouble() ?? 0.0,
+      totalPrice: doc['totalPrice']?.toDouble() ?? 0.0,
+      surveyNumber: doc['surveyNumber'] ?? '',
+      plotNumbers: List<String>.from(doc['plotNumbers'] ?? []),
+      district: doc['district'],
+      mandal: doc['mandal'],
+      village: doc['village'],
+      city: doc['city'],
+      pincode: doc['pincode'] ?? '',
+      latitude: doc['latitude']?.toDouble() ?? 0.0,
+      longitude: doc['longitude']?.toDouble() ?? 0.0,
+      state: doc['state'] ?? '',
+      roadAccess: doc['roadAccess'] ?? '',
+      roadType: doc['roadType'] ?? '',
+      roadWidth: doc['roadWidth']?.toDouble() ?? 0.0,
+      landFacing: doc['landFacing'] ?? '',
+      propertyOwner: doc['propertyOwner'] ?? '',
+      images: List<String>.from(doc['images'] ?? []),
+      videos: List<String>.from(doc['videos'] ?? []),
+      documents: List<String>.from(doc['documents'] ?? []),
+      address: doc['address'],
+      userType: doc['userType'] ?? 'Owner',
+      ventureName: doc['ventureName'],
+      createdAt: doc['createdAt'] ?? Timestamp.now(),
+    );
   }
 }

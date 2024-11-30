@@ -14,6 +14,9 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
   bool isPlotSelected = false;
   bool isFarmLandSelected = false;
   bool isAgriLandSelected = false;
+  bool isPlotEnabled = false;
+  bool isFarmLandEnabled = false;
+  bool isAgriLandEnabled = false;
 
   // Units and Ranges
   String pricePerUnitUnit = '';
@@ -25,6 +28,8 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
 
   RangeValues selectedPriceRange = const RangeValues(0, 0);
   RangeValues selectedLandAreaRange = const RangeValues(0, 0);
+
+  List<String> selectedPropertyTypes = [];
 
   @override
   void initState() {
@@ -49,18 +54,18 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
         pricePerUnitUnit = 'per acre';
         landAreaUnit = 'acre';
         minPricePerUnit = 500000;
-        maxPricePerUnit = 50000000;
+        maxPricePerUnit = 5000000000;
         minLandArea = 1;
-        maxLandArea = 100;
+        maxLandArea = 999;
         selectedPriceRange = RangeValues(minPricePerUnit, maxPricePerUnit);
         selectedLandAreaRange = RangeValues(minLandArea, maxLandArea);
       } else if (isPlotSelected || isFarmLandSelected) {
         pricePerUnitUnit = 'per sqyd';
         landAreaUnit = 'sqyd';
-        minPricePerUnit = 5000;
-        maxPricePerUnit = 500000;
+        minPricePerUnit = 0.0; // allow 0 as minimum
+        maxPricePerUnit = 5000000;
         minLandArea = 100;
-        maxLandArea = 5000;
+        maxLandArea = 4800;
         selectedPriceRange = RangeValues(minPricePerUnit, maxPricePerUnit);
         selectedLandAreaRange = RangeValues(minLandArea, maxLandArea);
       }
@@ -72,12 +77,15 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
       if (propertyType == 'Agri Land') {
         isAgriLandSelected = !isAgriLandSelected;
         if (isAgriLandSelected) {
+          // Deselect other property types
           isPlotSelected = false;
           isFarmLandSelected = false;
+          isPlotEnabled = false;
+          isFarmLandEnabled = false;
           pricePerUnitUnit = 'per acre';
           landAreaUnit = 'acre';
           minPricePerUnit = 500000;
-          maxPricePerUnit = 50000000;
+          maxPricePerUnit = 5000000000;
           minLandArea = 1;
           maxLandArea = 100;
           selectedPriceRange = RangeValues(minPricePerUnit, maxPricePerUnit);
@@ -85,19 +93,17 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
         } else {
           resetFilters();
         }
-      } else {
-        if (propertyType == 'Plot') {
-          isPlotSelected = !isPlotSelected;
-        } else if (propertyType == 'Farm Land') {
-          isFarmLandSelected = !isFarmLandSelected;
-        }
-
-        if (isPlotSelected || isFarmLandSelected) {
+      } else if (propertyType == 'Plot') {
+        isPlotSelected = !isPlotSelected;
+        if (isPlotSelected) {
           isAgriLandSelected = false;
+          isFarmLandSelected = false;
+          isFarmLandEnabled = false;
+          isAgriLandEnabled = false;
           pricePerUnitUnit = 'per sqyd';
           landAreaUnit = 'sqyd';
           minPricePerUnit = 5000;
-          maxPricePerUnit = 500000;
+          maxPricePerUnit = 2000000;
           minLandArea = 100;
           maxLandArea = 5000;
           selectedPriceRange = RangeValues(minPricePerUnit, maxPricePerUnit);
@@ -105,8 +111,36 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
         } else {
           resetFilters();
         }
+      } else if (propertyType == 'Farm Land') {
+        isFarmLandSelected = !isFarmLandSelected;
+        if (isFarmLandSelected) {
+          isAgriLandSelected = false;
+          isPlotSelected = false;
+          isPlotEnabled = false;
+          isAgriLandEnabled = false;
+          pricePerUnitUnit = 'per sqyd';
+          landAreaUnit = 'sqyd';
+          minPricePerUnit = 1000;
+          maxPricePerUnit = 100000;
+          minLandArea = 100;
+          maxLandArea = 5000;
+          selectedPriceRange =
+              RangeValues(minPricePerUnit, maxPricePerUnit);
+          selectedLandAreaRange = RangeValues(minLandArea, maxLandArea);
+        } else {
+          resetFilters();
+        }
       }
     });
+
+    // Ensure selected property types are updated
+    List<String> selectedPropertyTypes = [];
+    if (isPlotSelected) selectedPropertyTypes.add('Plot');
+    if (isFarmLandSelected) selectedPropertyTypes.add('Farm Land');
+    if (isAgriLandSelected) selectedPropertyTypes.add('Agri Land');
+
+    // Update the filter state when property types are updated
+    print('Updated Filters: $selectedPropertyTypes, $selectedPriceRange, $selectedLandAreaRange');
   }
 
   void resetFilters() {
@@ -195,6 +229,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                       setState(() {
                         selectedPriceRange = values;
                       });
+                      print('Updated price range: $selectedPriceRange');
                     },
                   ),
                   const SizedBox(height: 16),
@@ -223,20 +258,13 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () {
-                // Collect selected property types
                 List<String> selectedPropertyTypes = [];
                 if (isPlotSelected) selectedPropertyTypes.add('Plot');
                 if (isFarmLandSelected) selectedPropertyTypes.add('Farm Land');
                 if (isAgriLandSelected) selectedPropertyTypes.add('Agri Land');
 
-                // Debugging: Print the selected filters
-                print('Selected Property Types: $selectedPropertyTypes');
-                print('Selected Price Range: $selectedPriceRange');
-                print('Price Per Unit Unit: $pricePerUnitUnit');
-                print('Selected Land Area Range: $selectedLandAreaRange');
-                print('Land Area Unit: $landAreaUnit');
+                print('Applying Filters: $selectedPropertyTypes, $selectedPriceRange, $selectedLandAreaRange');
 
-                // Pass the selected filters back to BuyLandScreen
                 Navigator.pop(context, {
                   'selectedPropertyTypes': selectedPropertyTypes,
                   'selectedPriceRange': selectedPriceRange,

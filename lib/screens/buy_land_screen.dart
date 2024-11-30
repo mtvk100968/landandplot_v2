@@ -43,6 +43,7 @@ class BuyLandScreenState extends State<BuyLandScreen> {
   }
 
   Future<List<Property>> fetchProperties() async {
+    print('Filters: $selectedPropertyTypes, $selectedPriceRange, $selectedLandAreaRange');
     print('fetchProperties called with filters:');
     print('selectedPropertyTypes: $selectedPropertyTypes');
     print('selectedPriceRange: $selectedPriceRange');
@@ -143,6 +144,8 @@ class BuyLandScreenState extends State<BuyLandScreen> {
             result['selectedLandAreaRange'] ?? const RangeValues(0, 0);
         landAreaUnit = result['landAreaUnit'] ?? '';
       });
+      // Add the print statement here
+      print('Filters: $selectedPropertyTypes, $selectedPriceRange, $selectedLandAreaRange');
     }
   }
 
