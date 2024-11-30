@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart' as dotenv;
-
-// Import your custom classes
-import 'firebase_options.dart';
-import './components/bottom_nav_bar.dart';
-import './utils/keys.dart'; // Import global keys and tab indices
+import 'package:provider/provider.dart';
+import './providers/favorites_provider.dart'; // Adjust the import path if needed
+import './firebase_options.dart'; // Import Firebase options
+import './components/bottom_nav_bar.dart'; // Import your BottomNavBar widget
 
 Future<void> main() async {
   // Ensure Flutter bindings are initialized
@@ -29,16 +27,17 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'LANDANDPLOT',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.black),
-        useMaterial3: true, // Opt into Material 3 design
+    return ChangeNotifierProvider(
+      create: (_) => FavoritesProvider(), // Provide the FavoritesProvider
+      child: MaterialApp(
+        title: 'LANDANDPLOT',
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.black),
+          useMaterial3: true, // Opt into Material 3 design
+        ),
+        debugShowCheckedModeBanner: false, // Hide the debug banner
+        home: BottomNavBar(), // Use the BottomNavBar as the home
       ),
-      debugShowCheckedModeBanner: false, // Hide the debug banner
-      home: BottomNavBar(
-        key: bottomNavBarKey, // Assign the global key here
-      ), // Use the BottomNavBar as the home
     );
   }
 }

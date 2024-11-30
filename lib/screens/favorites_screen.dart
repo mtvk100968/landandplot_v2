@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/user_service.dart';
@@ -56,6 +57,7 @@ class FavoritesScreenState extends State<FavoritesScreen> {
           await _userService.addFavoriteProperty(user.uid, property.id);
         }
 
+        // Reload favorite properties immediately
         setState(() {
           _favoritePropertiesFuture = _loadFavoriteProperties();
         });
@@ -78,29 +80,62 @@ class FavoritesScreenState extends State<FavoritesScreen> {
   }
 
   Widget _buildFavoritesContent() {
-    return FutureBuilder<List<Property>>(
-      future: _favoritePropertiesFuture,
+    return StreamBuilder<DocumentSnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('users')
+          .doc(_currentUser!.uid)
+          .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const CircularProgressIndicator();
         } else if (snapshot.hasError) {
           return Text('Error: ${snapshot.error}');
-        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+        } else if (!snapshot.hasData || snapshot.data?.data() == null) {
           return Text(
             'No favorite properties found!',
             style: Theme.of(context).textTheme.headlineMedium,
             textAlign: TextAlign.center,
           );
         } else {
-          List<Property> favoriteProperties = snapshot.data!;
-          return ListView.builder(
-            itemCount: favoriteProperties.length,
-            itemBuilder: (context, index) {
-              return PropertyCard(
-                property: favoriteProperties[index],
-                onFavoriteToggle: toggleFavorite,
-                isFavorited: true,
-              );
+          // Fetch favorited property IDs from the user's document
+          List<dynamic> favoritedPropertyIds =
+              snapshot.data!.get('favoritedPropertyIds') ?? [];
+
+          if (favoritedPropertyIds.isEmpty) {
+            return Text(
+              'No favorite properties found!',
+              style: Theme.of(context).textTheme.headlineMedium,
+              textAlign: TextAlign.center,
+            );
+          }
+
+          return FutureBuilder<List<Property>>(
+            future: _propertyService.getPropertiesByIds(
+                favoritedPropertyIds.cast<String>()),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const CircularProgressIndicator();
+              } else if (snapshot.hasError) {
+                return Text('Error: ${snapshot.error}');
+              } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                return Text(
+                  'No favorite properties found!',
+                  style: Theme.of(context).textTheme.headlineMedium,
+                  textAlign: TextAlign.center,
+                );
+              } else {
+                List<Property> favoriteProperties = snapshot.data!;
+                return ListView.builder(
+                  itemCount: favoriteProperties.length,
+                  itemBuilder: (context, index) {
+                    return PropertyCard(
+                      property: favoriteProperties[index],
+                      onFavoriteToggle: toggleFavorite,
+                      isFavorited: true,
+                    );
+                  },
+                );
+              }
             },
           );
         }
