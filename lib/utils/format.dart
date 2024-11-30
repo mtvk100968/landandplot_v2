@@ -26,3 +26,10 @@ String formatPrice(double price, String propertyType) {
     return '₹${formatValue(price)}';
   }
 }
+
+String formatIndianPrice(double price) {
+  final formatter = RegExp(r'(\d+?)(?=(\d\d)+(\d)(?!\d))');
+  return price
+      .toString()
+      .replaceAllMapped(formatter, (match) => '${match[1]},');
+}

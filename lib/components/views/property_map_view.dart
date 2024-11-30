@@ -125,6 +125,8 @@ class PropertyMapViewState extends State<PropertyMapView> {
               ),
               onMapCreated: _onMapCreated,
               markers: _markers,
+              myLocationEnabled: true,
+              myLocationButtonEnabled: true, // Enable default location button
               // Add the ClusterManager to the GoogleMap widget
               clusterManagers: {_clusterManager},
             );
