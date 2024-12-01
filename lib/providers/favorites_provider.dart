@@ -1,14 +1,9 @@
 import 'package:flutter/material.dart';
 
 class FavoritesProvider extends ChangeNotifier {
-  List<String> _favoritePropertyIds = [];
+  final List<String> _favoritePropertyIds = [];
 
-  List<String> get favoritePropertyIds => _favoritePropertyIds;
-
-  void setFavorites(List<String> favorites) {
-    _favoritePropertyIds = favorites;
-    notifyListeners();
-  }
+  List<String> get favoritePropertyIds => List.unmodifiable(_favoritePropertyIds);
 
   void toggleFavorite(String propertyId) {
     if (_favoritePropertyIds.contains(propertyId)) {
@@ -16,6 +11,10 @@ class FavoritesProvider extends ChangeNotifier {
     } else {
       _favoritePropertyIds.add(propertyId);
     }
-    notifyListeners();
+    notifyListeners(); // Notify listeners about the change
+  }
+
+  bool isFavorite(String propertyId) {
+    return _favoritePropertyIds.contains(propertyId);
   }
 }
