@@ -60,16 +60,31 @@ class _LocationSearchBarState extends State<LocationSearchBar> {
         TextField(
           controller: _controller,
           decoration: InputDecoration(
-            hintText: 'Search location...',
+            hintText: 'Search locations...',
             prefixIcon: const Icon(Icons.search),
             contentPadding:
                 const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(30.0),
-              borderSide: BorderSide.none,
+              borderRadius: BorderRadius.circular(5.0),
+              borderSide: BorderSide(
+                color: Colors.grey, // Set the border color to grey
+                width: 1.0, // Set the border width to a thin line
+              ),
             ),
-            filled: true,
-            fillColor: Colors.grey[200],
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(5.0),
+              borderSide: BorderSide(
+                color: Colors.grey, // Grey border for the enabled state
+                width: 1.0,
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(5.0),
+              borderSide: BorderSide(
+                color: Colors.grey, // Grey border for the focused state
+                width: 1.0,
+              ),
+            ),
           ),
           onChanged: _onChanged,
         ),

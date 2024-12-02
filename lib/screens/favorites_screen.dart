@@ -4,7 +4,7 @@ import '../services/user_service.dart';
 import '../models/user_model.dart';
 import '../models/property_model.dart';
 import '../services/property_service.dart';
-import '../components/cards/property_card.dart';
+import '../components/property_card.dart';
 
 class FavoritesScreen extends StatefulWidget {
   const FavoritesScreen({super.key});

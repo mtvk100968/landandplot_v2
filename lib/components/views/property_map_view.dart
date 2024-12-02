@@ -48,8 +48,7 @@ class PropertyMapViewState extends State<PropertyMapView> {
 
     for (Property property in widget.properties) {
       // Format the price
-      final String priceText =
-          formatPrice(property.totalPrice, property.propertyType);
+      final String priceText = formatPrice(property.totalPrice);
 
       // Create custom marker with the formatted price
       final BitmapDescriptor customIcon =

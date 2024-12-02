@@ -194,7 +194,7 @@ class BuyLandScreenState extends State<BuyLandScreen> {
         title: const Text(
           'LANDANDPLOT',
           style: TextStyle(
-            color: Colors.green,
+            color: Colors.lightGreen,
             fontSize: 30,
             fontWeight: FontWeight.w800,
           ),
@@ -229,7 +229,7 @@ class BuyLandScreenState extends State<BuyLandScreen> {
         children: [
           // **Search and Filter Section**
           Padding(
-            padding: const EdgeInsets.all(8.0),
+            padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 8),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
@@ -242,7 +242,7 @@ class BuyLandScreenState extends State<BuyLandScreen> {
                 const SizedBox(width: 8),
                 // **Filter Button**
                 CircleAvatar(
-                  backgroundColor: Colors.green,
+                  backgroundColor: Colors.lightGreen,
                   child: IconButton(
                     icon: const Icon(Icons.tune, color: Colors.white),
                     onPressed: () async {
@@ -253,7 +253,7 @@ class BuyLandScreenState extends State<BuyLandScreen> {
                 const SizedBox(width: 8),
                 // **Toggle Button (Map/List)**
                 CircleAvatar(
-                  backgroundColor: Colors.green,
+                  backgroundColor: Colors.lightGreen,
                   child: IconButton(
                     icon: Icon(
                       showMap ? Icons.view_list : Icons.map,
@@ -341,7 +341,7 @@ class BuyLandScreenState extends State<BuyLandScreen> {
                 ],
               ),
             ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 2),
           // **Property Listings**
           Expanded(
             child: FutureBuilder<List<Property>>(

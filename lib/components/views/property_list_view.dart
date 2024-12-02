@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../models/property_model.dart';
-import '../cards/property_card.dart';
+import '../property_card.dart';
 
 class PropertyListView extends StatelessWidget {
   final List<Property> properties;

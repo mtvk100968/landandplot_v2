@@ -33,7 +33,7 @@ class CustomMarker {
     // Define the paint for the rectangle and pointer.
     final Paint rectPaint = Paint()
       // ..color = const ui.Color.fromARGB(255, 30, 67, 31)
-      ..color = Colors.green
+      ..color = Colors.lightGreen
       ..style = PaintingStyle.fill;
 
     // Define the paint for the border.
@@ -114,7 +114,7 @@ class CustomMarker {
   /// Dynamically calculates the width of the rectangle based on the price text length.
   static double _calculateWidthBasedOnText(String price) {
     // Base width for short prices
-    double baseWidth = 200;
+    double baseWidth = 180;
 
     // Additional width per character
     double additionalWidthPerChar = 1;
