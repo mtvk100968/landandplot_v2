@@ -1,11 +1,13 @@
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:provider/provider.dart';
 import '../../../models/property_model.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../../services/user_service.dart';
 import '../../../models/user_model.dart';
 import '../../../utils/format.dart';
+import '../../providers/user_provider.dart';
 
 class PropertyCard extends StatefulWidget {
   final Property property;
@@ -21,7 +23,6 @@ class PropertyCard extends StatefulWidget {
 
 class PropertyCardState extends State<PropertyCard> {
   int _current = 0;
-  bool _isFavorited = false; // State for favorite icon
   User? _currentUser;
   AppUser? _appUser;
   final UserService _userService = UserService();
@@ -29,59 +30,52 @@ class PropertyCardState extends State<PropertyCard> {
   @override
   void initState() {
     super.initState();
-    _isFavorited = widget.isFavorited; // Initialize with passed value
-    _getCurrentUserAndFavorites();
+    _getCurrentUser();
   }
 
   void _toggleFavorite() async {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+
     if (_currentUser == null) {
       _showSignInDialog();
       return;
     }
 
-    setState(() {
-      _isFavorited = !_isFavorited;
-    });
-
     try {
-      if (_isFavorited) {
-        await _userService.addFavoriteProperty(
-            _currentUser!.uid, widget.property.id);
-        _appUser?.favoritedPropertyIds.add(widget.property.id);
-      } else {
-        await _userService.removeFavoriteProperty(
-            _currentUser!.uid, widget.property.id);
-        _appUser?.favoritedPropertyIds.remove(widget.property.id);
+      // Toggle the favorite status in the database
+      await _userService.toggleFavorite(_currentUser!.uid, widget.property.id);
+
+      // Fetch the updated user data
+      AppUser? updatedUser = await _userService.getUserById(_currentUser!.uid);
+      if (updatedUser != null) {
+        // Update the UserProvider
+        userProvider.setUser(updatedUser);
       }
     } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isFavorited = !_isFavorited; // Revert state on error
-        });
-      }
+      // Handle error
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error updating favorites: $e')),
       );
     }
   }
 
-  Future<void> _getCurrentUserAndFavorites() async {
-    _currentUser = FirebaseAuth.instance.currentUser;
-    if (_currentUser != null) {
-      try {
-        // Fetch the user's data from Firestore
-        _appUser = await _userService.getUserById(_currentUser!.uid);
-        if (mounted && _appUser != null) {
-          setState(() {
-            _isFavorited =
-                _appUser!.favoritedPropertyIds.contains(widget.property.id);
-          });
-        }
-      } catch (e) {
-        print('Error fetching user data: $e');
-      }
-    }
-  }
+  // Future<void> _getCurrentUserAndFavorites() async {
+  //   _currentUser = FirebaseAuth.instance.currentUser;
+  //   if (_currentUser != null) {
+  //     try {
+  //       // Fetch the user's data from Firestore
+  //       _appUser = await _userService.getUserById(_currentUser!.uid);
+  //       if (mounted && _appUser != null) {
+  //         setState(() {
+  //           _isFavorited =
+  //               _appUser!.favoritedPropertyIds.contains(widget.property.id);
+  //         });
+  //       }
+  //     } catch (e) {
+  //       print('Error fetching user data: $e');
+  //     }
+  //   }
+  // }
 
 
   void _showSignInDialog() {
@@ -112,11 +106,26 @@ class PropertyCardState extends State<PropertyCard> {
     );
   }
 
+  Future<void> _getCurrentUser() async {
+    _currentUser = FirebaseAuth.instance.currentUser;
+    if (_currentUser != null) {
+      try {
+        // Fetch the user's data from Firestore
+        _appUser = await _userService.getUserById(_currentUser!.uid);
+        // No need to call setState() here unless you're using _appUser in the UI
+      } catch (e) {
+        print('Error fetching user data: $e');
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final userProvider = Provider.of<UserProvider>(context);
+    final isFavorited = userProvider.user.favoritedPropertyIds.contains(widget.property.id);
+
     // Determine the size of the card to make it responsive
-    double cardWidth =
-        MediaQuery.of(context).size.width * 0.95; // 95% of screen width
+    double cardWidth = MediaQuery.of(context).size.width * 0.95; // 95% of screen width
     double cardHeight = cardWidth; // Square shape for images
 
     return Center(
@@ -230,8 +239,8 @@ class PropertyCardState extends State<PropertyCard> {
                       ),
                       padding: const EdgeInsets.all(8.0),
                       child: Icon(
-                        _isFavorited ? Icons.favorite : Icons.favorite_border,
-                        color: _isFavorited ? Colors.pinkAccent : Colors.white,
+                        isFavorited ? Icons.favorite : Icons.favorite_border,
+                        color: isFavorited ? Colors.pinkAccent : Colors.white,
                         size: 24,
                       ),
                     ),

@@ -7,81 +7,11 @@ class UserService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final String collectionPath = 'users';
 
-  // // Create or update a user in Firestore
-  // Future<void> saveUser(AppUser user) async {
-  //   await _firestore.collection(collectionPath).doc(user.uid).set(
-  //         user.toMap(),
-  //         SetOptions(merge: true), // Merges with existing data if available
-  //       );
-  // }
-  //
-  // Future<void> toggleFavorite(String userId, String propertyId) async {
-  //   DocumentReference userRef = _firestore.collection('users').doc(userId);
-  //
-  //   // Fetch the current user data
-  //   DocumentSnapshot userSnapshot = await userRef.get();
-  //   if (userSnapshot.exists) {
-  //     List<dynamic> favoritedPropertyIds = List.from(userSnapshot['favoritedPropertyIds'] ?? []);
-  //
-  //     if (favoritedPropertyIds.contains(propertyId)) {
-  //       // Remove from favorites
-  //       favoritedPropertyIds.remove(propertyId);
-  //     } else {
-  //       // Add to favorites
-  //       favoritedPropertyIds.add(propertyId);
-  //     }
-  //
-  //     // Update the user's favorite list
-  //     await userRef.update({'favoritedPropertyIds': favoritedPropertyIds});
-  //   }
-  // }
-  //
-  // // Fetch a user from Firestore by UID
-  // Future<AppUser?> getUserById(String uid) async {
-  //   DocumentSnapshot<Map<String, dynamic>> doc =
-  //   await _firestore.collection(collectionPath).doc(uid).get();
-  //   if (doc.exists) {
-  //     return AppUser.fromDocument(doc.data()!);
-  //   }
-  //   return null;
-  // }
-  //
-  // // Add property to favorites
-  // Future<void> addFavoriteProperty(String userId, String propertyId) async {
-  //   try {
-  //     DocumentReference userRef = _firestore.collection('users').doc(userId);
-  //     await userRef.update({
-  //       'favoritedPropertyIds': FieldValue.arrayUnion([propertyId]),
-  //     });
-  //     print("Added $propertyId to favorites.");
-  //   } catch (e) {
-  //     print("Failed to add favorite: $e");
-  //     throw Exception("Failed to add favorite property for user");
-  //   }
-  // }
-
   Future<void> saveUser(AppUser user) async {
     await _firestore.collection(collectionPath).doc(user.uid).set(
       user.toMap(),
       SetOptions(merge: true),
     );
-  }
-
-  Future<void> toggleFavorite(String userId, String propertyId) async {
-    DocumentReference userRef = _firestore.collection('users').doc(userId);
-
-    DocumentSnapshot userSnapshot = await userRef.get();
-    if (userSnapshot.exists) {
-      List<dynamic> favoritedPropertyIds = List.from(userSnapshot['favoritedPropertyIds'] ?? []);
-
-      if (favoritedPropertyIds.contains(propertyId)) {
-        favoritedPropertyIds.remove(propertyId);
-      } else {
-        favoritedPropertyIds.add(propertyId);
-      }
-
-      await userRef.update({'favoritedPropertyIds': favoritedPropertyIds});
-    }
   }
 
   Future<AppUser?> getUserById(String uid) async {
@@ -92,21 +22,6 @@ class UserService {
     }
     return null;
   }
-
-  Future<void> addFavoriteProperty(String userId, String propertyId) async {
-    DocumentReference userRef = _firestore.collection('users').doc(userId);
-    await userRef.update({
-      'favoritedPropertyIds': FieldValue.arrayUnion([propertyId]),
-    });
-  }
-
-  Future<void> removeFavoriteProperty(String userId, String propertyId) async {
-    DocumentReference userRef = _firestore.collection('users').doc(userId);
-    await userRef.update({
-      'favoritedPropertyIds': FieldValue.arrayRemove([propertyId]),
-    });
-  }
-
 
   // Delete a user from Firestore
   Future<void> deleteUser(String uid) async {
@@ -125,7 +40,7 @@ class UserService {
   Future<void> addPropertyToUser(String userId, String propertyId) async {
     try {
       DocumentReference userRef =
-          _firestore.collection(collectionPath).doc(userId);
+      _firestore.collection(collectionPath).doc(userId);
       await userRef.update({
         'postedPropertyIds': FieldValue.arrayUnion([propertyId])
       });
@@ -134,17 +49,43 @@ class UserService {
     }
   }
 
-  // // Remove property from favorites
+  Future<void> addFavoriteProperty(String userId, String propertyId) async {
+    DocumentReference userRef = _firestore.collection('users').doc(userId);
+    await userRef.update({
+      'favoritedPropertyIds': FieldValue.arrayUnion([propertyId]),
+    });
+  }
+
+  Future<void> removeFavoriteProperty(String userId, String propertyId) async {
+    DocumentReference userRef = _firestore.collection('users').doc(userId);
+    await userRef.update({
+      'favoritedPropertyIds': FieldValue.arrayRemove([propertyId]),
+    });
+  }
+
+  // // Add property to user's favorited properties
+  // Future<void> addFavoriteProperty(String userId, String propertyId) async {
+  //   try {
+  //     DocumentReference userRef =
+  //     _firestore.collection(collectionPath).doc(userId);
+  //     await userRef.update({
+  //       'favoritedPropertyIds': FieldValue.arrayUnion([propertyId])
+  //     });
+  //   } catch (e) {
+  //     throw Exception('Failed to favorite property for user');
+  //   }
+  // }
+  //
+  // // Remove property from user's favorited properties
   // Future<void> removeFavoriteProperty(String userId, String propertyId) async {
   //   try {
-  //     DocumentReference userRef = _firestore.collection('users').doc(userId);
+  //     DocumentReference userRef =
+  //     _firestore.collection(collectionPath).doc(userId);
   //     await userRef.update({
-  //       'favoritedPropertyIds': FieldValue.arrayRemove([propertyId]),
+  //       'favoritedPropertyIds': FieldValue.arrayRemove([propertyId])
   //     });
-  //     print("Removed $propertyId from favorites.");
   //   } catch (e) {
-  //     print("Failed to remove favorite: $e");
-  //     throw Exception("Failed to remove favorite property for user");
+  //     throw Exception('Failed to remove favorite property for user');
   //   }
   // }
 
@@ -152,7 +93,7 @@ class UserService {
   Future<void> addInTalksProperty(String userId, String propertyId) async {
     try {
       DocumentReference userRef =
-          _firestore.collection(collectionPath).doc(userId);
+      _firestore.collection(collectionPath).doc(userId);
       await userRef.update({
         'inTalksPropertyIds': FieldValue.arrayUnion([propertyId])
       });
@@ -165,12 +106,58 @@ class UserService {
   Future<void> addBoughtProperty(String userId, String propertyId) async {
     try {
       DocumentReference userRef =
-          _firestore.collection(collectionPath).doc(userId);
+      _firestore.collection(collectionPath).doc(userId);
       await userRef.update({
         'boughtPropertyIds': FieldValue.arrayUnion([propertyId])
       });
     } catch (e) {
       throw Exception('Failed to add bought property for user');
+    }
+  }
+
+  // Future<void> toggleFavorite(String userId, String propertyId) async {
+  //   DocumentReference userRef = _firestore.collection('users').doc(userId);
+  //
+  //   DocumentSnapshot userSnapshot = await userRef.get();
+  //   if (userSnapshot.exists) {
+  //     List<dynamic> favoritedPropertyIds = List.from(userSnapshot['favoritedPropertyIds'] ?? []);
+  //
+  //     if (favoritedPropertyIds.contains(propertyId)) {
+  //       favoritedPropertyIds.remove(propertyId);
+  //     } else {
+  //       favoritedPropertyIds.add(propertyId);
+  //     }
+  //
+  //     await userRef.update({'favoritedPropertyIds': favoritedPropertyIds});
+  //   }
+  // }
+  Future<void> toggleFavorite(String userId, String propertyId) async {
+    DocumentReference userRef = _firestore.collection('users').doc(userId);
+
+    try {
+      DocumentSnapshot userSnapshot = await userRef.get();
+      if (userSnapshot.exists) {
+        List<dynamic> favoritedPropertyIds =
+        List.from(userSnapshot['favoritedPropertyIds'] ?? []);
+
+        if (favoritedPropertyIds.contains(propertyId)) {
+          favoritedPropertyIds.remove(propertyId);
+        } else {
+          favoritedPropertyIds.add(propertyId);
+        }
+
+        await userRef.update({'favoritedPropertyIds': favoritedPropertyIds});
+      } else {
+        // User document doesn't exist; create it
+        await userRef.set({
+          'favoritedPropertyIds': [propertyId],
+          // Add other default fields if necessary
+        });
+      }
+    } catch (e) {
+      print('Error in UserService.toggleFavorite: $e');
+      // Handle the error appropriately
+      throw e; // Re-throw if necessary
     }
   }
 }

@@ -24,6 +24,20 @@ class AppUser {
         inTalksPropertyIds = inTalksPropertyIds ?? [],
         boughtPropertyIds = boughtPropertyIds ?? [];
 
+  // Factory constructor for an empty user
+  factory AppUser.empty() {
+    return AppUser(
+      uid: '',
+      name: null,
+      email: null,
+      phoneNumber: null,
+      postedPropertyIds: [],
+      favoritedPropertyIds: [],
+      inTalksPropertyIds: [],
+      boughtPropertyIds: [],
+    );
+  }
+
   // Convert AppUser object to a Map for Firestore
   Map<String, dynamic> toMap() {
     return {

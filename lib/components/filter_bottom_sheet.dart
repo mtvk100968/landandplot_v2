@@ -53,17 +53,26 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
       if (isAgriLandSelected) {
         pricePerUnitUnit = 'per acre';
         landAreaUnit = 'acre';
-        minPricePerUnit = 500000;
+        minPricePerUnit = 50000;
         maxPricePerUnit = 5000000000;
         minLandArea = 1;
         maxLandArea = 999;
         selectedPriceRange = RangeValues(minPricePerUnit, maxPricePerUnit);
         selectedLandAreaRange = RangeValues(minLandArea, maxLandArea);
-      } else if (isPlotSelected || isFarmLandSelected) {
+      } else if (isPlotSelected) {
         pricePerUnitUnit = 'per sqyd';
         landAreaUnit = 'sqyd';
         minPricePerUnit = 0.0; // allow 0 as minimum
-        maxPricePerUnit = 5000000;
+        maxPricePerUnit = 1000000;
+        minLandArea = 100;
+        maxLandArea = 4800;
+        selectedPriceRange = RangeValues(minPricePerUnit, maxPricePerUnit);
+        selectedLandAreaRange = RangeValues(minLandArea, maxLandArea);
+      } else if (isFarmLandSelected) {
+        pricePerUnitUnit = 'per sqyd';
+        landAreaUnit = 'sqyd';
+        minPricePerUnit = 0.0; // allow 0 as minimum
+        maxPricePerUnit = 200000;
         minLandArea = 100;
         maxLandArea = 4800;
         selectedPriceRange = RangeValues(minPricePerUnit, maxPricePerUnit);
@@ -84,7 +93,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
           isFarmLandEnabled = false;
           pricePerUnitUnit = 'per acre';
           landAreaUnit = 'acre';
-          minPricePerUnit = 500000;
+          minPricePerUnit = 50000;
           maxPricePerUnit = 5000000000;
           minLandArea = 1;
           maxLandArea = 100;
@@ -102,7 +111,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
           isAgriLandEnabled = false;
           pricePerUnitUnit = 'per sqyd';
           landAreaUnit = 'sqyd';
-          minPricePerUnit = 5000;
+          minPricePerUnit = 500;
           maxPricePerUnit = 2000000;
           minLandArea = 100;
           maxLandArea = 5000;

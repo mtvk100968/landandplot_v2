@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
+import '../providers/user_provider.dart';
 import '../services/user_service.dart';
 import '../models/user_model.dart';
 import '../models/property_model.dart';
@@ -19,6 +21,7 @@ class FavoritesScreenState extends State<FavoritesScreen> {
   final UserService _userService = UserService();
   final PropertyService _propertyService = PropertyService();
   Future<List<Property>>? _favoritePropertiesFuture;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   @override
   void initState() {
@@ -44,24 +47,48 @@ class FavoritesScreenState extends State<FavoritesScreen> {
     }
   }
 
-  void toggleFavorite(Property property) async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      AppUser? appUser = await _userService.getUserById(user.uid);
-      if (appUser != null) {
-        bool isAlreadyFavorited = appUser.favoritedPropertyIds.contains(property.id);
+  // void toggleFavorite(Property property) async {
+  //   final user = FirebaseAuth.instance.currentUser;
+  //   if (user != null) {
+  //     AppUser? appUser = await _userService.getUserById(user.uid);
+  //     if (appUser != null) {
+  //       bool isAlreadyFavorited = appUser.favoritedPropertyIds.contains(property.id);
+  //
+  //       if (isAlreadyFavorited) {
+  //         await _userService.removeFavoriteProperty(user.uid, property.id);
+  //       } else {
+  //         await _userService.addFavoriteProperty(user.uid, property.id);
+  //       }
+  //
+  //       // Reload favorite properties immediately
+  //       setState(() {
+  //         _favoritePropertiesFuture = _loadFavoriteProperties();
+  //       });
+  //     }
+  //   }
+  // }
 
-        if (isAlreadyFavorited) {
-          await _userService.removeFavoriteProperty(user.uid, property.id);
-        } else {
-          await _userService.addFavoriteProperty(user.uid, property.id);
-        }
+  Future<void> toggleFavorite(Property property) async {
+    final userId = _currentUser!.uid;
+    final propertyId = property.id;
 
-        // Reload favorite properties immediately
-        setState(() {
-          _favoritePropertiesFuture = _loadFavoriteProperties();
-        });
+    try {
+      await _userService.toggleFavorite(userId, propertyId);
+
+      // Fetch the updated user data
+      AppUser? updatedUser = await _userService.getUserById(userId);
+      if (updatedUser != null) {
+        // Update the UserProvider
+        Provider.of<UserProvider>(context, listen: false).setUser(updatedUser);
       }
+
+      // Reload favorite properties immediately
+      setState(() {
+        _favoritePropertiesFuture = _loadFavoriteProperties();
+      });
+    } catch (e) {
+      print('Error in toggleFavorite: $e');
+      // Handle the error appropriately
     }
   }
 
@@ -130,7 +157,7 @@ class FavoritesScreenState extends State<FavoritesScreen> {
                   itemBuilder: (context, index) {
                     return PropertyCard(
                       property: favoriteProperties[index],
-                      onFavoriteToggle: toggleFavorite,
+                      onFavoriteToggle: toggleFavorite, // Pass the function directly
                       isFavorited: true,
                     );
                   },

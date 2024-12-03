@@ -1,5 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../models/user_model.dart';
+import '../providers/user_provider.dart';
 import '../services/property_service.dart';
 import '../models/property_model.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -46,11 +49,35 @@ class BuyLandScreenState extends State<BuyLandScreen> {
   }
 
   // Define the toggleFavorite function in the BuyLandScreen
-  void toggleFavorite(Property property) {
+  // void toggleFavorite(Property property) {
+  //   final user = FirebaseAuth.instance.currentUser;
+  //   if (user != null) {
+  //     _userService.toggleFavorite(
+  //         user.uid, property.id); // Call UserService to toggle
+  //   }
+  // }
+
+  void toggleFavorite(Property property) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
-      _userService.toggleFavorite(
-          user.uid, property.id); // Call UserService to toggle
+      await _userService.toggleFavorite(user.uid, property.id);
+
+      // Update UserProvider
+      AppUser? updatedUser = await _userService.getUserById(user.uid);
+      if (updatedUser != null) {
+        Provider.of<UserProvider>(context, listen: false).setUser(updatedUser);
+      }
+
+      // Update the UI if necessary
+      setState(() {
+        // Update local state if required
+      });
+    } else {
+      // Prompt user to log in
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Please log in to favorite properties.')),
+      );
+      Navigator.pushNamed(context, '/login');
     }
   }
 
@@ -360,7 +387,7 @@ class BuyLandScreenState extends State<BuyLandScreen> {
               ),
             ),
           const SizedBox(height: 10),
-// **Property Listings**
+          // **Property Listings**
           Expanded(
             child: FutureBuilder<List<Property>>(
               future: fetchProperties(),
@@ -375,12 +402,13 @@ class BuyLandScreenState extends State<BuyLandScreen> {
                 } else {
                   final properties = snapshot.data!;
                   print('Number of properties fetched: ${properties.length}');
-// Toggle between Map View and List View
+                  // Toggle between Map View and List View
                   return showMap
                       ? PropertyMapView(properties: properties) // Map View
                       : PropertyListView(
-                          properties: properties,
-                          onFavoriteToggle: toggleFavorite); // List View
+                    properties: properties,
+                    onFavoriteToggle: toggleFavorite,
+                  ); // List View
                 }
               },
             ),
