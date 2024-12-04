@@ -66,7 +66,7 @@ class BottomNavBarState extends State<BottomNavBar> {
         child = const AlertsScreen();
         break;
       case 4:
-        child = const ProfileScreen();
+        child = ProfileScreen(propertyList: const [], favoritedPropertyIds: const [], onFavoriteToggle: (String propertyId, bool isFavorited) {  },);
         break;
       default:
         child = const BuyLandScreen();

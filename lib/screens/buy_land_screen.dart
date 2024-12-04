@@ -1,8 +1,7 @@
+// lib/screens/buy_land_screen.dart
+
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../models/user_model.dart';
-import '../providers/user_provider.dart';
 import '../services/property_service.dart';
 import '../models/property_model.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -10,7 +9,8 @@ import '../../components/views/property_list_view.dart';
 import '../../components/views/property_map_view.dart';
 import '../../components/filter_bottom_sheet.dart';
 import '../../components/location_search_bar.dart';
-import '../../../services/user_service.dart'; // Import the UserService
+import '../../services/user_service.dart';
+import '../../models/user_model.dart';
 
 class BuyLandScreen extends StatefulWidget {
   const BuyLandScreen({Key? key}) : super(key: key);
@@ -40,7 +40,18 @@ class BuyLandScreenState extends State<BuyLandScreen> {
   String? selectedPincode;
   String? selectedState;
 
-  final UserService _userService = UserService(); // Initialize the UserService
+  // Current user
+  AppUser? currentUser;
+
+  // Store the properties future
+  Future<List<Property>>? _propertyFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCurrentUser();
+    _propertyFuture = fetchProperties();
+  }
 
   @override
   void dispose() {
@@ -48,42 +59,19 @@ class BuyLandScreenState extends State<BuyLandScreen> {
     super.dispose();
   }
 
-  // Define the toggleFavorite function in the BuyLandScreen
-  // void toggleFavorite(Property property) {
-  //   final user = FirebaseAuth.instance.currentUser;
-  //   if (user != null) {
-  //     _userService.toggleFavorite(
-  //         user.uid, property.id); // Call UserService to toggle
-  //   }
-  // }
-
-  void toggleFavorite(Property property) async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      await _userService.toggleFavorite(user.uid, property.id);
-
-      // Update UserProvider
-      AppUser? updatedUser = await _userService.getUserById(user.uid);
-      if (updatedUser != null) {
-        Provider.of<UserProvider>(context, listen: false).setUser(updatedUser);
-      }
-
-      // Update the UI if necessary
+  // Load current user data
+  Future<void> _loadCurrentUser() async {
+    User? firebaseUser = FirebaseAuth.instance.currentUser;
+    if (firebaseUser != null) {
+      AppUser? user = await UserService().getUserById(firebaseUser.uid);
       setState(() {
-        // Update local state if required
+        currentUser = user;
       });
-    } else {
-      // Prompt user to log in
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please log in to favorite properties.')),
-      );
-      Navigator.pushNamed(context, '/login');
     }
   }
 
+  // Fetch properties with applied filters
   Future<List<Property>> fetchProperties() async {
-    print(
-        'Filters: $selectedPropertyTypes, $selectedPriceRange, $selectedLandAreaRange');
     print('fetchProperties called with filters:');
     print('selectedPropertyTypes: $selectedPropertyTypes');
     print('selectedPriceRange: $selectedPriceRange');
@@ -129,14 +117,14 @@ class BuyLandScreenState extends State<BuyLandScreen> {
       return await propertyService.getPropertiesWithFilters(
         propertyTypes: selectedPropertyTypes,
         minPricePerUnit:
-            selectedPriceRange.start > 0 ? selectedPriceRange.start : null,
+        selectedPriceRange.start > 0 ? selectedPriceRange.start : null,
         maxPricePerUnit:
-            selectedPriceRange.end > 0 ? selectedPriceRange.end : null,
+        selectedPriceRange.end > 0 ? selectedPriceRange.end : null,
         minLandArea: selectedLandAreaRange.start > 0
             ? selectedLandAreaRange.start
             : null,
         maxLandArea:
-            selectedLandAreaRange.end > 0 ? selectedLandAreaRange.end : null,
+        selectedLandAreaRange.end > 0 ? selectedLandAreaRange.end : null,
         minLat: minLat,
         maxLat: maxLat,
         minLon: minLon,
@@ -183,10 +171,8 @@ class BuyLandScreenState extends State<BuyLandScreen> {
         selectedLandAreaRange =
             result['selectedLandAreaRange'] ?? const RangeValues(0, 0);
         landAreaUnit = result['landAreaUnit'] ?? '';
+        _propertyFuture = fetchProperties(); // Update properties
       });
-      // Add the print statement here
-      print(
-          'Filters: $selectedPropertyTypes, $selectedPriceRange, $selectedLandAreaRange');
     }
   }
 
@@ -228,7 +214,43 @@ class BuyLandScreenState extends State<BuyLandScreen> {
       print('Selected District: $selectedDistrict');
       print('Selected Pincode: $selectedPincode');
       print('Selected State: $selectedState');
+
+      _propertyFuture = fetchProperties(); // Update properties
     });
+  }
+
+  // Toggle favorite status
+  void _onFavoriteToggle(String propertyId, bool isFavorited) async {
+    if (currentUser == null) {
+      // Prompt user to log in
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('You need to be logged in to favorite properties.')),
+      );
+      return;
+    }
+
+    try {
+      if (isFavorited) {
+        // If currently favorited, remove from favorites
+        await UserService()
+            .removeFavoriteProperty(currentUser!.uid, propertyId);
+      } else {
+        // If not favorited, add to favorites
+        await UserService().addFavoriteProperty(currentUser!.uid, propertyId);
+      }
+
+      // Reload current user data to update favoritedPropertyIds
+      AppUser? updatedUser = await UserService().getUserById(currentUser!.uid);
+      setState(() {
+        currentUser = updatedUser;
+      });
+    } catch (e) {
+      print('Error toggling favorite: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to update favorite: $e')),
+      );
+    }
   }
 
   @override
@@ -238,7 +260,7 @@ class BuyLandScreenState extends State<BuyLandScreen> {
         title: const Text(
           'LANDANDPLOT',
           style: TextStyle(
-            color: Colors.green,
+            color: Colors.lightGreen,
             fontSize: 30,
             fontWeight: FontWeight.w800,
           ),
@@ -253,8 +275,8 @@ class BuyLandScreenState extends State<BuyLandScreen> {
                 return IconButton(
                   icon: const Icon(Icons.logout),
                   onPressed: () async {
-                    Navigator.pushReplacementNamed(context, '/profile');
                     await FirebaseAuth.instance.signOut();
+                    Navigator.pushReplacementNamed(context, '/profile');
                   },
                 );
               } else {
@@ -271,50 +293,49 @@ class BuyLandScreenState extends State<BuyLandScreen> {
       ),
       body: Column(
         children: [
-// **Search and Filter Section**
+          // **Search and Filter Section**
           Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Column(
+            padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 8),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-// **Location Search Bar**
-                LocationSearchBar(
-                  onPlaceSelected: _handlePlaceSelected,
+                // **Location Search Bar**
+                Expanded(
+                  child: LocationSearchBar(
+                    onPlaceSelected: _handlePlaceSelected,
+                  ),
                 ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-// **Filter Button**
-                    CircleAvatar(
-                      backgroundColor: Colors.green,
-                      child: IconButton(
-                        icon: const Icon(Icons.tune, color: Colors.white),
-                        onPressed: () async {
-                          await openFilterBottomSheet();
-                        },
-                      ),
+                const SizedBox(width: 8),
+                // **Filter Button**
+                CircleAvatar(
+                  backgroundColor: Colors.lightGreen,
+                  child: IconButton(
+                    icon: const Icon(Icons.tune, color: Colors.white),
+                    onPressed: () async {
+                      await openFilterBottomSheet();
+                    },
+                  ),
+                ),
+                const SizedBox(width: 8),
+                // **Toggle Button (Map/List)**
+                CircleAvatar(
+                  backgroundColor: Colors.lightGreen,
+                  child: IconButton(
+                    icon: Icon(
+                      showMap ? Icons.view_list : Icons.map,
+                      color: Colors.white,
                     ),
-                    const SizedBox(width: 8),
-// **Toggle Button (Map/List)**
-                    CircleAvatar(
-                      backgroundColor: Colors.green,
-                      child: IconButton(
-                        icon: Icon(
-                          showMap ? Icons.view_list : Icons.map,
-                          color: Colors.white,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            showMap = !showMap;
-                          });
-                        },
-                      ),
-                    ),
-                  ],
+                    onPressed: () {
+                      setState(() {
+                        showMap = !showMap;
+                      });
+                    },
+                  ),
                 ),
               ],
             ),
           ),
-// **Active Filters**
+          // **Active Filters**
           if (selectedPropertyTypes.isNotEmpty ||
               (selectedPriceRange.start > 0 && selectedPriceRange.end > 0) ||
               (selectedLandAreaRange.start > 0 &&
@@ -334,6 +355,7 @@ class BuyLandScreenState extends State<BuyLandScreen> {
                       onDeleted: () {
                         setState(() {
                           selectedCity = null;
+                          _propertyFuture = fetchProperties();
                         });
                       },
                     ),
@@ -343,6 +365,7 @@ class BuyLandScreenState extends State<BuyLandScreen> {
                       onDeleted: () {
                         setState(() {
                           selectedDistrict = null;
+                          _propertyFuture = fetchProperties();
                         });
                       },
                     ),
@@ -352,6 +375,7 @@ class BuyLandScreenState extends State<BuyLandScreen> {
                       onDeleted: () {
                         setState(() {
                           selectedPincode = null;
+                          _propertyFuture = fetchProperties();
                         });
                       },
                     ),
@@ -362,6 +386,7 @@ class BuyLandScreenState extends State<BuyLandScreen> {
                       onDeleted: () {
                         setState(() {
                           selectedPlace = null;
+                          _propertyFuture = fetchProperties();
                         });
                       },
                     ),
@@ -386,11 +411,11 @@ class BuyLandScreenState extends State<BuyLandScreen> {
                 ],
               ),
             ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 2),
           // **Property Listings**
           Expanded(
             child: FutureBuilder<List<Property>>(
-              future: fetchProperties(),
+              future: _propertyFuture,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
@@ -407,7 +432,10 @@ class BuyLandScreenState extends State<BuyLandScreen> {
                       ? PropertyMapView(properties: properties) // Map View
                       : PropertyListView(
                     properties: properties,
-                    onFavoriteToggle: toggleFavorite,
+                    favoritedPropertyIds:
+                    currentUser?.favoritedPropertyIds ?? [],
+                    onFavoriteToggle:
+                    _onFavoriteToggle, // Updated callback
                   ); // List View
                 }
               },
@@ -418,7 +446,7 @@ class BuyLandScreenState extends State<BuyLandScreen> {
     );
   }
 
-// Helper method to format price
+  // Helper method to format price
   String formatPrice(double value) {
     if (value >= 10000000) {
       return '${(value / 10000000).toStringAsFixed(1)}C'; // Crores
