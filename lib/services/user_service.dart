@@ -4,102 +4,125 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user_model.dart';
 
 class UserService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final String collectionPath = 'users';
+  // Define the users collection reference with the correct generic type
+  final CollectionReference<Map<String, dynamic>> _usersCollection =
+      FirebaseFirestore.instance.collection('users');
 
-  // Create or update a user in Firestore
-  Future<void> saveUser(AppUser user) async {
-    await _firestore.collection(collectionPath).doc(user.uid).set(
-          user.toMap(),
-          SetOptions(merge: true), // Merges with existing data if available
-        );
-  }
-
-  // Fetch a user from Firestore by UID
-  Future<AppUser?> getUserById(String uid) async {
-    DocumentSnapshot<Map<String, dynamic>> doc =
-        await _firestore.collection(collectionPath).doc(uid).get();
-    if (doc.exists) {
-      return AppUser.fromDocument(doc.data()!);
-    }
-    return null;
-  }
-
-  // Delete a user from Firestore
-  Future<void> deleteUser(String uid) async {
-    await _firestore.collection(collectionPath).doc(uid).delete();
-  }
-
-  // Update user information
-  Future<void> updateUser(AppUser user) async {
-    await _firestore
-        .collection(collectionPath)
-        .doc(user.uid)
-        .update(user.toMap());
-  }
-
-  // Add property to user's posted properties
-  Future<void> addPropertyToUser(String userId, String propertyId) async {
+  /// Fetch a user by their UID
+  Future<AppUser?> getUserById(String userId) async {
     try {
-      DocumentReference userRef =
-          _firestore.collection(collectionPath).doc(userId);
-      await userRef.update({
-        'postedPropertyIds': FieldValue.arrayUnion([propertyId])
-      });
+      DocumentSnapshot<Map<String, dynamic>> doc =
+          await _usersCollection.doc(userId).get();
+      if (doc.exists && doc.data() != null) {
+        return AppUser.fromDocument(doc.data()!);
+      }
+      return null;
     } catch (e) {
-      throw Exception('Failed to link property to user');
+      print('Error fetching user by ID: $e');
+      return null;
     }
   }
 
-  // Add property to user's favorited properties
+  /// Listen to real-time updates of a user by their UID
+  Stream<AppUser?> getUserStream(String userId) {
+    return _usersCollection.doc(userId).snapshots().map((doc) {
+      if (doc.exists && doc.data() != null) {
+        return AppUser.fromDocument(doc.data()!);
+      }
+      return null;
+    });
+  }
+
+  /// Create or update a user in Firestore
+  Future<void> saveUser(AppUser user) async {
+    try {
+      await _usersCollection.doc(user.uid).set(
+            user.toMap(),
+            SetOptions(merge: true), // Merges with existing data if available
+          );
+    } catch (e) {
+      print('Error saving user: $e');
+      throw Exception('Failed to save user');
+    }
+  }
+
+  /// Delete a user from Firestore
+  Future<void> deleteUser(String userId) async {
+    try {
+      await _usersCollection.doc(userId).delete();
+    } catch (e) {
+      print('Error deleting user: $e');
+      throw Exception('Failed to delete user');
+    }
+  }
+
+  /// Update user information
+  Future<void> updateUser(AppUser user) async {
+    try {
+      await _usersCollection.doc(user.uid).update(user.toMap());
+    } catch (e) {
+      print('Error updating user: $e');
+      throw Exception('Failed to update user');
+    }
+  }
+
+  /// Add a property to the user's favorites
   Future<void> addFavoriteProperty(String userId, String propertyId) async {
     try {
-      DocumentReference userRef =
-          _firestore.collection(collectionPath).doc(userId);
-      await userRef.update({
-        'favoritedPropertyIds': FieldValue.arrayUnion([propertyId])
+      await _usersCollection.doc(userId).update({
+        'favoritedPropertyIds': FieldValue.arrayUnion([propertyId]),
       });
     } catch (e) {
-      throw Exception('Failed to favorite property for user');
+      print('Error adding favorite property: $e');
+      throw Exception('Failed to add favorite property');
     }
   }
 
-  // Remove property from user's favorited properties
+  /// Remove a property from the user's favorites
   Future<void> removeFavoriteProperty(String userId, String propertyId) async {
     try {
-      DocumentReference userRef =
-          _firestore.collection(collectionPath).doc(userId);
-      await userRef.update({
-        'favoritedPropertyIds': FieldValue.arrayRemove([propertyId])
+      await _usersCollection.doc(userId).update({
+        'favoritedPropertyIds': FieldValue.arrayRemove([propertyId]),
       });
     } catch (e) {
-      throw Exception('Failed to remove favorite property for user');
+      print('Error removing favorite property: $e');
+      throw Exception('Failed to remove favorite property');
     }
   }
 
-  // Add property to user's in talks properties
+  /// Add a property to the user's posted properties
+  Future<void> addPropertyToUser(String userId, String propertyId) async {
+    try {
+      await _usersCollection.doc(userId).update({
+        'postedPropertyIds': FieldValue.arrayUnion([propertyId]),
+      });
+    } catch (e) {
+      print('Error adding property to user: $e');
+      throw Exception('Failed to add property to user');
+    }
+  }
+
+  /// Add a property to the user's in-talks properties
   Future<void> addInTalksProperty(String userId, String propertyId) async {
     try {
-      DocumentReference userRef =
-          _firestore.collection(collectionPath).doc(userId);
-      await userRef.update({
-        'inTalksPropertyIds': FieldValue.arrayUnion([propertyId])
+      await _usersCollection.doc(userId).update({
+        'inTalksPropertyIds': FieldValue.arrayUnion([propertyId]),
       });
     } catch (e) {
-      throw Exception('Failed to add property to in-talks for user');
+      print('Error adding in-talks property: $e');
+      throw Exception('Failed to add in-talks property');
     }
   }
 
-  // Add property to user's bought properties
+  /// Add a property to the user's bought properties
   Future<void> addBoughtProperty(String userId, String propertyId) async {
     try {
-      DocumentReference userRef =
-          _firestore.collection(collectionPath).doc(userId);
-      await userRef.update({
-        'boughtPropertyIds': FieldValue.arrayUnion([propertyId])
+      await _usersCollection.doc(userId).update({
+        'boughtPropertyIds': FieldValue.arrayUnion([propertyId]),
       });
     } catch (e) {
-      throw Exception('Failed to add bought property for user');
+      print('Error adding bought property: $e');
+      throw Exception('Failed to add bought property');
     }
   }
 }

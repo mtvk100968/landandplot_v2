@@ -1,3 +1,5 @@
+// lib/screens/buy_land_screen.dart
+
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../services/property_service.dart';
@@ -7,6 +9,8 @@ import '../../components/views/property_list_view.dart';
 import '../../components/views/property_map_view.dart';
 import '../../components/filter_bottom_sheet.dart';
 import '../../components/location_search_bar.dart';
+import '../../services/user_service.dart';
+import '../../models/user_model.dart';
 
 class BuyLandScreen extends StatefulWidget {
   const BuyLandScreen({Key? key}) : super(key: key);
@@ -35,6 +39,14 @@ class BuyLandScreenState extends State<BuyLandScreen> {
   String? selectedDistrict;
   String? selectedPincode;
   String? selectedState;
+
+  Future<List<Property>>? _propertyFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _propertyFuture = fetchProperties();
+  }
 
   @override
   void dispose() {
@@ -142,6 +154,7 @@ class BuyLandScreenState extends State<BuyLandScreen> {
         selectedLandAreaRange =
             result['selectedLandAreaRange'] ?? const RangeValues(0, 0);
         landAreaUnit = result['landAreaUnit'] ?? '';
+        _propertyFuture = fetchProperties(); // Update properties
       });
     }
   }
@@ -172,23 +185,65 @@ class BuyLandScreenState extends State<BuyLandScreen> {
         }
       }
 
+      // In _handlePlaceSelected method, remove the code that resets selectedPlace to null
+      // when city, district or pincode is found.
+      // This ensures that for point-based searches (like a single building),
+      // the selectedPlace remains and can be used for radius-based filtering.
+
+      // Just remove the following lines from _handlePlaceSelected():
+
       // If the place is an area (e.g., city, district), clear the point location
-      if (selectedCity != null ||
-          selectedDistrict != null ||
-          selectedPincode != null) {
-        selectedPlace = null;
-      }
+      // if (selectedCity != null ||
+      //     selectedDistrict != null ||
+      //     selectedPincode != null) {
+      //   selectedPlace = null;
+      // }
 
       print('Place selected: $place');
       print('Selected City: $selectedCity');
       print('Selected District: $selectedDistrict');
       print('Selected Pincode: $selectedPincode');
       print('Selected State: $selectedState');
+
+      _propertyFuture = fetchProperties(); // Update properties
     });
+  }
+
+  void _onFavoriteToggle(String propertyId, bool nowFavorited) async {
+    User? firebaseUser = FirebaseAuth.instance.currentUser;
+    if (firebaseUser == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('You need to be logged in to favorite properties.')),
+      );
+      return;
+    }
+
+    try {
+      if (nowFavorited) {
+        await UserService().addFavoriteProperty(firebaseUser.uid, propertyId);
+      } else {
+        await UserService()
+            .removeFavoriteProperty(firebaseUser.uid, propertyId);
+      }
+    } catch (e) {
+      print('Error toggling favorite: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to update favorite: $e')),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    User? firebaseUser = FirebaseAuth.instance.currentUser;
+    if (firebaseUser == null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('LANDANDPLOT')),
+        body: const Center(child: Text('Please log in to see properties')),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -209,8 +264,8 @@ class BuyLandScreenState extends State<BuyLandScreen> {
                 return IconButton(
                   icon: const Icon(Icons.logout),
                   onPressed: () async {
-                    Navigator.pushReplacementNamed(context, '/profile');
                     await FirebaseAuth.instance.signOut();
+                    Navigator.pushReplacementNamed(context, '/profile');
                   },
                 );
               } else {
@@ -289,6 +344,7 @@ class BuyLandScreenState extends State<BuyLandScreen> {
                       onDeleted: () {
                         setState(() {
                           selectedCity = null;
+                          _propertyFuture = fetchProperties();
                         });
                       },
                     ),
@@ -298,6 +354,7 @@ class BuyLandScreenState extends State<BuyLandScreen> {
                       onDeleted: () {
                         setState(() {
                           selectedDistrict = null;
+                          _propertyFuture = fetchProperties();
                         });
                       },
                     ),
@@ -307,6 +364,7 @@ class BuyLandScreenState extends State<BuyLandScreen> {
                       onDeleted: () {
                         setState(() {
                           selectedPincode = null;
+                          _propertyFuture = fetchProperties();
                         });
                       },
                     ),
@@ -317,6 +375,7 @@ class BuyLandScreenState extends State<BuyLandScreen> {
                       onDeleted: () {
                         setState(() {
                           selectedPlace = null;
+                          _propertyFuture = fetchProperties();
                         });
                       },
                     ),
@@ -344,24 +403,49 @@ class BuyLandScreenState extends State<BuyLandScreen> {
           const SizedBox(height: 2),
           // **Property Listings**
           Expanded(
-            child: FutureBuilder<List<Property>>(
-              future: fetchProperties(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
+            child: StreamBuilder<AppUser?>(
+              stream: UserService().getUserStream(firebaseUser.uid),
+              builder: (context, userSnapshot) {
+                if (userSnapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
-                } else if (snapshot.hasError) {
-                  print('Error in FutureBuilder: ${snapshot.error}');
-                  return const Center(child: Text('Error loading properties'));
-                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Center(child: Text('No properties found'));
-                } else {
-                  final properties = snapshot.data!;
-                  print('Number of properties fetched: ${properties.length}');
-                  // Toggle between Map View and List View
-                  return showMap
-                      ? PropertyMapView(properties: properties) // Map View
-                      : PropertyListView(properties: properties); // List View
                 }
+                if (userSnapshot.hasError) {
+                  return Center(child: Text('Error: ${userSnapshot.error}'));
+                }
+                final currentUser = userSnapshot.data;
+                if (currentUser == null) {
+                  return const Center(child: Text('No user data available.'));
+                }
+
+                return FutureBuilder<List<Property>>(
+                  future: _propertyFuture,
+                  builder: (context, propertySnapshot) {
+                    if (propertySnapshot.connectionState ==
+                        ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    } else if (propertySnapshot.hasError) {
+                      print(
+                          'Error in FutureBuilder: ${propertySnapshot.error}');
+                      return const Center(
+                          child: Text('Error loading properties'));
+                    } else if (!propertySnapshot.hasData ||
+                        propertySnapshot.data!.isEmpty) {
+                      return const Center(child: Text('No properties found'));
+                    } else {
+                      final properties = propertySnapshot.data!;
+                      print(
+                          'Number of properties fetched: ${properties.length}');
+                      return showMap
+                          ? PropertyMapView(properties: properties)
+                          : PropertyListView(
+                              properties: properties,
+                              favoritedPropertyIds:
+                                  currentUser.favoritedPropertyIds,
+                              onFavoriteToggle: _onFavoriteToggle,
+                            );
+                    }
+                  },
+                );
               },
             ),
           ),

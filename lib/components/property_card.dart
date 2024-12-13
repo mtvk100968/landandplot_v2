@@ -1,28 +1,54 @@
+// lib/components/property_card.dart
+
 import 'package:flutter/material.dart';
 import '../models/property_model.dart';
 import '../utils/format.dart';
 
-class PropertyCard extends StatelessWidget {
+class PropertyCard extends StatefulWidget {
   final Property property;
+  final bool isFavorited;
+  final ValueChanged<bool> onFavoriteToggle; // Reverted to ValueChanged<bool>
 
-  const PropertyCard({Key? key, required this.property}) : super(key: key);
+  const PropertyCard({
+    Key? key,
+    required this.property,
+    required this.isFavorited,
+    required this.onFavoriteToggle,
+  }) : super(key: key);
+
+  @override
+  _PropertyCardState createState() => _PropertyCardState();
+}
+
+class _PropertyCardState extends State<PropertyCard> {
+  late bool isFavorited;
+  void _toggleFavorite() {
+    // Directly toggle from the current widget.isFavorited value
+    widget.onFavoriteToggle(!widget.isFavorited);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    isFavorited = widget.isFavorited;
+  }
 
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 9), // Top and bottom padding
+      padding: const EdgeInsets.only(bottom: 9), // Bottom padding
       child: Stack(
         children: [
           // Image Carousel
           AspectRatio(
-            aspectRatio: 16 / 9,
+            aspectRatio: 16 / 10,
             child: PageView.builder(
-              itemCount: property.images.length,
+              itemCount: widget.property.images.length,
               itemBuilder: (context, index) {
                 return Image.network(
-                  property.images[index],
+                  widget.property.images[index],
                   fit: BoxFit.cover,
                   width: screenWidth,
                   errorBuilder: (context, error, stackTrace) {
@@ -43,13 +69,14 @@ class PropertyCard extends StatelessWidget {
             right: 0,
             child: Container(
               padding: const EdgeInsets.all(8),
+              // Optional: Uncomment to add a semi-transparent background
               // color: Colors.black.withOpacity(0.6),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Price and Unit
                   Text(
-                    '${formatPrice(property.pricePerUnit)}/${property.propertyType == 'Agri Land' ? 'ac' : 'sqyd'}',
+                    '${formatPrice(widget.property.pricePerUnit)}/${widget.property.propertyType == 'Agri Land' ? 'ac' : 'sqyd'}',
                     style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -61,7 +88,7 @@ class PropertyCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   // Town and City
                   Text(
-                    '${property.village ?? ''}, ${property.city ?? ''}',
+                    '${widget.property.village ?? ''}, ${widget.property.city ?? ''}',
                     style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w500,
@@ -72,7 +99,7 @@ class PropertyCard extends StatelessWidget {
                   const SizedBox(height: 2),
                   // Mandal and District
                   Text(
-                    '${property.mandal ?? ''}, ${property.district ?? ''}',
+                    '${widget.property.mandal ?? ''}, ${widget.property.district ?? ''}',
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
@@ -95,7 +122,7 @@ class PropertyCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(4), // Subtle rounding
               ),
               child: Text(
-                property.propertyType,
+                widget.property.propertyType,
                 style: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.bold,
@@ -137,9 +164,7 @@ class PropertyCard extends StatelessWidget {
                 const SizedBox(width: 12), // Added spacing between icons
                 // Heart Icon
                 GestureDetector(
-                  onTap: () {
-                    // Add your favorite functionality here
-                  },
+                  onTap: _toggleFavorite, // Use the local method
                   child: Container(
                     width: 40, // Increased width
                     height: 40, // Increased height
@@ -150,11 +175,13 @@ class PropertyCard extends StatelessWidget {
                       borderRadius:
                           BorderRadius.circular(8), // More rounded corners
                     ),
-                    alignment: Alignment.center, // Center the icon
-                    child: const Icon(
-                      Icons.favorite_border,
-                      size: 24, // Larger icon size
-                      color: Colors.white, // White icon on black background
+                    alignment: Alignment.center,
+                    child: Icon(
+                      widget.isFavorited
+                          ? Icons.favorite
+                          : Icons.favorite_border,
+                      size: 24,
+                      color: widget.isFavorited ? Colors.red : Colors.white,
                     ),
                   ),
                 ),
@@ -168,11 +195,12 @@ class PropertyCard extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
+                // Optional: Uncomment to add a semi-transparent background
                 // color: Colors.black.withOpacity(0.7),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(
-                '${formatValue(property.landArea)} ${property.propertyType == 'Agri Land' ? 'ac' : 'sqyd'}',
+                '${formatValue(widget.property.landArea)} ${widget.property.propertyType == 'Agri Land' ? 'ac' : 'sqyd'}',
                 style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
