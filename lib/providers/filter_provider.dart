@@ -1,4 +1,7 @@
+// filter_provider.dart
 import 'package:flutter/material.dart';
+
+enum PropertyType { Plot, FarmLand, AgriLand }
 
 class FilterProvider extends ChangeNotifier {
   // Property Type Filters
@@ -22,9 +25,40 @@ class FilterProvider extends ChangeNotifier {
   RangeValues selectedPriceRange = const RangeValues(0, 0);
   RangeValues selectedLandAreaRange = const RangeValues(0, 0);
 
+  // Internal method to convert string to PropertyType enum
+  PropertyType? _propertyTypeFromString(String typeString) {
+    switch (typeString) {
+      case 'Plot':
+        return PropertyType.Plot;
+      case 'Farm Land':
+        return PropertyType.FarmLand;
+      case 'Agri Land':
+        return PropertyType.AgriLand;
+      default:
+        return null;
+    }
+  }
+
+  // Internal method to convert PropertyType enum to string
+  String _propertyTypeToString(PropertyType type) {
+    switch (type) {
+      case PropertyType.Plot:
+        return 'Plot';
+      case PropertyType.FarmLand:
+        return 'Farm Land';
+      case PropertyType.AgriLand:
+        return 'Agri Land';
+      default:
+        return '';
+    }
+  }
+
   // Update Property Type Selection Logic
   void updatePropertyTypeSelection(String propertyType) {
-    if (propertyType == 'Agri Land') {
+    PropertyType? typeEnum = _propertyTypeFromString(propertyType);
+    if (typeEnum == null) return;
+
+    if (typeEnum == PropertyType.AgriLand) {
       isAgriLandSelected = !isAgriLandSelected;
 
       if (isAgriLandSelected) {
@@ -36,7 +70,7 @@ class FilterProvider extends ChangeNotifier {
         // Set units and ranges for Agri Land
         pricePerUnitUnit = 'per acre';
         landAreaUnit = 'acre';
-        minPricePerUnit = 500000; // 5L
+        minPricePerUnit = 0; // 0
         maxPricePerUnit = 50000000; // 5C
         minLandArea = 1;
         maxLandArea = 100;
@@ -48,9 +82,9 @@ class FilterProvider extends ChangeNotifier {
         resetFilters();
       }
     } else {
-      if (propertyType == 'Plot' && isPlotEnabled) {
+      if (typeEnum == PropertyType.Plot && isPlotEnabled) {
         isPlotSelected = !isPlotSelected;
-      } else if (propertyType == 'Farm Land' && isFarmLandEnabled) {
+      } else if (typeEnum == PropertyType.FarmLand && isFarmLandEnabled) {
         isFarmLandSelected = !isFarmLandSelected;
       }
 
@@ -61,7 +95,7 @@ class FilterProvider extends ChangeNotifier {
         // Set units and ranges for Plot or Farm Land
         pricePerUnitUnit = 'per sqyd';
         landAreaUnit = 'sqyd';
-        minPricePerUnit = 5000; // 5K
+        minPricePerUnit = 0; // 0
         maxPricePerUnit = 500000; // 5L
         minLandArea = 100;
         maxLandArea = 5000;

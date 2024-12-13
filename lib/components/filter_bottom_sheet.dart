@@ -1,4 +1,8 @@
+// filter_bottom_sheet.dart
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+enum PropertyType { Plot, FarmLand, AgriLand }
 
 class FilterBottomSheet extends StatefulWidget {
   final Map<String, dynamic>? currentFilters;
@@ -10,10 +14,8 @@ class FilterBottomSheet extends StatefulWidget {
 }
 
 class _FilterBottomSheetState extends State<FilterBottomSheet> {
-  // Property Type Filters
-  bool isPlotSelected = false;
-  bool isFarmLandSelected = false;
-  bool isAgriLandSelected = false;
+  // Property Type Filter - Only one can be selected
+  PropertyType? selectedPropertyType;
 
   // Units and Ranges
   String pricePerUnitUnit = '';
@@ -26,84 +28,138 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
   RangeValues selectedPriceRange = const RangeValues(0, 0);
   RangeValues selectedLandAreaRange = const RangeValues(0, 0);
 
+  bool isLoading = false;
+
   @override
   void initState() {
     super.initState();
-    // Initialize with current filters if provided
-    if (widget.currentFilters != null) {
-      selectedPriceRange = widget.currentFilters!['selectedPriceRange'] ??
-          const RangeValues(0, 0);
-      selectedLandAreaRange = widget.currentFilters!['selectedLandAreaRange'] ??
-          const RangeValues(0, 0);
-      pricePerUnitUnit = widget.currentFilters!['pricePerUnitUnit'] ?? '';
-      landAreaUnit = widget.currentFilters!['landAreaUnit'] ?? '';
-      List<String> propertyTypes = List<String>.from(
-          widget.currentFilters!['selectedPropertyTypes'] ?? []);
+    _loadFilters();
+  }
 
-      isPlotSelected = propertyTypes.contains('Plot');
-      isFarmLandSelected = propertyTypes.contains('Farm Land');
-      isAgriLandSelected = propertyTypes.contains('Agri Land');
-
-      // Set units and ranges based on selected property types
-      if (isAgriLandSelected) {
-        pricePerUnitUnit = 'per acre';
-        landAreaUnit = 'acre';
-        minPricePerUnit = 500000;
-        maxPricePerUnit = 50000000;
-        minLandArea = 1;
-        maxLandArea = 100;
-        selectedPriceRange = RangeValues(minPricePerUnit, maxPricePerUnit);
-        selectedLandAreaRange = RangeValues(minLandArea, maxLandArea);
-      } else if (isPlotSelected || isFarmLandSelected) {
-        pricePerUnitUnit = 'per sqyd';
-        landAreaUnit = 'sqyd';
-        minPricePerUnit = 5000;
-        maxPricePerUnit = 500000;
-        minLandArea = 100;
-        maxLandArea = 5000;
-        selectedPriceRange = RangeValues(minPricePerUnit, maxPricePerUnit);
-        selectedLandAreaRange = RangeValues(minLandArea, maxLandArea);
-      }
+  // Internal method to convert string to PropertyType enum
+  PropertyType? _propertyTypeFromString(String typeString) {
+    switch (typeString) {
+      case 'Plot':
+        return PropertyType.Plot;
+      case 'Farm Land':
+        return PropertyType.FarmLand;
+      case 'Agri Land':
+        return PropertyType.AgriLand;
+      default:
+        return null;
     }
   }
 
-  void updatePropertyTypeSelection(String propertyType) {
+  // Internal method to convert PropertyType enum to string
+  String _propertyTypeToString(PropertyType type) {
+    switch (type) {
+      case PropertyType.Plot:
+        return 'Plot';
+      case PropertyType.FarmLand:
+        return 'Farm Land';
+      case PropertyType.AgriLand:
+        return 'Agri Land';
+      default:
+        return '';
+    }
+  }
+
+  Future<void> _loadFilters() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
-      if (propertyType == 'Agri Land') {
-        isAgriLandSelected = !isAgriLandSelected;
-        if (isAgriLandSelected) {
-          isPlotSelected = false;
-          isFarmLandSelected = false;
+      selectedPriceRange = RangeValues(
+        prefs.getDouble('minPricePerUnit') ?? 0.0,
+        prefs.getDouble('maxPricePerUnit') ?? 0.0,
+      );
+      selectedLandAreaRange = RangeValues(
+        prefs.getDouble('minLandArea') ?? 0.0,
+        prefs.getDouble('maxLandArea') ?? 0.0,
+      );
+      pricePerUnitUnit = prefs.getString('pricePerUnitUnit') ?? '';
+      landAreaUnit = prefs.getString('landAreaUnit') ?? '';
+      List<String> propertyTypes =
+          prefs.getStringList('selectedPropertyTypes') ?? [];
+
+      if (propertyTypes.isNotEmpty) {
+        String typeString = propertyTypes.first;
+        selectedPropertyType = _propertyTypeFromString(typeString);
+
+        // Set units and ranges based on selected property type
+        if (selectedPropertyType == PropertyType.AgriLand) {
           pricePerUnitUnit = 'per acre';
           landAreaUnit = 'acre';
-          minPricePerUnit = 500000;
+          minPricePerUnit = 0;
           maxPricePerUnit = 50000000;
           minLandArea = 1;
           maxLandArea = 100;
           selectedPriceRange = RangeValues(minPricePerUnit, maxPricePerUnit);
           selectedLandAreaRange = RangeValues(minLandArea, maxLandArea);
-        } else {
-          resetFilters();
-        }
-      } else {
-        if (propertyType == 'Plot') {
-          isPlotSelected = !isPlotSelected;
-        } else if (propertyType == 'Farm Land') {
-          isFarmLandSelected = !isFarmLandSelected;
-        }
-
-        if (isPlotSelected || isFarmLandSelected) {
-          isAgriLandSelected = false;
+        } else if (selectedPropertyType == PropertyType.Plot ||
+            selectedPropertyType == PropertyType.FarmLand) {
           pricePerUnitUnit = 'per sqyd';
           landAreaUnit = 'sqyd';
-          minPricePerUnit = 5000;
+          minPricePerUnit = 0;
           maxPricePerUnit = 500000;
           minLandArea = 100;
           maxLandArea = 5000;
           selectedPriceRange = RangeValues(minPricePerUnit, maxPricePerUnit);
           selectedLandAreaRange = RangeValues(minLandArea, maxLandArea);
         } else {
+          // If no valid property type is selected, reset filters
           resetFilters();
+        }
+      } else {
+        // If no property type is selected, reset filters
+        resetFilters();
+      }
+    });
+  }
+
+  Future<void> _saveFilters() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String> propertyTypes = selectedPropertyType != null
+        ? [_propertyTypeToString(selectedPropertyType!)]
+        : [];
+
+    await prefs.setStringList('selectedPropertyTypes', propertyTypes);
+    await prefs.setDouble('minPricePerUnit', selectedPriceRange.start);
+    await prefs.setDouble('maxPricePerUnit', selectedPriceRange.end);
+    await prefs.setDouble('minLandArea', selectedLandAreaRange.start);
+    await prefs.setDouble('maxLandArea', selectedLandAreaRange.end);
+    await prefs.setString('pricePerUnitUnit', pricePerUnitUnit);
+    await prefs.setString('landAreaUnit', landAreaUnit);
+  }
+
+  void togglePropertyType(PropertyType type) {
+    setState(() {
+      if (selectedPropertyType == type) {
+        // If the same type is tapped again, deselect it
+        selectedPropertyType = null;
+        resetFilters();
+      } else {
+        // Select the new type
+        selectedPropertyType = type;
+
+        // Set units and ranges based on selected property type
+        if (selectedPropertyType == PropertyType.AgriLand) {
+          pricePerUnitUnit = 'per acre';
+          landAreaUnit = 'acre';
+          minPricePerUnit = 0;
+          maxPricePerUnit = 50000000;
+          minLandArea = 1;
+          maxLandArea = 100;
+          selectedPriceRange = RangeValues(minPricePerUnit, maxPricePerUnit);
+          selectedLandAreaRange = RangeValues(minLandArea, maxLandArea);
+        } else if (selectedPropertyType == PropertyType.Plot ||
+            selectedPropertyType == PropertyType.FarmLand) {
+          pricePerUnitUnit = 'per sqyd';
+          landAreaUnit = 'sqyd';
+          minPricePerUnit = 0;
+          maxPricePerUnit = 500000;
+          minLandArea = 100;
+          maxLandArea = 5000;
+          selectedPriceRange = RangeValues(minPricePerUnit, maxPricePerUnit);
+          selectedLandAreaRange = RangeValues(minLandArea, maxLandArea);
         }
       }
     });
@@ -111,9 +167,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
 
   void resetFilters() {
     setState(() {
-      isPlotSelected = false;
-      isFarmLandSelected = false;
-      isAgriLandSelected = false;
+      selectedPropertyType = null;
       pricePerUnitUnit = '';
       landAreaUnit = '';
       minPricePerUnit = 0.0;
@@ -138,117 +192,205 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
     }
   }
 
+  void applyFilters() async {
+    setState(() {
+      isLoading = true;
+    });
+
+    // Simulate a delay for applying filters
+    await Future.delayed(const Duration(seconds: 1));
+
+    await _saveFilters();
+
+    setState(() {
+      isLoading = false;
+    });
+
+    // Show a SnackBar as visual feedback
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Filters Applied')),
+    );
+
+    // Collect selected property types as a list
+    List<String> selectedPropertyTypesList = selectedPropertyType != null
+        ? [_propertyTypeToString(selectedPropertyType!)]
+        : [];
+
+    // Pass the selected filters back to the previous screen
+    Navigator.pop(context, {
+      'selectedPropertyTypes': selectedPropertyTypesList,
+      'selectedPriceRange': selectedPriceRange,
+      'pricePerUnitUnit': pricePerUnitUnit,
+      'selectedLandAreaRange': selectedLandAreaRange,
+      'landAreaUnit': landAreaUnit,
+    });
+  }
+
+  void showUnitsExplanation() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Units Explanation'),
+        content: const Text('C = Crores, L = Lakhs, K = Thousands'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget buildPropertyTypeRadio(
+      PropertyType type, IconData icon, String label) {
+    return RadioListTile<PropertyType>(
+      secondary: Icon(icon, semanticLabel: '$label icon'),
+      title: Text(label, style: const TextStyle(fontSize: 16)),
+      value: type,
+      groupValue: selectedPropertyType,
+      onChanged: (PropertyType? value) {
+        togglePropertyType(type);
+      },
+      controlAffinity: ListTileControlAffinity.leading,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: MediaQuery.of(context).size.height *
-          0.7, // Take up 90% of screen height
-      padding: const EdgeInsets.all(16.0),
-      child: SingleChildScrollView(
-        child: Column(
-          children: [
-            const Text(
-              'Select Property Type',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            CheckboxListTile(
-              title: const Text('Plot'),
-              value: isPlotSelected,
-              onChanged: (bool? value) {
-                updatePropertyTypeSelection('Plot');
-              },
-            ),
-            CheckboxListTile(
-              title: const Text('Farm Land'),
-              value: isFarmLandSelected,
-              onChanged: (bool? value) {
-                updatePropertyTypeSelection('Farm Land');
-              },
-            ),
-            CheckboxListTile(
-              title: const Text('Agri Land'),
-              value: isAgriLandSelected,
-              onChanged: (bool? value) {
-                updatePropertyTypeSelection('Agri Land');
-              },
-            ),
-            if (pricePerUnitUnit.isNotEmpty && landAreaUnit.isNotEmpty)
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+    // Adaptive height based on screen size
+    double screenHeight = MediaQuery.of(context).size.height;
+    double containerHeight = screenHeight * 0.7;
+    if (screenHeight < 600) {
+      containerHeight = screenHeight * 0.9;
+    }
+
+    return Theme(
+      data: Theme.of(context).copyWith(
+        colorScheme: ColorScheme.light(
+          primary: Colors.green,
+          onPrimary: Colors.white,
+          secondary: Colors.greenAccent,
+        ),
+      ),
+      child: Container(
+        height: containerHeight,
+        padding: const EdgeInsets.all(16.0),
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              // Header with title and info icon
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const SizedBox(height: 16),
-                  Text(
-                    'Price per unit ($pricePerUnitUnit)',
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.bold),
+                  const Text(
+                    'Filter Properties',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
-                  RangeSlider(
-                    values: selectedPriceRange,
-                    min: minPricePerUnit,
-                    max: maxPricePerUnit,
-                    divisions: 10,
-                    labels: RangeLabels(
-                      formatPrice(selectedPriceRange.start),
-                      formatPrice(selectedPriceRange.end),
-                    ),
-                    onChanged: (RangeValues values) {
-                      setState(() {
-                        selectedPriceRange = values;
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Land area ($landAreaUnit)',
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  RangeSlider(
-                    values: selectedLandAreaRange,
-                    min: minLandArea,
-                    max: maxLandArea,
-                    divisions: 10,
-                    labels: RangeLabels(
-                      selectedLandAreaRange.start.toStringAsFixed(1),
-                      selectedLandAreaRange.end.toStringAsFixed(1),
-                    ),
-                    onChanged: (RangeValues values) {
-                      setState(() {
-                        selectedLandAreaRange = values;
-                      });
-                    },
+                  IconButton(
+                    icon: const Icon(Icons.info_outline),
+                    onPressed: showUnitsExplanation,
+                    tooltip: 'Units Explanation',
                   ),
                 ],
               ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () {
-                // Collect selected property types
-                List<String> selectedPropertyTypes = [];
-                if (isPlotSelected) selectedPropertyTypes.add('Plot');
-                if (isFarmLandSelected) selectedPropertyTypes.add('Farm Land');
-                if (isAgriLandSelected) selectedPropertyTypes.add('Agri Land');
-
-                // Debugging: Print the selected filters
-                print('Selected Property Types: $selectedPropertyTypes');
-                print('Selected Price Range: $selectedPriceRange');
-                print('Price Per Unit Unit: $pricePerUnitUnit');
-                print('Selected Land Area Range: $selectedLandAreaRange');
-                print('Land Area Unit: $landAreaUnit');
-
-                // Pass the selected filters back to BuyLandScreen
-                Navigator.pop(context, {
-                  'selectedPropertyTypes': selectedPropertyTypes,
-                  'selectedPriceRange': selectedPriceRange,
-                  'pricePerUnitUnit': pricePerUnitUnit,
-                  'selectedLandAreaRange': selectedLandAreaRange,
-                  'landAreaUnit': landAreaUnit,
-                });
-              },
-              child: const Text('Apply Filters'),
-            ),
-            const SizedBox(height: 16),
-          ],
+              const SizedBox(height: 8),
+              // Property Type Selection
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Select Property Type',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ),
+              buildPropertyTypeRadio(
+                  PropertyType.Plot, Icons.landscape, 'Plot'),
+              buildPropertyTypeRadio(
+                  PropertyType.FarmLand, Icons.agriculture, 'Farm Land'),
+              buildPropertyTypeRadio(
+                  PropertyType.AgriLand, Icons.grass, 'Agri Land'),
+              const SizedBox(height: 16),
+              // Price Range Selection
+              if (pricePerUnitUnit.isNotEmpty)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Price ($pricePerUnitUnit): ${formatPrice(selectedPriceRange.start)} - ${formatPrice(selectedPriceRange.end)}',
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                    RangeSlider(
+                      values: selectedPriceRange,
+                      min: minPricePerUnit,
+                      max: maxPricePerUnit,
+                      divisions: 10,
+                      labels: RangeLabels(
+                        formatPrice(selectedPriceRange.start),
+                        formatPrice(selectedPriceRange.end),
+                      ),
+                      onChanged: (RangeValues values) {
+                        setState(() {
+                          selectedPriceRange = values;
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              const SizedBox(height: 16),
+              // Land Area Range Selection
+              if (landAreaUnit.isNotEmpty)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Area ($landAreaUnit): ${selectedLandAreaRange.start.toStringAsFixed(1)} - ${selectedLandAreaRange.end.toStringAsFixed(1)}',
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                    RangeSlider(
+                      values: selectedLandAreaRange,
+                      min: minLandArea,
+                      max: maxLandArea,
+                      divisions: 10,
+                      labels: RangeLabels(
+                        selectedLandAreaRange.start.toStringAsFixed(1),
+                        selectedLandAreaRange.end.toStringAsFixed(1),
+                      ),
+                      onChanged: (RangeValues values) {
+                        setState(() {
+                          selectedLandAreaRange = values;
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              const SizedBox(height: 24),
+              // Action Buttons: Reset and Apply
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  TextButton(
+                    onPressed: resetFilters,
+                    child: const Text('Reset Filters'),
+                  ),
+                  ElevatedButton(
+                    onPressed: isLoading ? null : applyFilters,
+                    child: isLoading
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text('Apply Filters'),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
