@@ -95,11 +95,16 @@ class _Step2PropertyDetailsState extends State<Step2PropertyDetails> {
                 TextFormField(
                   controller: _areaController,
                   decoration: InputDecoration(
-                    labelText: isAgri ? 'Area (in acres)' : 'Area (in sqyds)',
+                    labelText: propertyProvider.propertyType == 'Agri Land'
+                        ? 'Area (in acres)'
+                        : propertyProvider.propertyType == 'Apartment'
+                        ? 'Area (in sq ft)'
+                        : 'Area (in sq yds)',
                   ),
                   keyboardType: TextInputType.numberWithOptions(decimal: true),
                   validator: Validators.areaValidator,
                   onChanged: (value) {
+                    // Format the input value to the Indian number system
                     String formattedValue = _formatToIndianSystem(value);
                     _areaController.value = TextEditingValue(
                       text: formattedValue,
@@ -107,11 +112,13 @@ class _Step2PropertyDetailsState extends State<Step2PropertyDetails> {
                         offset: formattedValue.length,
                       ),
                     );
-                    double? parsedValue =
-                        double.tryParse(value.replaceAll(',', ''));
+
+                    // Parse the value to double and update the provider
+                    double? parsedValue = double.tryParse(value.replaceAll(',', ''));
                     propertyProvider.setArea(parsedValue ?? 0.0);
                   },
                 ),
+
                 SizedBox(height: 20),
 
                 // Price per Unit Field
@@ -131,7 +138,7 @@ class _Step2PropertyDetailsState extends State<Step2PropertyDetails> {
                       ),
                     );
                     double? parsedValue =
-                        double.tryParse(value.replaceAll(',', ''));
+                    double.tryParse(value.replaceAll(',', ''));
                     propertyProvider.setPricePerUnit(parsedValue ?? 0.0);
                   },
                 ),

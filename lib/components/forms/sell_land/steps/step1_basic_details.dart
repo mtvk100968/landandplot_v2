@@ -1,77 +1,152 @@
 // lib/components/widgets/steps/step1_basic_details.dart
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
-import '../../../../providers/property_provider.dart';
-import '../../../../utils/validators.dart';
 
-class Step1BasicDetails extends StatelessWidget {
+import '../../../../models/user_model.dart';
+import '../../../../providers/property_provider.dart';
+
+class Step1BasicDetails extends StatefulWidget {
   final GlobalKey<FormState> formKey;
 
   const Step1BasicDetails({Key? key, required this.formKey}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    final propertyProvider = Provider.of<PropertyProvider>(context);
+  _Step1BasicDetailsState createState() => _Step1BasicDetailsState();
+}
 
-    return SingleChildScrollView(
-        child: Form(
-      key: formKey,
+class _Step1BasicDetailsState extends State<Step1BasicDetails> {
+  final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _ownerNameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+
+  AppUser? currentUser;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchCurrentUser();
+  }
+
+  Future<void> _fetchCurrentUser() async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user != null) {
+      // Attempt to fetch phone number from Firebase Auth
+      _phoneController.text = user.phoneNumber ?? '';
+
+      try {
+        // Fetch additional details from Firestore
+        final doc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
+
+        if (doc.exists) {
+          setState(() {
+            currentUser = AppUser.fromDocument(doc.data()!);
+            _emailController.text = currentUser?.email ?? '';
+            _phoneController.text = currentUser?.phoneNumber ??
+                user.phoneNumber ??
+                ''; // Use Firestore as fallback
+            _nameController.text = currentUser?.name ?? '';
+          });
+        }
+      } catch (e) {
+        print("Error fetching Firestore user data: $e");
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Form(
+      key: widget.formKey,
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            TextFormField(
-              decoration: InputDecoration(labelText: 'Your Phone Number'),
-              keyboardType: TextInputType.phone,
-              initialValue: propertyProvider.phoneNumber.isNotEmpty
-                  ? propertyProvider.phoneNumber
-                  : '+91',
-              validator: Validators.phoneValidator,
-              onChanged: (value) => propertyProvider.setPhoneNumber(value),
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'^\+?[0-9]*$')),
-                LengthLimitingTextInputFormatter(13),
-              ],
+            const Text(
+              "Step 1: Basic Details",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 16),
             TextFormField(
-              decoration: InputDecoration(labelText: 'Your Name'),
-              initialValue: propertyProvider.name,
-              validator: Validators.requiredValidator,
-              onChanged: (value) => propertyProvider.setName(value),
+              controller: _phoneController,
+              decoration: const InputDecoration(
+                labelText: "Your Phone Number",
+                prefixText: "+91",
+              ),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 8),
             TextFormField(
-              decoration: InputDecoration(labelText: 'Property Owner Name'),
-              initialValue: propertyProvider.propertyOwnerName,
-              validator: Validators.requiredValidator,
-              onChanged: (value) =>
-                  propertyProvider.setPropertyOwnerName(value),
+              controller: _emailController,
+              decoration: InputDecoration(labelText: 'Your Email'),
+              onChanged: (value) {
+                Provider.of<PropertyProvider>(context, listen: false).email =
+                    value;
+              },
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 8),
+            TextFormField(
+              controller: _nameController,
+              decoration: const InputDecoration(
+                labelText: "Your Name",
+              ),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Please enter your name';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 8),
+            TextFormField(
+              controller: _ownerNameController,
+              decoration: const InputDecoration(
+                labelText: "Property Owner Name",
+              ),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Please enter the property owner\'s name';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 8),
+            // Dropdown for selecting property type
             DropdownButtonFormField<String>(
-              decoration: InputDecoration(labelText: 'Property Type'),
-              value: propertyProvider.propertyType,
-              items: ['Plot', 'Farm Land', 'Agri Land']
-                  .map((type) => DropdownMenuItem(
-                        value: type,
-                        child: Text(type[0].toUpperCase() +
-                            type.substring(1).replaceAll('_', ' ')),
-                      ))
-                  .toList(),
+              items: const [
+                DropdownMenuItem(value: "Agri Land", child: Text("Agri Land")),
+                DropdownMenuItem(value: "Farm Land", child: Text("Farm")),
+                DropdownMenuItem(value: "Plot", child: Text("Plot")),
+                DropdownMenuItem(value: "House", child: Text("House")),
+                DropdownMenuItem(value: "Apartment", child: Text("Apartment")),
+              ],
               onChanged: (value) {
                 if (value != null) {
-                  propertyProvider.setPropertyType(value);
+                  // Access PropertyProvider and update the property type
+                  Provider.of<PropertyProvider>(context, listen: false)
+                      .setPropertyType(value);
                 }
               },
-              validator: Validators.requiredValidator,
+              decoration: const InputDecoration(
+                labelText: "Property Type",
+              ),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Please select a property type';
+                }
+                return null;
+              },
             ),
           ],
         ),
       ),
-    ));
+    );
   }
 }

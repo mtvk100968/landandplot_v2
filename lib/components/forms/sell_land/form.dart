@@ -1,5 +1,6 @@
 // lib/widgets/sell_land_form/sell_land_form.dart
 import 'dart:io';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import './steps/step1_basic_details.dart';
 import './steps/step2_property_details.dart';
@@ -26,7 +27,7 @@ class _SellLandFormState extends State<SellLandForm> {
   // Form Keys for each step
   final List<GlobalKey<FormState>> _formKeys = List.generate(
     5,
-    (_) => GlobalKey<FormState>(),
+        (_) => GlobalKey<FormState>(),
   );
 
   void _nextPage() {
@@ -64,24 +65,29 @@ class _SellLandFormState extends State<SellLandForm> {
 
   Future<void> _submitForm() async {
     final propertyProvider =
-        Provider.of<PropertyProvider>(context, listen: false);
-    final propertyService =
-        Provider.of<PropertyService>(context, listen: false);
+    Provider.of<PropertyProvider>(context, listen: false);
 
-    // Gather form data
-    // Convert provider data to Property model
-    // Assuming you have a Property model defined in property_model.dart
+    // Ensure all form steps are validated
+    bool allValid = true;
+    for (var i = 0; i < _formKeys.length; i++) {
+      if (!(_formKeys[i].currentState?.validate() ?? false)) {
+        print("Validation failed at step: $i");
+        allValid = false;
+        break;
+      }
+    }
 
-    final property = propertyProvider.toProperty();
-
-    // Retrieve media files directly from the provider
-    List<File> images = propertyProvider.imageFiles;
-    List<File> videos = propertyProvider.videoFiles;
-    List<File> documents = propertyProvider.documentFiles;
-
-    if (images.isEmpty) {
+    if (!allValid) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please add at least one image.')),
+        SnackBar(content: Text('Please fill in all required fields.')),
+      );
+      return;
+    }
+
+    // Check for missing required fields
+    if (propertyProvider.latitude == null || propertyProvider.longitude == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Please select a location on the map.')),
       );
       return;
     }
@@ -94,26 +100,40 @@ class _SellLandFormState extends State<SellLandForm> {
         builder: (context) => Center(child: CircularProgressIndicator()),
       );
 
-      // Upload property with media files
-      String propertyId = await propertyService.addProperty(
-        property,
-        images,
-        videos: videos,
-        documents: documents,
-      );
+      // Prepare data for submission
+      final propertyData = {
+        'phoneNumber': propertyProvider.phoneNumber,
+        'email': propertyProvider.email.isNotEmpty ? propertyProvider.email : null,
+        'name': propertyProvider.name,
+        'propertyOwner': propertyProvider.propertyOwner.isNotEmpty ? propertyProvider.propertyOwner : null,
+        'propertyType': propertyProvider.propertyType,
+        'area': propertyProvider.area,
+        'pricePerUnit': propertyProvider.pricePerUnit,
+        'totalPrice': propertyProvider.totalPrice,
+        'surveyNumber': propertyProvider.surveyNumber,
+        'pincode': propertyProvider.pincode,
+        'address': propertyProvider.address,
+        'district': propertyProvider.district,
+        'city': propertyProvider.city,
+        'state': propertyProvider.state,
+        'latitude': propertyProvider.latitude,
+        'longitude': propertyProvider.longitude,
+      };
+
+      // Save data to Firestore
+      await FirebaseFirestore.instance.collection('properties').add(propertyData);
 
       // Dismiss the loading indicator
       Navigator.of(context).pop();
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text('Property Listed Successfully! ID: $propertyId')),
+        SnackBar(content: Text('Property listed successfully!')),
       );
 
-      // Optionally, reset the form
+      // Reset form data
       propertyProvider.resetForm();
 
-      // Navigate to another screen if desired
+      // Optionally, navigate to another screen
     } catch (e) {
       // Dismiss the loading indicator
       Navigator.of(context).pop();
@@ -171,10 +191,10 @@ class _SellLandFormState extends State<SellLandForm> {
               children: [
                 _currentPage > 0
                     ? ElevatedButton.icon(
-                        onPressed: _prevPage,
-                        icon: Icon(Icons.arrow_back),
-                        label: Text('Back'),
-                      )
+                  onPressed: _prevPage,
+                  icon: Icon(Icons.arrow_back),
+                  label: Text('Back'),
+                )
                     : SizedBox(),
                 ElevatedButton.icon(
                   onPressed: _nextPage,

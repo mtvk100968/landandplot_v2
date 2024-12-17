@@ -11,6 +11,7 @@ import '../../components/filter_bottom_sheet.dart';
 import '../../components/location_search_bar.dart';
 import '../../services/user_service.dart';
 import '../../models/user_model.dart';
+import 'login_screen.dart';
 
 class BuyLandScreen extends StatefulWidget {
   const BuyLandScreen({Key? key}) : super(key: key);
@@ -40,11 +41,16 @@ class BuyLandScreenState extends State<BuyLandScreen> {
   String? selectedPincode;
   String? selectedState;
 
+  // Current user
+  AppUser? currentUser;
+
+  // Store the properties future
   Future<List<Property>>? _propertyFuture;
 
   @override
   void initState() {
     super.initState();
+    _loadCurrentUser();
     _propertyFuture = fetchProperties();
   }
 
@@ -54,6 +60,31 @@ class BuyLandScreenState extends State<BuyLandScreen> {
     super.dispose();
   }
 
+  // Load current user data
+  Future<void> _loadCurrentUser() async {
+    User? firebaseUser = FirebaseAuth.instance.currentUser;
+    if (firebaseUser != null) {
+      AppUser? user = await UserService().getUserById(firebaseUser.uid);
+      setState(() {
+        currentUser = user;
+      });
+    } else {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => LoginScreen(
+              propertyList: [],
+              favoritedPropertyIds: [],
+              onFavoriteToggle: (propertyId, isFavorited) {},
+            ),
+          ),
+        );
+      });
+    }
+  }
+
+  // Fetch properties with applied filters
   Future<List<Property>> fetchProperties() async {
     print('fetchProperties called with filters:');
     print('selectedPropertyTypes: $selectedPropertyTypes');
@@ -100,14 +131,14 @@ class BuyLandScreenState extends State<BuyLandScreen> {
       return await propertyService.getPropertiesWithFilters(
         propertyTypes: selectedPropertyTypes,
         minPricePerUnit:
-            selectedPriceRange.start > 0 ? selectedPriceRange.start : null,
+        selectedPriceRange.start > 0 ? selectedPriceRange.start : null,
         maxPricePerUnit:
-            selectedPriceRange.end > 0 ? selectedPriceRange.end : null,
+        selectedPriceRange.end > 0 ? selectedPriceRange.end : null,
         minLandArea: selectedLandAreaRange.start > 0
             ? selectedLandAreaRange.start
             : null,
         maxLandArea:
-            selectedLandAreaRange.end > 0 ? selectedLandAreaRange.end : null,
+        selectedLandAreaRange.end > 0 ? selectedLandAreaRange.end : null,
         minLat: minLat,
         maxLat: maxLat,
         minLon: minLon,
@@ -185,19 +216,12 @@ class BuyLandScreenState extends State<BuyLandScreen> {
         }
       }
 
-      // In _handlePlaceSelected method, remove the code that resets selectedPlace to null
-      // when city, district or pincode is found.
-      // This ensures that for point-based searches (like a single building),
-      // the selectedPlace remains and can be used for radius-based filtering.
-
-      // Just remove the following lines from _handlePlaceSelected():
-
       // If the place is an area (e.g., city, district), clear the point location
-      // if (selectedCity != null ||
-      //     selectedDistrict != null ||
-      //     selectedPincode != null) {
-      //   selectedPlace = null;
-      // }
+      if (selectedCity != null ||
+          selectedDistrict != null ||
+          selectedPincode != null) {
+        selectedPlace = null;
+      }
 
       print('Place selected: $place');
       print('Selected City: $selectedCity');
@@ -209,23 +233,73 @@ class BuyLandScreenState extends State<BuyLandScreen> {
     });
   }
 
-  void _onFavoriteToggle(String propertyId, bool nowFavorited) async {
-    User? firebaseUser = FirebaseAuth.instance.currentUser;
-    if (firebaseUser == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('You need to be logged in to favorite properties.')),
+  // Toggle favorite status
+  // void _onFavoriteToggle(String propertyId, bool isFavorited) async {
+  //   if (currentUser == null) {
+  //     // Prompt user to log in
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       const SnackBar(
+  //           content: Text('You need to be logged in to favorite properties.')),
+  //     );
+  //     return;
+  //   }
+  //
+  //   try {
+  //     if (isFavorited) {
+  //       // If currently favorited, remove from favorites
+  //       await UserService()
+  //           .removeFavoriteProperty(currentUser!.uid, propertyId);
+  //     } else {
+  //       // If not favorited, add to favorites
+  //       await UserService().addFavoriteProperty(currentUser!.uid, propertyId);
+  //     }
+  //
+  //     // Reload current user data to update favoritedPropertyIds
+  //     AppUser? updatedUser = await UserService().getUserById(currentUser!.uid);
+  //     setState(() {
+  //       currentUser = updatedUser;
+  //     });
+  //   } catch (e) {
+  //     print('Error toggling favorite: $e');
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text('Failed to update favorite: $e')),
+  //     );
+  //   }
+  // }
+
+  void _onFavoriteToggle(String propertyId, bool isFavorited) async {
+    User? user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      // Navigate to LoginScreen if the user is not logged in
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => LoginScreen(
+            propertyList: [],
+            favoritedPropertyIds: [],
+            onFavoriteToggle: (propertyId, isFavorited) {},
+          ),
+        ),
       );
-      return;
+      return; // Stop further execution
     }
 
+    // Proceed with favoriting or unfavoriting the property
     try {
-      if (nowFavorited) {
-        await UserService().addFavoriteProperty(firebaseUser.uid, propertyId);
+      if (isFavorited) {
+        // Remove property from favorites
+        await UserService().removeFavoriteProperty(user.uid, propertyId);
       } else {
-        await UserService()
-            .removeFavoriteProperty(firebaseUser.uid, propertyId);
+        // Add property to favorites
+        await UserService().addFavoriteProperty(user.uid, propertyId);
       }
+
+      // Reload user data to update favorite property IDs
+      AppUser? updatedUser = await UserService().getUserById(user.uid);
+      setState(() {
+        currentUser = updatedUser;
+      });
     } catch (e) {
       print('Error toggling favorite: $e');
       ScaffoldMessenger.of(context).showSnackBar(
@@ -236,14 +310,6 @@ class BuyLandScreenState extends State<BuyLandScreen> {
 
   @override
   Widget build(BuildContext context) {
-    User? firebaseUser = FirebaseAuth.instance.currentUser;
-    if (firebaseUser == null) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('LANDANDPLOT')),
-        body: const Center(child: Text('Please log in to see properties')),
-      );
-    }
-
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -259,13 +325,22 @@ class BuyLandScreenState extends State<BuyLandScreen> {
             future: isLoggedIn(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const SizedBox.shrink(); // Or a placeholder widget
+                return const SizedBox.shrink();
               } else if (snapshot.hasData && snapshot.data!) {
                 return IconButton(
                   icon: const Icon(Icons.logout),
                   onPressed: () async {
                     await FirebaseAuth.instance.signOut();
-                    Navigator.pushReplacementNamed(context, '/profile');
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => LoginScreen(
+                          propertyList: [],
+                          favoritedPropertyIds: [],
+                          onFavoriteToggle: (propertyId, isFavorited) {},
+                        ),
+                      ),
+                    );
                   },
                 );
               } else {
@@ -403,49 +478,30 @@ class BuyLandScreenState extends State<BuyLandScreen> {
           const SizedBox(height: 2),
           // **Property Listings**
           Expanded(
-            child: StreamBuilder<AppUser?>(
-              stream: UserService().getUserStream(firebaseUser.uid),
-              builder: (context, userSnapshot) {
-                if (userSnapshot.connectionState == ConnectionState.waiting) {
+            child: FutureBuilder<List<Property>>(
+              future: _propertyFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
+                } else if (snapshot.hasError) {
+                  print('Error in FutureBuilder: ${snapshot.error}');
+                  return const Center(child: Text('Error loading properties'));
+                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return const Center(child: Text('No properties found'));
+                } else {
+                  final properties = snapshot.data!;
+                  print('Number of properties fetched: ${properties.length}');
+                  // Toggle between Map View and List View
+                  return showMap
+                      ? PropertyMapView(properties: properties) // Map View
+                      : PropertyListView(
+                    properties: properties,
+                    favoritedPropertyIds:
+                    currentUser?.favoritedPropertyIds ?? [],
+                    onFavoriteToggle:
+                    _onFavoriteToggle, // Updated callback
+                  ); // List View
                 }
-                if (userSnapshot.hasError) {
-                  return Center(child: Text('Error: ${userSnapshot.error}'));
-                }
-                final currentUser = userSnapshot.data;
-                if (currentUser == null) {
-                  return const Center(child: Text('No user data available.'));
-                }
-
-                return FutureBuilder<List<Property>>(
-                  future: _propertyFuture,
-                  builder: (context, propertySnapshot) {
-                    if (propertySnapshot.connectionState ==
-                        ConnectionState.waiting) {
-                      return const Center(child: CircularProgressIndicator());
-                    } else if (propertySnapshot.hasError) {
-                      print(
-                          'Error in FutureBuilder: ${propertySnapshot.error}');
-                      return const Center(
-                          child: Text('Error loading properties'));
-                    } else if (!propertySnapshot.hasData ||
-                        propertySnapshot.data!.isEmpty) {
-                      return const Center(child: Text('No properties found'));
-                    } else {
-                      final properties = propertySnapshot.data!;
-                      print(
-                          'Number of properties fetched: ${properties.length}');
-                      return showMap
-                          ? PropertyMapView(properties: properties)
-                          : PropertyListView(
-                              properties: properties,
-                              favoritedPropertyIds:
-                                  currentUser.favoritedPropertyIds,
-                              onFavoriteToggle: _onFavoriteToggle,
-                            );
-                    }
-                  },
-                );
               },
             ),
           ),

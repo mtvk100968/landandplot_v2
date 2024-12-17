@@ -1,11 +1,8 @@
-// lib/components/views/property_list_view.dart
-
 import 'package:flutter/material.dart';
 import '../../../models/property_model.dart';
 import '../property_card.dart';
 
-typedef FavoriteToggleCallback = void Function(
-    String propertyId, bool isFavorited);
+typedef FavoriteToggleCallback = void Function(String propertyId, bool isFavorited);
 
 class PropertyListView extends StatelessWidget {
   final List<Property> properties;
@@ -36,9 +33,8 @@ class PropertyListView extends StatelessWidget {
         return PropertyCard(
           property: property,
           isFavorited: isFavorited,
-          onFavoriteToggle: (newIsFavorited) {
-            // Pass the property.id along with the new favorited status
-            onFavoriteToggle(property.id, newIsFavorited);
+          onFavoriteToggle: (Property property) {
+            onFavoriteToggle(property.id, !isFavorited); // Pass correct arguments
           },
         );
       },

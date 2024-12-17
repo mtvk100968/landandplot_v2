@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../../screens/buy_land_screen.dart';
 import '../../screens/sell_land_screen.dart';
@@ -40,7 +41,7 @@ class BottomNavBarState extends State<BottomNavBar> {
   // Handle system back button press
   void _onPopInvokedWithResult(bool didPop, Object? result) {
     final NavigatorState currentNavigator =
-        _navigatorKeys[_selectedIndex].currentState!;
+    _navigatorKeys[_selectedIndex].currentState!;
     if (currentNavigator.canPop()) {
       currentNavigator.pop();
     } else {
@@ -66,7 +67,11 @@ class BottomNavBarState extends State<BottomNavBar> {
         child = const AlertsScreen();
         break;
       case 4:
-        child = const ProfileScreen();
+        child = ProfileScreen(
+          propertyList: const [],
+          favoritedPropertyIds: const [],
+          onFavoriteToggle: (String propertyId, bool isFavorited) {},
+        );
         break;
       default:
         child = const BuyLandScreen();
@@ -94,7 +99,7 @@ class BottomNavBarState extends State<BottomNavBar> {
         body: Stack(
           children: List.generate(
             _navigatorKeys.length,
-            (index) => _buildOffstageNavigator(index),
+                (index) => _buildOffstageNavigator(index),
           ),
         ),
         bottomNavigationBar: BottomNavigationBar(

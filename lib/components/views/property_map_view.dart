@@ -25,7 +25,7 @@ class PropertyMapViewState extends State<PropertyMapView> {
 
   // Create a ClusterManagerId
   final ClusterManagerId _clusterManagerId =
-      ClusterManagerId('propertyClusterManager');
+  ClusterManagerId('propertyClusterManager');
 
   // Create a ClusterManager
   late ClusterManager _clusterManager;
@@ -48,11 +48,12 @@ class PropertyMapViewState extends State<PropertyMapView> {
 
     for (Property property in widget.properties) {
       // Format the price
-      final String priceText = formatPrice(property.totalPrice);
+      final String priceText =
+      formatPrice(property.totalPrice, property.propertyType);
 
       // Create custom marker with the formatted price
       final BitmapDescriptor customIcon =
-          await CustomMarker.createMarker(priceText);
+      await CustomMarker.createMarker(priceText);
 
       // Create marker for each property
       markers.add(
@@ -62,7 +63,7 @@ class PropertyMapViewState extends State<PropertyMapView> {
           icon: customIcon,
           infoWindow: InfoWindow(
             title:
-                'Land Area: ${property.landArea} ${property.propertyType == 'agri land' ? 'Acres' : 'Sq Yards'}',
+            'Land Area: ${property.landArea} ${property.propertyType == 'agri land' ? 'Acres' : 'Sq Yards'}',
             snippet: 'Price: $priceText',
           ),
           // Associate this marker with the ClusterManager

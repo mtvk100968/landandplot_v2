@@ -9,20 +9,15 @@ import 'dart:developer' as developer;
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class PropertyProvider with ChangeNotifier {
-  Timestamp getCurrentTimestampInIST() {
-    DateTime nowUtc = DateTime.now().toUtc();
-    DateTime nowIst = nowUtc.add(Duration(hours: 5, minutes: 30));
-    return Timestamp.fromDate(nowIst);
-  }
 
   // Step 1: Basic Details
   String _phoneNumber = '';
   String _name = '';
   String _propertyOwnerName = '';
-  String _propertyType = 'Plot'; // Default value
-
-  // **New Field: User Type**
+  String _propertyType = '';
   String _userType = 'Owner'; // Default to 'Owner'
+  String _email = '';
+  String _propertyOwner = '';
 
   // Step 2: Property Details
   double _area = 0.0;
@@ -65,6 +60,32 @@ class PropertyProvider with ChangeNotifier {
   final String _apiKey =
       "AIzaSyC9TbKldN2qRj91FxHl1KC3r7KjUlBXOSk"; // Replace with your actual API key
 
+  // Properties list to store properties
+  List<Property> _properties = [];
+
+  // Getter for properties
+  List<Property> get properties => _properties;
+
+  // In PropertyProvider
+  Future<void> fetchProperties() async {
+    try {
+      // Fetching properties from Firestore
+      QuerySnapshot<Map<String, dynamic>> snapshot = await FirebaseFirestore.instance
+          .collection('properties') // Your Firestore collection
+          .get();
+
+      // Mapping Firestore data to Property model
+      _properties = snapshot.docs
+          .map((doc) => Property.fromDocument(doc)) // Convert each document to Property model
+          .toList();
+
+      // Notify listeners to update the UI
+      notifyListeners();
+    } catch (e) {
+      print("Error fetching properties: $e");
+    }
+  }
+
 // Getters and Setters for Step 1
   String get phoneNumber => _phoneNumber;
   void setPhoneNumber(String value) {
@@ -75,6 +96,24 @@ class PropertyProvider with ChangeNotifier {
   String get name => _name;
   void setName(String value) {
     _name = value;
+    notifyListeners();
+  }
+
+  // Getter for email
+  String get email => _email;
+
+  // Setter for email
+  set email(String value) {
+    _email = value;
+    notifyListeners();
+  }
+
+  // Getter for propertyOwner
+  String get propertyOwner => _propertyOwner;
+
+  // Setter for propertyOwner
+  set propertyOwner(String value) {
+    _propertyOwner = value;
     notifyListeners();
   }
 
@@ -90,13 +129,11 @@ class PropertyProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  // **Getters and Setters for User Type**
+  // Getters and Setters for User Type
   String get userType => _userType;
   void setUserType(String value) {
-    if (value != _userType) {
-      _userType = value;
-      notifyListeners();
-    }
+    _userType = value;
+    notifyListeners();
   }
 
   // **Getters and Setters for Venture Name**
@@ -124,11 +161,6 @@ class PropertyProvider with ChangeNotifier {
   }
 
   double get totalPrice => _totalPrice;
-
-  // void calculateTotalPrice() {
-  //   _totalPrice = _area * _pricePerUnit;
-  //   notifyListeners();
-  // }
 
   void calculateTotalPrice() {
     if (_propertyType.toLowerCase() == 'agri land') {
@@ -481,5 +513,12 @@ class PropertyProvider with ChangeNotifier {
     _documentFiles.clear();
     _address = '';
     notifyListeners();
+  }
+
+// Utility function to get current timestamp in IST (Indian Standard Time)
+  Timestamp getCurrentTimestampInIST() {
+    DateTime nowUtc = DateTime.now().toUtc();
+    DateTime nowIst = nowUtc.add(Duration(hours: 5, minutes: 30));
+    return Timestamp.fromDate(nowIst);
   }
 }

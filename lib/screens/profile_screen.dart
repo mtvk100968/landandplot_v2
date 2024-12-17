@@ -1,9 +1,22 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
+import '../models/property_model.dart';
+import '../components/views/property_list_view.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import '../utils/whats_app_utils.dart';
+
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key});
+  final List<Property> propertyList; // Your properties data
+  final List<String> favoritedPropertyIds; // IDs of favorited properties
+  final FavoriteToggleCallback onFavoriteToggle;
+
+  const ProfileScreen({
+    Key? key,
+    required this.propertyList,
+    required this.favoritedPropertyIds,
+    required this.onFavoriteToggle,
+  }) : super(key: key);
 
   @override
   ProfileScreenState createState() => ProfileScreenState();
@@ -34,7 +47,7 @@ class ProfileScreenState extends State<ProfileScreen> {
     if (_currentUser != null) {
       setState(() {
         _welcomeMessage =
-            'Welcome, ${_currentUser!.email ?? _currentUser!.phoneNumber}';
+        'Welcome, ${_currentUser!.email ?? _currentUser!.phoneNumber}';
       });
     }
   }
@@ -42,44 +55,73 @@ class ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('LANDANDPLOT')),
-      body: Center(
-        child: _currentUser == null
-            ? _buildLoginButtons() // Show login buttons if not logged in
-            : _buildProfilePage(), // Show profile if logged in
+      appBar: AppBar(
+        title: const Text('Profile'),
+      ),
+      body: _currentUser == null
+          ? _buildLoginButtons() // Show login buttons if not logged in
+          : Column(
+        children: [
+          if (_welcomeMessage != null)
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Text(
+                _welcomeMessage!,
+                style: const TextStyle(fontSize: 20),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          Expanded(
+            // Property List Section
+            child: PropertyListView(
+              properties: widget.propertyList,
+              favoritedPropertyIds: widget.favoritedPropertyIds,
+              onFavoriteToggle: widget.onFavoriteToggle, // No casting needed
+            ),
+          ),
+          // WhatsApp Support Button
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: ElevatedButton(
+              onPressed: () {
+                WhatsAppUtils.launchWhatsApp(
+                  'Hello, I need assistance with my property.',
+                  '+1234567890',
+                );
+              },
+              child: const Text('Contact Support via WhatsApp'),
+            ),
+          ),
+          // Sign Out Button
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: ElevatedButton(
+              onPressed: _signOut,
+              child: const Text('Sign Out'),
+            ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildLoginButtons() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        ElevatedButton(
-          onPressed: () => _signInWithGoogle(),
-          child: const Text('Sign in with Google'),
-        ),
-        ElevatedButton(
-          onPressed: () {
-            _showPhoneNumberDialog();
-          },
-          child: const Text('Sign in with Phone Number'),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildProfilePage() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        if (_welcomeMessage != null)
-          Text(_welcomeMessage!, style: const TextStyle(fontSize: 20)),
-        ElevatedButton(
-          onPressed: _signOut,
-          child: const Text('Sign Out'),
-        ),
-      ],
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          ElevatedButton(
+            onPressed: _signInWithGoogle,
+            child: const Text('Sign in with Google'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              _showPhoneNumberDialog();
+            },
+            child: const Text('Sign in with Phone Number'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -121,7 +163,7 @@ class ProfileScreenState extends State<ProfileScreen> {
               TextField(
                 controller: _codeController,
                 decoration:
-                    const InputDecoration(labelText: 'Verification Code'),
+                const InputDecoration(labelText: 'Verification Code'),
               ),
             ],
           ),
@@ -148,14 +190,14 @@ class ProfileScreenState extends State<ProfileScreen> {
     try {
       await signInWithPhoneNumber(
         _phoneController.text,
-        (String verId) {
+            (String verId) {
           if (mounted) {
             setState(() {
               _verificationId = verId;
             });
           }
         },
-        (FirebaseAuthException e) {
+            (FirebaseAuthException e) {
           _showErrorSnackBar('Failed to verify phone number: ${e.message}');
         },
       );
