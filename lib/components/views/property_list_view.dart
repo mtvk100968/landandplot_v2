@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../models/property_model.dart';
+import '../../screens/property_details_display_page.dart';
 import '../property_card.dart';
 
 typedef FavoriteToggleCallback = void Function(String propertyId, bool isFavorited);
@@ -34,7 +35,16 @@ class PropertyListView extends StatelessWidget {
           property: property,
           isFavorited: isFavorited,
           onFavoriteToggle: (Property property) {
-            onFavoriteToggle(property.id, !isFavorited); // Pass correct arguments
+            onFavoriteToggle(property.id, !isFavorited);
+          },
+          onImageTap: () {
+            // Navigate to PropertyDetailsDisplayPage
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => PropertyDetailsDisplayPage(property: property),
+              ),
+            );
           },
         );
       },

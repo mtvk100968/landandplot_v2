@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:landandplot/screens/property_details_display_page.dart';
 import 'package:provider/provider.dart';
 import '../components/property_card.dart';
 import '../providers/user_provider.dart';
@@ -159,6 +160,16 @@ class FavoritesScreenState extends State<FavoritesScreen> {
                       property: favoriteProperties[index],
                       onFavoriteToggle: toggleFavorite, // Pass the function directly
                       isFavorited: true,
+                      onImageTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => PropertyDetailsDisplayPage(
+                              property: favoriteProperties[index], // Correct reference
+                            ),
+                          ),
+                        );
+                      },
                     );
                   },
                 );

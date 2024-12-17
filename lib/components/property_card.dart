@@ -13,8 +13,10 @@ class PropertyCard extends StatefulWidget {
   final Property property;
   final Function(Property) onFavoriteToggle;
   final bool isFavorited; // Add this parameter
+  final VoidCallback onImageTap; // Add this new parameter
 
   const PropertyCard({super.key, required this.property, required this.onFavoriteToggle,     required this.isFavorited,  // Accept the favorite status
+    required this.onImageTap, // Accept onImageTap
   });
 
   @override
@@ -151,8 +153,8 @@ class PropertyCardState extends State<PropertyCard> {
                     options: CarouselOptions(
                       height: cardHeight,
                       viewportFraction: 1.0,
-                      autoPlay: false, // Disable autoplay
-                      enableInfiniteScroll: false, // Disable infinite scroll
+                      autoPlay: false,
+                      enableInfiniteScroll: false,
                       onPageChanged: (index, reason) {
                         setState(() {
                           _current = index;
@@ -161,27 +163,29 @@ class PropertyCardState extends State<PropertyCard> {
                     ),
                     items: widget.property.images.isNotEmpty
                         ? widget.property.images.map((imageUrl) {
-                      return ClipRRect(
-                        borderRadius: BorderRadius.circular(
-                            20), // Fully rounded corners
-                        child: CachedNetworkImage(
-                          imageUrl: imageUrl,
-                          width: double.infinity,
-                          height: cardHeight,
-                          fit: BoxFit.cover,
-                          placeholder: (context, url) => Container(
-                            color: Colors.grey[300],
-                            child: const Center(
-                              child: CircularProgressIndicator(),
+                      return GestureDetector(
+                        onTap: widget.onImageTap, // Call the onImageTap callback
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: CachedNetworkImage(
+                            imageUrl: imageUrl,
+                            width: double.infinity,
+                            height: cardHeight,
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) => Container(
+                              color: Colors.grey[300],
+                              child: const Center(
+                                child: CircularProgressIndicator(),
+                              ),
                             ),
-                          ),
-                          errorWidget: (context, url, error) => Container(
-                            color: Colors.grey[300],
-                            child: const Center(
-                              child: Icon(
-                                Icons.broken_image,
-                                size: 50,
-                                color: Colors.grey,
+                            errorWidget: (context, url, error) => Container(
+                              color: Colors.grey[300],
+                              child: const Center(
+                                child: Icon(
+                                  Icons.broken_image,
+                                  size: 50,
+                                  color: Colors.grey,
+                                ),
                               ),
                             ),
                           ),
@@ -189,13 +193,16 @@ class PropertyCardState extends State<PropertyCard> {
                       );
                     }).toList()
                         : [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(20),
-                        child: Image.asset(
-                          'assets/images/no_image_available.png', // Ensure this image exists in your assets
-                          width: double.infinity,
-                          height: cardHeight,
-                          fit: BoxFit.cover,
+                      GestureDetector(
+                        onTap: widget.onImageTap, // Call the onImageTap callback
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: Image.asset(
+                            'assets/images/no_image_available.png',
+                            width: double.infinity,
+                            height: cardHeight,
+                            fit: BoxFit.cover,
+                          ),
                         ),
                       ),
                     ],
