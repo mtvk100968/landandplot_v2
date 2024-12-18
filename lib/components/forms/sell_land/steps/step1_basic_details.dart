@@ -1,5 +1,4 @@
 // lib/components/widgets/steps/step1_basic_details.dart
-
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -67,84 +66,76 @@ class _Step1BasicDetailsState extends State<Step1BasicDetails> {
       key: widget.formKey,
       child: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              "Step 1: Basic Details",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _phoneController,
-              decoration: const InputDecoration(
-                labelText: "Your Phone Number",
-                prefixText: "+91",
+        child: SingleChildScrollView( // Wrap content here
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                "Step 1: Basic Details",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
-            ),
-            const SizedBox(height: 8),
-            TextFormField(
-              controller: _emailController,
-              decoration: InputDecoration(labelText: 'Your Email'),
-              onChanged: (value) {
-                Provider.of<PropertyProvider>(context, listen: false).email =
-                    value;
-              },
-            ),
-            const SizedBox(height: 8),
-            TextFormField(
-              controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: "Your Name",
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _phoneController,
+                decoration: const InputDecoration(
+                  labelText: "Your Phone Number",
+                  prefixText: "+91",
+                ),
               ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter your name';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 8),
-            TextFormField(
-              controller: _ownerNameController,
-              decoration: const InputDecoration(
-                labelText: "Property Owner Name",
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _emailController,
+                decoration: InputDecoration(labelText: 'Your Email'),
               ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter the property owner\'s name';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 8),
-            // Dropdown for selecting property type
-            DropdownButtonFormField<String>(
-              items: const [
-                DropdownMenuItem(value: "Agri Land", child: Text("Agri Land")),
-                DropdownMenuItem(value: "Farm Land", child: Text("Farm")),
-                DropdownMenuItem(value: "Plot", child: Text("Plot")),
-                DropdownMenuItem(value: "House", child: Text("House")),
-                DropdownMenuItem(value: "Apartment", child: Text("Apartment")),
-              ],
-              onChanged: (value) {
-                if (value != null) {
-                  // Access PropertyProvider and update the property type
-                  Provider.of<PropertyProvider>(context, listen: false)
-                      .setPropertyType(value);
-                }
-              },
-              decoration: const InputDecoration(
-                labelText: "Property Type",
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _nameController,
+                decoration: const InputDecoration(
+                  labelText: "Your Name",
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter your name';
+                  }
+                  return null;
+                },
               ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please select a property type';
-                }
-                return null;
-              },
-            ),
-          ],
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _ownerNameController,
+                decoration: const InputDecoration(
+                  labelText: "Property Owner Name",
+                ),
+              ),
+              const SizedBox(height: 8),
+              DropdownButtonFormField<String>(
+                items: const [
+                  DropdownMenuItem(
+                      value: "Agri Land", child: Text("Agri Land")),
+                  DropdownMenuItem(value: "Farm Land", child: Text("Farm")),
+                  DropdownMenuItem(value: "Plot", child: Text("Plot")),
+                  DropdownMenuItem(value: "House", child: Text("House")),
+                  DropdownMenuItem(
+                      value: "Apartment", child: Text("Apartment")),
+                ],
+                onChanged: (value) {
+                  if (value != null) {
+                    Provider.of<PropertyProvider>(context, listen: false)
+                        .setPropertyType(value);
+                  }
+                },
+                decoration: const InputDecoration(
+                  labelText: "Property Type",
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please select a property type';
+                  }
+                  return null;
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );

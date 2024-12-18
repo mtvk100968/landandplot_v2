@@ -2,12 +2,12 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:provider/provider.dart';
-import '../../../models/property_model.dart';
+import '../../../../models/property_model.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../../../services/user_service.dart';
-import '../../../models/user_model.dart';
-import '../../../utils/format.dart';
-import '../../providers/user_provider.dart';
+import '../../../../services/user_service.dart';
+import '../../../../models/user_model.dart';
+import '../../../../utils/format.dart';
+import '../../../providers/user_provider.dart';
 
 class PropertyCard extends StatefulWidget {
   final Property property;

@@ -1,6 +1,7 @@
 // lib/services/user_service.dart
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../models/property_model.dart';
 import '../models/user_model.dart';
 
 class UserService {
@@ -168,6 +169,27 @@ class UserService {
     } catch (e) {
       print('Error fetching user data: $e');
       return null;
+    }
+  }
+
+  /// Fetch properties by a list of IDs.
+  Future<List<Property>> getPropertiesByIds(List<String> propertyIds) async {
+    if (propertyIds.isEmpty) {
+      return [];
+    }
+
+    try {
+      QuerySnapshot<Map<String, dynamic>> snapshot = await _firestore
+          .collection(collectionPath)
+          .where(FieldPath.documentId, whereIn: propertyIds)
+          .get();
+
+      return snapshot.docs.map((doc) => Property.fromDocument(doc)).toList();
+    } catch (e, stacktrace) {
+      print('Error fetching properties by IDs: $e');
+      print(stacktrace); // Print stack trace for debugging
+      Error.throwWithStackTrace(
+          Exception('Failed to fetch properties by IDs'), stacktrace);
     }
   }
 

@@ -1,10 +1,30 @@
 // lib/utils/format.dart
 
+import 'package:flutter/services.dart';
+
 extension StringExtension on String {
   String capitalize() {
     if (this.isEmpty) return this;
     return this[0].toUpperCase() + substring(1);
   }
+}
+
+String capitalizeEachWord(String input) {
+  if (input.isEmpty) return input;
+  return input
+      .split(' ')
+      .map((word) => word.isEmpty ? word : word.capitalize())
+      .join(' ');
+}
+
+TextInputFormatter capitalizeWordsInputFormatter() {
+  return TextInputFormatter.withFunction((oldValue, newValue) {
+    String transformed = capitalizeEachWord(newValue.text);
+    return newValue.copyWith(
+      text: transformed,
+      selection: TextSelection.collapsed(offset: transformed.length),
+    );
+  });
 }
 
 String formatPrice(double price, String propertyType) {
@@ -33,3 +53,5 @@ String formatIndianPrice(double price) {
       .toString()
       .replaceAllMapped(formatter, (match) => '${match[1]},');
 }
+
+

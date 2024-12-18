@@ -73,11 +73,7 @@ class _UserRegistrationState extends State<UserRegistration> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => ProfileScreen(
-              propertyList: [],
-              favoritedPropertyIds: [],
-              onFavoriteToggle: (propertyId, isFavorited) {},
-            ),
+            builder: (context) => const ProfileScreen(),
           ),
         );
       } catch (e) {

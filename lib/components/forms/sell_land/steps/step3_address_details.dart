@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../../../providers/property_provider.dart';
 import '../../../../utils/validators.dart';
 import 'package:flutter/services.dart';
+import '../../../../utils/format.dart';
 
 class Step3AddressDetails extends StatefulWidget {
   final GlobalKey<FormState> formKey;
@@ -29,7 +30,7 @@ class _Step3AddressDetailsState extends State<Step3AddressDetails> {
   void initState() {
     super.initState();
     final propertyProvider =
-        Provider.of<PropertyProvider>(context, listen: false);
+    Provider.of<PropertyProvider>(context, listen: false);
     _pincodeController = TextEditingController(text: propertyProvider.pincode);
     _addressController =
         TextEditingController(text: propertyProvider.address ?? '');
@@ -50,7 +51,7 @@ class _Step3AddressDetailsState extends State<Step3AddressDetails> {
 
   void _updateControllers() {
     final propertyProvider =
-        Provider.of<PropertyProvider>(context, listen: false);
+    Provider.of<PropertyProvider>(context, listen: false);
 
     if (_pincodeController.text != propertyProvider.pincode) {
       _pincodeController.text = propertyProvider.pincode;
@@ -90,7 +91,7 @@ class _Step3AddressDetailsState extends State<Step3AddressDetails> {
   @override
   void dispose() {
     final propertyProvider =
-        Provider.of<PropertyProvider>(context, listen: false);
+    Provider.of<PropertyProvider>(context, listen: false);
     propertyProvider.removeListener(_updateControllers);
     _pincodeController.dispose();
     _addressController.dispose();
@@ -143,12 +144,16 @@ class _Step3AddressDetailsState extends State<Step3AddressDetails> {
                   hintText: 'Enter your address',
                 ),
                 keyboardType: TextInputType.streetAddress,
+                textCapitalization: TextCapitalization.words,
                 validator:
-                    Validators.requiredValidator, // Ensure address is entered
+                Validators.requiredValidator, // Ensure address is entered
                 onChanged: (value) {
                   propertyProvider.setAddress(value);
                 },
                 maxLines: 2, // Allow multiple lines for address
+                inputFormatters: [
+                  capitalizeWordsInputFormatter(),
+                ],
               ),
               SizedBox(height: 20),
 
@@ -161,10 +166,13 @@ class _Step3AddressDetailsState extends State<Step3AddressDetails> {
                 ),
                 keyboardType: TextInputType.text,
                 validator:
-                    Validators.requiredValidator, // Ensure village is entered
+                Validators.requiredValidator, // Ensure village is entered
                 onChanged: (value) {
                   propertyProvider.setVillage(value);
                 },
+                inputFormatters: [
+                  capitalizeWordsInputFormatter(),
+                ],
               ),
               SizedBox(height: 20),
 
@@ -187,6 +195,9 @@ class _Step3AddressDetailsState extends State<Step3AddressDetails> {
                   onChanged: (value) {
                     propertyProvider.setVentureName(value);
                   },
+                  inputFormatters: [
+                    capitalizeWordsInputFormatter(),
+                  ],
                 ),
               if (showVentureName) SizedBox(height: 20),
 
@@ -211,7 +222,7 @@ class _Step3AddressDetailsState extends State<Step3AddressDetails> {
                   DropdownButtonFormField<String>(
                     decoration: InputDecoration(labelText: 'Mandal'),
                     value: propertyProvider.mandal != null &&
-                            propertyProvider.mandal!.isNotEmpty
+                        propertyProvider.mandal!.isNotEmpty
                         ? propertyProvider.mandal
                         : null,
                     items: propertyProvider.mandalList.map((mandal) {
@@ -222,10 +233,10 @@ class _Step3AddressDetailsState extends State<Step3AddressDetails> {
                     }).toList(),
                     onChanged: propertyProvider.district != null
                         ? (value) {
-                            if (value != null) {
-                              propertyProvider.setMandal(value);
-                            }
-                          }
+                      if (value != null) {
+                        propertyProvider.setMandal(value);
+                      }
+                    }
                         : null, // Disable if no district selected
                     validator: Validators.requiredValidator,
                     hint: Text('Select Mandal'),

@@ -1,18 +1,47 @@
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
+import 'package:share_plus/share_plus.dart';
 import '../models/property_model.dart';
 import 'image_video_preview_page.dart';
 
-class PropertyDetailsDisplayPage extends StatelessWidget {
+class PropertyDetailsDisplayPage extends StatefulWidget {
   final Property property;
 
-  const PropertyDetailsDisplayPage({Key? key, required this.property}) : super(key: key);
+  const PropertyDetailsDisplayPage({Key? key, required this.property})
+      : super(key: key);
+
+  @override
+  State<PropertyDetailsDisplayPage> createState() =>
+      _PropertyDetailsDisplayPageState();
+}
+
+class _PropertyDetailsDisplayPageState
+    extends State<PropertyDetailsDisplayPage> {
+  bool isFavorite = false; // State for heart icon toggle
+
+  // Share property details
+  void _shareProperty() {
+    final String shareText =
+        'Check out this property: ${widget.property.address}\n'
+        'Price: ₹ ${widget.property.totalPrice}\n'
+        'Location: ${widget.property.city}, ${widget.property.state}\n\n'
+        'View more details in our app!';
+
+    Share.share(shareText, subject: 'Property Details');
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Property Details'),
+        actions: [
+          // Share Icon
+          IconButton(
+            icon: const Icon(Icons.share),
+            onPressed: _shareProperty,
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -30,29 +59,29 @@ class PropertyDetailsDisplayPage extends StatelessWidget {
               // Property Title and Type
               _buildTitleSection(),
               const Divider(height: 30),
-              _buildDetailTile('Owner Name', property.propertyOwner),
-              _buildDetailTile('Mobile Number', property.mobileNumber),
-              _buildDetailTile('Property Type', property.propertyType),
-              _buildDetailTile('User Type', property.userType),
-              _buildDetailTile('Venture Name', property.ventureName ?? 'N/A'),
+              _buildDetailTile('Owner Name', widget.property.propertyOwner),
+              _buildDetailTile('Mobile Number', widget.property.mobileNumber),
+              _buildDetailTile('Property Type', widget.property.propertyType),
+              _buildDetailTile('User Type', widget.property.userType),
+              _buildDetailTile('Venture Name', widget.property.ventureName ?? 'N/A'),
               const Divider(height: 30),
-              _buildDetailTile('Land Area', '${property.landArea} Sq Yards'),
-              _buildDetailTile('Price Per Unit', '₹ ${property.pricePerUnit}'),
-              _buildDetailTile('Total Price', '₹ ${property.totalPrice}'),
-              _buildDetailTile('Survey Number', property.surveyNumber),
-              _buildDetailTile('Plot Numbers', property.plotNumbers.isNotEmpty ? property.plotNumbers.join(', ') : 'N/A'),
+              _buildDetailTile('Land Area', '${widget.property.landArea} Sq Yards'),
+              _buildDetailTile('Price Per Unit', '₹ ${widget.property.pricePerUnit}'),
+              _buildDetailTile('Total Price', '₹ ${widget.property.totalPrice}'),
+              _buildDetailTile('Survey Number', widget.property.surveyNumber),
+              _buildDetailTile('Plot Numbers', widget.property.plotNumbers.isNotEmpty ? widget.property.plotNumbers.join(', ') : 'N/A'),
               const Divider(height: 30),
-              _buildDetailTile('District', property.district ?? 'N/A'),
-              _buildDetailTile('Mandal', property.mandal ?? 'N/A'),
-              _buildDetailTile('Village', property.village ?? 'N/A'),
-              _buildDetailTile('City', property.city ?? 'N/A'),
-              _buildDetailTile('Pincode', property.pincode),
-              _buildDetailTile('State', property.state ?? 'N/A'),
+              _buildDetailTile('District', widget.property.district ?? 'N/A'),
+              _buildDetailTile('Mandal', widget.property.mandal ?? 'N/A'),
+              _buildDetailTile('Village', widget.property.village ?? 'N/A'),
+              _buildDetailTile('City', widget.property.city ?? 'N/A'),
+              _buildDetailTile('Pincode', widget.property.pincode),
+              _buildDetailTile('State', widget.property.state ?? 'N/A'),
               const Divider(height: 30),
-              _buildDetailTile('Road Access', property.roadAccess),
-              _buildDetailTile('Road Type', property.roadType),
-              _buildDetailTile('Road Width', '${property.roadWidth} meters'),
-              _buildDetailTile('Land Facing', property.landFacing),
+              _buildDetailTile('Road Access', widget.property.roadAccess),
+              _buildDetailTile('Road Type', widget.property.roadType),
+              _buildDetailTile('Road Width', '${widget.property.roadWidth} meters'),
+              _buildDetailTile('Land Facing', widget.property.landFacing),
               const SizedBox(height: 20),
               _buildMapLocation(context),
             ],
@@ -76,8 +105,8 @@ class PropertyDetailsDisplayPage extends StatelessWidget {
             context,
             MaterialPageRoute(
               builder: (context) => ImageVideoPreviewPage(
-                imageUrls: property.images,
-                videoUrls: property.videos,
+                imageUrls: widget.property.images,
+                videoUrls: widget.property.videos,
               ),
             ),
           );
@@ -89,8 +118,8 @@ class PropertyDetailsDisplayPage extends StatelessWidget {
             autoPlay: false,
             enableInfiniteScroll: false,
           ),
-          items: property.images.isNotEmpty
-              ? property.images.map((imageUrl) {
+          items: widget.property.images.isNotEmpty
+              ? widget.property.images.map((imageUrl) {
             return ClipRRect(
               borderRadius: const BorderRadius.only(
                 bottomLeft: Radius.circular(20),
@@ -130,7 +159,7 @@ class PropertyDetailsDisplayPage extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          property.address ?? 'Property Details',
+          widget.property.address ?? 'Property Details',
           style: const TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
@@ -138,7 +167,7 @@ class PropertyDetailsDisplayPage extends StatelessWidget {
         ),
         const SizedBox(height: 10),
         Text(
-          property.propertyType,
+          widget.property.propertyType,
           style: const TextStyle(fontSize: 16, color: Colors.grey),
         ),
       ],
@@ -188,7 +217,7 @@ class PropertyDetailsDisplayPage extends StatelessWidget {
             child: ClipRRect(
               borderRadius: BorderRadius.circular(12),
               child: Image.network(
-                'https://maps.googleapis.com/maps/api/staticmap?center=${property.latitude},${property.longitude}&zoom=16&size=600x300&markers=color:red%7C${property.latitude},${property.longitude}&key=YOUR_GOOGLE_MAPS_API_KEY',
+                'https://maps.googleapis.com/maps/api/staticmap?center=${widget.property.latitude},${widget.property.longitude}&zoom=16&size=600x300&markers=color:red%7C${widget.property.latitude},${widget.property.longitude}&key=YOUR_GOOGLE_MAPS_API_KEY',
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) {
                   return const Center(

@@ -92,13 +92,7 @@ class MyApp extends StatelessWidget {
           favoritedPropertyIds: [],
           onFavoriteToggle: (propertyId, isFavorited) {},
         ),
-        '/profile': (context) => ProfileScreen(
-          propertyList: defaultPropertyList,
-          favoritedPropertyIds: defaultFavoritedPropertyIds,
-          onFavoriteToggle: (String propertyId, bool isFavorited) {
-            print('Toggled favorite: $propertyId, New State: $isFavorited');
-          },
-        ),
+        '/profile': (context) => const ProfileScreen(),
         '/phoneotpscreen': (context) => PhoneNumberOtpScreen(),
       },
       debugShowCheckedModeBanner: false,

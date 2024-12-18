@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:landandplot/screens/property_details_display_page.dart';
 import 'package:provider/provider.dart';
-import '../components/property_card.dart';
+import '../components/views/property_card.dart';
 import '../providers/user_provider.dart';
 import '../services/user_service.dart';
 import '../models/user_model.dart';
