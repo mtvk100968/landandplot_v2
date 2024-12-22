@@ -121,11 +121,6 @@ class BuyLandScreenState extends State<BuyLandScreen> {
     }
   }
 
-  Future<bool> isLoggedIn() async {
-    User? user = FirebaseAuth.instance.currentUser;
-    return user != null;
-  }
-
   // Method to open the FilterBottomSheet and get the selected filters
   Future<void> openFilterBottomSheet() async {
     // Pass current filters to the bottom sheet (optional)
@@ -185,20 +180,6 @@ class BuyLandScreenState extends State<BuyLandScreen> {
         }
       }
 
-      // In _handlePlaceSelected method, remove the code that resets selectedPlace to null
-      // when city, district or pincode is found.
-      // This ensures that for point-based searches (like a single building),
-      // the selectedPlace remains and can be used for radius-based filtering.
-
-      // Just remove the following lines from _handlePlaceSelected():
-
-      // If the place is an area (e.g., city, district), clear the point location
-      // if (selectedCity != null ||
-      //     selectedDistrict != null ||
-      //     selectedPincode != null) {
-      //   selectedPlace = null;
-      // }
-
       print('Place selected: $place');
       print('Selected City: $selectedCity');
       print('Selected District: $selectedDistrict');
@@ -216,6 +197,7 @@ class BuyLandScreenState extends State<BuyLandScreen> {
         const SnackBar(
             content: Text('You need to be logged in to favorite properties.')),
       );
+      Navigator.pushNamed(context, '/profile'); // Navigate to profile page
       return;
     }
 
@@ -236,14 +218,6 @@ class BuyLandScreenState extends State<BuyLandScreen> {
 
   @override
   Widget build(BuildContext context) {
-    User? firebaseUser = FirebaseAuth.instance.currentUser;
-    if (firebaseUser == null) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('LANDANDPLOT')),
-        body: const Center(child: Text('Please log in to see properties')),
-      );
-    }
-
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -255,12 +229,12 @@ class BuyLandScreenState extends State<BuyLandScreen> {
           ),
         ),
         actions: [
-          FutureBuilder<bool>(
-            future: isLoggedIn(),
+          StreamBuilder<User?>(
+            stream: FirebaseAuth.instance.authStateChanges(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const SizedBox.shrink(); // Or a placeholder widget
-              } else if (snapshot.hasData && snapshot.data!) {
+              } else if (snapshot.hasData && snapshot.data != null) {
                 return IconButton(
                   icon: const Icon(Icons.logout),
                   onPressed: () async {
@@ -272,7 +246,7 @@ class BuyLandScreenState extends State<BuyLandScreen> {
                 return IconButton(
                   icon: const Icon(Icons.login),
                   onPressed: () {
-                    Navigator.pushNamed(context, '/login');
+                    Navigator.pushNamed(context, '/profile');
                   },
                 );
               }
@@ -403,49 +377,72 @@ class BuyLandScreenState extends State<BuyLandScreen> {
           const SizedBox(height: 2),
           // **Property Listings**
           Expanded(
-            child: StreamBuilder<AppUser?>(
-              stream: UserService().getUserStream(firebaseUser.uid),
-              builder: (context, userSnapshot) {
-                if (userSnapshot.connectionState == ConnectionState.waiting) {
+            child: FutureBuilder<List<Property>>(
+              future: _propertyFuture,
+              builder: (context, propertySnapshot) {
+                if (propertySnapshot.connectionState ==
+                    ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
-                }
-                if (userSnapshot.hasError) {
-                  return Center(child: Text('Error: ${userSnapshot.error}'));
-                }
-                final currentUser = userSnapshot.data;
-                if (currentUser == null) {
-                  return const Center(child: Text('No user data available.'));
-                }
+                } else if (propertySnapshot.hasError) {
+                  print('Error in FutureBuilder: ${propertySnapshot.error}');
+                  return const Center(child: Text('Error loading properties'));
+                } else if (!propertySnapshot.hasData ||
+                    propertySnapshot.data!.isEmpty) {
+                  return const Center(child: Text('No properties found'));
+                } else {
+                  final properties = propertySnapshot.data!;
+                  print('Number of properties fetched: ${properties.length}');
+                  return StreamBuilder<User?>(
+                    stream: FirebaseAuth.instance.authStateChanges(),
+                    builder: (context, authSnapshot) {
+                      if (authSnapshot.connectionState ==
+                          ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+                      final user = authSnapshot.data;
+                      if (user != null) {
+                        // User is logged in
+                        return StreamBuilder<AppUser?>(
+                          stream: UserService().getUserStream(user.uid),
+                          builder: (context, userSnapshot) {
+                            if (userSnapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return const Center(
+                                  child: CircularProgressIndicator());
+                            }
+                            if (userSnapshot.hasError) {
+                              return Center(
+                                  child: Text('Error: ${userSnapshot.error}'));
+                            }
+                            final currentUser = userSnapshot.data;
+                            if (currentUser == null) {
+                              return const Center(
+                                  child: Text('No user data available.'));
+                            }
 
-                return FutureBuilder<List<Property>>(
-                  future: _propertyFuture,
-                  builder: (context, propertySnapshot) {
-                    if (propertySnapshot.connectionState ==
-                        ConnectionState.waiting) {
-                      return const Center(child: CircularProgressIndicator());
-                    } else if (propertySnapshot.hasError) {
-                      print(
-                          'Error in FutureBuilder: ${propertySnapshot.error}');
-                      return const Center(
-                          child: Text('Error loading properties'));
-                    } else if (!propertySnapshot.hasData ||
-                        propertySnapshot.data!.isEmpty) {
-                      return const Center(child: Text('No properties found'));
-                    } else {
-                      final properties = propertySnapshot.data!;
-                      print(
-                          'Number of properties fetched: ${properties.length}');
-                      return showMap
-                          ? PropertyMapView(properties: properties)
-                          : PropertyListView(
-                              properties: properties,
-                              favoritedPropertyIds:
-                                  currentUser.favoritedPropertyIds,
-                              onFavoriteToggle: _onFavoriteToggle,
-                            );
-                    }
-                  },
-                );
+                            return showMap
+                                ? PropertyMapView(properties: properties)
+                                : PropertyListView(
+                                    properties: properties,
+                                    favoritedPropertyIds:
+                                        currentUser.favoritedPropertyIds,
+                                    onFavoriteToggle: _onFavoriteToggle,
+                                  );
+                          },
+                        );
+                      } else {
+                        // User is not logged in
+                        return showMap
+                            ? PropertyMapView(properties: properties)
+                            : PropertyListView(
+                                properties: properties,
+                                favoritedPropertyIds: [], // Empty list for guests
+                                onFavoriteToggle: _onFavoriteToggle,
+                              );
+                      }
+                    },
+                  );
+                }
               },
             ),
           ),
