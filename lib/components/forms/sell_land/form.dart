@@ -1,15 +1,22 @@
 // lib/widgets/sell_land_form/sell_land_form.dart
+
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../../providers/property_provider.dart';
+import '../../../services/property_service.dart';
+import 'package:flutter/services.dart';
+
+// Steps
 import './steps/step1_basic_details.dart';
 import './steps/step2_property_details.dart';
 import './steps/step3_address_details.dart';
 import './steps/step4_map_location.dart';
 import './steps/step5_media_upload.dart';
-import 'package:provider/provider.dart';
-import '../../../providers/property_provider.dart';
-import '../../../services/property_service.dart';
-import 'package:flutter/services.dart';
+
+// For switching tabs after successful submit
+import '../../../utils/keys.dart';
+import '../../../components/bottom_nav_bar.dart';
 
 class SellLandForm extends StatefulWidget {
   const SellLandForm({Key? key}) : super(key: key);
@@ -34,7 +41,7 @@ class _SellLandFormState extends State<SellLandForm> {
     const List<int> noValidationSteps = [
       2,
       3
-    ]; // Steps 3 and 4 (zero-based index)
+    ]; // Steps 3 (index 2) and 4 (index 3)
 
     // Determine if the current step requires validation
     bool requiresValidation = !noValidationSteps.contains(_currentPage);
@@ -44,7 +51,7 @@ class _SellLandFormState extends State<SellLandForm> {
         (_formKeys[_currentPage].currentState?.validate() ?? true)) {
       if (_currentPage < _totalSteps - 1) {
         _pageController.nextPage(
-          duration: Duration(milliseconds: 300),
+          duration: const Duration(milliseconds: 300),
           curve: Curves.ease,
         );
       } else {
@@ -56,7 +63,7 @@ class _SellLandFormState extends State<SellLandForm> {
   void _prevPage() {
     if (_currentPage > 0) {
       _pageController.previousPage(
-        duration: Duration(milliseconds: 300),
+        duration: const Duration(milliseconds: 300),
         curve: Curves.ease,
       );
     }
@@ -68,10 +75,7 @@ class _SellLandFormState extends State<SellLandForm> {
     final propertyService =
         Provider.of<PropertyService>(context, listen: false);
 
-    // Gather form data
-    // Convert provider data to Property model
-    // Assuming you have a Property model defined in property_model.dart
-
+    // Gather form data from the provider
     final property = propertyProvider.toProperty();
 
     // Retrieve media files directly from the provider
@@ -81,7 +85,7 @@ class _SellLandFormState extends State<SellLandForm> {
 
     if (images.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please add at least one image.')),
+        const SnackBar(content: Text('Please add at least one image.')),
       );
       return;
     }
@@ -91,7 +95,7 @@ class _SellLandFormState extends State<SellLandForm> {
       showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (context) => Center(child: CircularProgressIndicator()),
+        builder: (context) => const Center(child: CircularProgressIndicator()),
       );
 
       // Upload property with media files
@@ -103,20 +107,25 @@ class _SellLandFormState extends State<SellLandForm> {
       );
 
       // Dismiss the loading indicator
-      Navigator.of(context).pop();
+      Navigator.of(context, rootNavigator: true).pop();
 
+      // Notify user of success
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
             content: Text('Property Listed Successfully! ID: $propertyId')),
       );
 
-      // Optionally, reset the form
+      // Optionally reset the provider’s form data
       propertyProvider.resetForm();
 
-      // Navigate to another screen if desired
+      // Switch to the Buy Land tab (index 0)
+      final bottomNavState = bottomNavBarKey.currentState as BottomNavBarState?;
+      if (bottomNavState != null) {
+        bottomNavState.switchTab(0);
+      }
     } catch (e) {
       // Dismiss the loading indicator
-      Navigator.of(context).pop();
+      Navigator.of(context, rootNavigator: true).pop();
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to list property: $e')),
@@ -148,7 +157,7 @@ class _SellLandFormState extends State<SellLandForm> {
           Expanded(
             child: PageView(
               controller: _pageController,
-              physics: NeverScrollableScrollPhysics(),
+              physics: const NeverScrollableScrollPhysics(),
               onPageChanged: (index) {
                 setState(() {
                   _currentPage = index;
@@ -172,10 +181,10 @@ class _SellLandFormState extends State<SellLandForm> {
                 _currentPage > 0
                     ? ElevatedButton.icon(
                         onPressed: _prevPage,
-                        icon: Icon(Icons.arrow_back),
-                        label: Text('Back'),
+                        icon: const Icon(Icons.arrow_back),
+                        label: const Text('Back'),
                       )
-                    : SizedBox(),
+                    : const SizedBox(),
                 ElevatedButton.icon(
                   onPressed: _nextPage,
                   icon: Icon(

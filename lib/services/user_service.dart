@@ -2,11 +2,16 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user_model.dart';
+import '../models/property_model.dart'; // Ensure this import exists
 
 class UserService {
-  // Define the users collection reference with the correct generic type
+  // Reference to the 'users' collection
   final CollectionReference<Map<String, dynamic>> _usersCollection =
       FirebaseFirestore.instance.collection('users');
+
+  // Reference to the 'properties' collection
+  final CollectionReference<Map<String, dynamic>> _propertiesCollection =
+      FirebaseFirestore.instance.collection('properties');
 
   /// Fetch a user by their UID
   Future<AppUser?> getUserById(String userId) async {
@@ -123,6 +128,47 @@ class UserService {
     } catch (e) {
       print('Error adding bought property: $e');
       throw Exception('Failed to add bought property');
+    }
+  }
+
+  /// Fetch multiple Property documents by their IDs
+  Future<List<Property>> getPropertiesByIds(List<String> propertyIds) async {
+    if (propertyIds.isEmpty) {
+      return [];
+    }
+
+    List<Property> allProperties = [];
+
+    try {
+      // Firestore's `whereIn` has a limit of 10 items per query.
+      // Split the propertyIds into batches of 10.
+      List<List<String>> batches = [];
+      int batchSize = 10;
+      for (var i = 0; i < propertyIds.length; i += batchSize) {
+        int end = (i + batchSize < propertyIds.length)
+            ? i + batchSize
+            : propertyIds.length;
+        batches.add(propertyIds.sublist(i, end));
+      }
+
+      // Iterate over each batch and fetch properties
+      for (var batch in batches) {
+        QuerySnapshot<Map<String, dynamic>> snapshot =
+            await _propertiesCollection
+                .where(FieldPath.documentId, whereIn: batch)
+                .get();
+
+        List<Property> properties = snapshot.docs.map((doc) {
+          return Property.fromDocument(doc);
+        }).toList();
+
+        allProperties.addAll(properties);
+      }
+
+      return allProperties;
+    } catch (e) {
+      print('Error fetching properties by IDs: $e');
+      return [];
     }
   }
 }
