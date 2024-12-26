@@ -1,5 +1,3 @@
-// lib/screens/profile_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/auth_service.dart';
@@ -125,23 +123,36 @@ class ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  // ADDED: Pull-to-refresh method to reload user data
+  Future<void> _refreshProfile() async {
+    await _loadUserData();
+    // The setState calls happen inside _loadUserData, so no need for an extra setState here
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       // A gradient background for the entire screen
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.teal, Colors.white],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: SafeArea(
-          child: Center(
-            child: _currentUser == null
-                ? _buildLoginButtons()
-                : _buildProfilePage(),
+      body: RefreshIndicator(
+        onRefresh: _refreshProfile,
+        // Use a scrollable widget so the user can pull down
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.teal, Colors.white],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+            ),
+            child: SafeArea(
+              child: Center(
+                child: _currentUser == null
+                    ? _buildLoginButtons()
+                    : _buildProfilePage(),
+              ),
+            ),
           ),
         ),
       ),

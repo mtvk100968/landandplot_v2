@@ -1,5 +1,3 @@
-// lib/screens/buy_land_screen.dart
-
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../services/property_service.dart';
@@ -216,6 +214,13 @@ class BuyLandScreenState extends State<BuyLandScreen> {
     }
   }
 
+  // ADDED: A method for pull-to-refresh that re-fetches the properties
+  Future<void> _refreshProperties() async {
+    setState(() {
+      _propertyFuture = fetchProperties();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -254,199 +259,206 @@ class BuyLandScreenState extends State<BuyLandScreen> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          // **Search and Filter Section**
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 8),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                // **Location Search Bar**
-                Expanded(
-                  child: LocationSearchBar(
-                    onPlaceSelected: _handlePlaceSelected,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                // **Filter Button**
-                CircleAvatar(
-                  backgroundColor: Colors.lightGreen,
-                  child: IconButton(
-                    icon: const Icon(Icons.tune, color: Colors.white),
-                    onPressed: () async {
-                      await openFilterBottomSheet();
-                    },
-                  ),
-                ),
-                const SizedBox(width: 8),
-                // **Toggle Button (Map/List)**
-                CircleAvatar(
-                  backgroundColor: Colors.lightGreen,
-                  child: IconButton(
-                    icon: Icon(
-                      showMap ? Icons.view_list : Icons.map,
-                      color: Colors.white,
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        showMap = !showMap;
-                      });
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // **Active Filters**
-          if (selectedPropertyTypes.isNotEmpty ||
-              (selectedPriceRange.start > 0 && selectedPriceRange.end > 0) ||
-              (selectedLandAreaRange.start > 0 &&
-                  selectedLandAreaRange.end > 0) ||
-              selectedPlace != null ||
-              selectedCity != null ||
-              selectedDistrict != null ||
-              selectedPincode != null)
+      // ADDED: Wrap the main body content in a RefreshIndicator
+      body: RefreshIndicator(
+        onRefresh: _refreshProperties,
+        child: Column(
+          children: [
+            // **Search and Filter Section**
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Wrap(
-                spacing: 8.0,
+              padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 8),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  if (selectedCity != null)
-                    Chip(
-                      label: Text('City: $selectedCity'),
-                      onDeleted: () {
-                        setState(() {
-                          selectedCity = null;
-                          _propertyFuture = fetchProperties();
-                        });
+                  // **Location Search Bar**
+                  Expanded(
+                    child: LocationSearchBar(
+                      onPlaceSelected: _handlePlaceSelected,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  // **Filter Button**
+                  CircleAvatar(
+                    backgroundColor: Colors.lightGreen,
+                    child: IconButton(
+                      icon: const Icon(Icons.tune, color: Colors.white),
+                      onPressed: () async {
+                        await openFilterBottomSheet();
                       },
                     ),
-                  if (selectedDistrict != null)
-                    Chip(
-                      label: Text('District: $selectedDistrict'),
-                      onDeleted: () {
-                        setState(() {
-                          selectedDistrict = null;
-                          _propertyFuture = fetchProperties();
-                        });
-                      },
-                    ),
-                  if (selectedPincode != null)
-                    Chip(
-                      label: Text('Pincode: $selectedPincode'),
-                      onDeleted: () {
-                        setState(() {
-                          selectedPincode = null;
-                          _propertyFuture = fetchProperties();
-                        });
-                      },
-                    ),
-                  if (selectedPlace != null)
-                    Chip(
-                      label: Text(
-                          'Location: ${selectedPlace!['formatted_address']}'),
-                      onDeleted: () {
-                        setState(() {
-                          selectedPlace = null;
-                          _propertyFuture = fetchProperties();
-                        });
-                      },
-                    ),
-                  for (var type in selectedPropertyTypes)
-                    Chip(label: Text(type)),
-                  if (pricePerUnitUnit.isNotEmpty &&
-                      selectedPriceRange.start > 0 &&
-                      selectedPriceRange.end > 0)
-                    Chip(
-                      label: Text(
-                        'Price: ${formatPrice(selectedPriceRange.start)} - ${formatPrice(selectedPriceRange.end)} $pricePerUnitUnit',
+                  ),
+                  const SizedBox(width: 8),
+                  // **Toggle Button (Map/List)**
+                  CircleAvatar(
+                    backgroundColor: Colors.lightGreen,
+                    child: IconButton(
+                      icon: Icon(
+                        showMap ? Icons.view_list : Icons.map,
+                        color: Colors.white,
                       ),
+                      onPressed: () {
+                        setState(() {
+                          showMap = !showMap;
+                        });
+                      },
                     ),
-                  if (landAreaUnit.isNotEmpty &&
-                      selectedLandAreaRange.start > 0 &&
-                      selectedLandAreaRange.end > 0)
-                    Chip(
-                      label: Text(
-                        'Area: ${selectedLandAreaRange.start.toStringAsFixed(1)} - ${selectedLandAreaRange.end.toStringAsFixed(1)} $landAreaUnit',
-                      ),
-                    ),
+                  ),
                 ],
               ),
             ),
-          const SizedBox(height: 2),
-          // **Property Listings**
-          Expanded(
-            child: FutureBuilder<List<Property>>(
-              future: _propertyFuture,
-              builder: (context, propertySnapshot) {
-                if (propertySnapshot.connectionState ==
-                    ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                } else if (propertySnapshot.hasError) {
-                  print('Error in FutureBuilder: ${propertySnapshot.error}');
-                  return const Center(child: Text('Error loading properties'));
-                } else if (!propertySnapshot.hasData ||
-                    propertySnapshot.data!.isEmpty) {
-                  return const Center(child: Text('No properties found'));
-                } else {
-                  final properties = propertySnapshot.data!;
-                  print('Number of properties fetched: ${properties.length}');
-                  return StreamBuilder<User?>(
-                    stream: FirebaseAuth.instance.authStateChanges(),
-                    builder: (context, authSnapshot) {
-                      if (authSnapshot.connectionState ==
-                          ConnectionState.waiting) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-                      final user = authSnapshot.data;
-                      if (user != null) {
-                        // User is logged in
-                        return StreamBuilder<AppUser?>(
-                          stream: UserService().getUserStream(user.uid),
-                          builder: (context, userSnapshot) {
-                            if (userSnapshot.connectionState ==
-                                ConnectionState.waiting) {
-                              return const Center(
-                                  child: CircularProgressIndicator());
-                            }
-                            if (userSnapshot.hasError) {
-                              return Center(
-                                  child: Text('Error: ${userSnapshot.error}'));
-                            }
-                            final currentUser = userSnapshot.data;
-                            if (currentUser == null) {
-                              return const Center(
-                                  child: Text('No user data available.'));
-                            }
+            // **Active Filters**
+            if (selectedPropertyTypes.isNotEmpty ||
+                (selectedPriceRange.start > 0 && selectedPriceRange.end > 0) ||
+                (selectedLandAreaRange.start > 0 &&
+                    selectedLandAreaRange.end > 0) ||
+                selectedPlace != null ||
+                selectedCity != null ||
+                selectedDistrict != null ||
+                selectedPincode != null)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Wrap(
+                  spacing: 8.0,
+                  children: [
+                    if (selectedCity != null)
+                      Chip(
+                        label: Text('City: $selectedCity'),
+                        onDeleted: () {
+                          setState(() {
+                            selectedCity = null;
+                            _propertyFuture = fetchProperties();
+                          });
+                        },
+                      ),
+                    if (selectedDistrict != null)
+                      Chip(
+                        label: Text('District: $selectedDistrict'),
+                        onDeleted: () {
+                          setState(() {
+                            selectedDistrict = null;
+                            _propertyFuture = fetchProperties();
+                          });
+                        },
+                      ),
+                    if (selectedPincode != null)
+                      Chip(
+                        label: Text('Pincode: $selectedPincode'),
+                        onDeleted: () {
+                          setState(() {
+                            selectedPincode = null;
+                            _propertyFuture = fetchProperties();
+                          });
+                        },
+                      ),
+                    if (selectedPlace != null)
+                      Chip(
+                        label: Text(
+                            'Location: ${selectedPlace!['formatted_address']}'),
+                        onDeleted: () {
+                          setState(() {
+                            selectedPlace = null;
+                            _propertyFuture = fetchProperties();
+                          });
+                        },
+                      ),
+                    for (var type in selectedPropertyTypes)
+                      Chip(label: Text(type)),
+                    if (pricePerUnitUnit.isNotEmpty &&
+                        selectedPriceRange.start > 0 &&
+                        selectedPriceRange.end > 0)
+                      Chip(
+                        label: Text(
+                          'Price: ${formatPrice(selectedPriceRange.start)} - ${formatPrice(selectedPriceRange.end)} $pricePerUnitUnit',
+                        ),
+                      ),
+                    if (landAreaUnit.isNotEmpty &&
+                        selectedLandAreaRange.start > 0 &&
+                        selectedLandAreaRange.end > 0)
+                      Chip(
+                        label: Text(
+                          'Area: ${selectedLandAreaRange.start.toStringAsFixed(1)} - ${selectedLandAreaRange.end.toStringAsFixed(1)} $landAreaUnit',
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            const SizedBox(height: 2),
+            // **Property Listings**
+            Expanded(
+              child: FutureBuilder<List<Property>>(
+                future: _propertyFuture,
+                builder: (context, propertySnapshot) {
+                  if (propertySnapshot.connectionState ==
+                      ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  } else if (propertySnapshot.hasError) {
+                    print('Error in FutureBuilder: ${propertySnapshot.error}');
+                    return const Center(
+                        child: Text('Error loading properties'));
+                  } else if (!propertySnapshot.hasData ||
+                      propertySnapshot.data!.isEmpty) {
+                    return const Center(child: Text('No properties found'));
+                  } else {
+                    final properties = propertySnapshot.data!;
+                    print('Number of properties fetched: ${properties.length}');
+                    return StreamBuilder<User?>(
+                      stream: FirebaseAuth.instance.authStateChanges(),
+                      builder: (context, authSnapshot) {
+                        if (authSnapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Center(
+                              child: CircularProgressIndicator());
+                        }
+                        final user = authSnapshot.data;
+                        if (user != null) {
+                          // User is logged in
+                          return StreamBuilder<AppUser?>(
+                            stream: UserService().getUserStream(user.uid),
+                            builder: (context, userSnapshot) {
+                              if (userSnapshot.connectionState ==
+                                  ConnectionState.waiting) {
+                                return const Center(
+                                    child: CircularProgressIndicator());
+                              }
+                              if (userSnapshot.hasError) {
+                                return Center(
+                                    child:
+                                        Text('Error: ${userSnapshot.error}'));
+                              }
+                              final currentUser = userSnapshot.data;
+                              if (currentUser == null) {
+                                return const Center(
+                                    child: Text('No user data available.'));
+                              }
 
-                            return showMap
-                                ? PropertyMapView(properties: properties)
-                                : PropertyListView(
-                                    properties: properties,
-                                    favoritedPropertyIds:
-                                        currentUser.favoritedPropertyIds,
-                                    onFavoriteToggle: _onFavoriteToggle,
-                                  );
-                          },
-                        );
-                      } else {
-                        // User is not logged in
-                        return showMap
-                            ? PropertyMapView(properties: properties)
-                            : PropertyListView(
-                                properties: properties,
-                                favoritedPropertyIds: [], // Empty list for guests
-                                onFavoriteToggle: _onFavoriteToggle,
-                              );
-                      }
-                    },
-                  );
-                }
-              },
+                              return showMap
+                                  ? PropertyMapView(properties: properties)
+                                  : PropertyListView(
+                                      properties: properties,
+                                      favoritedPropertyIds:
+                                          currentUser.favoritedPropertyIds,
+                                      onFavoriteToggle: _onFavoriteToggle,
+                                    );
+                            },
+                          );
+                        } else {
+                          // User is not logged in
+                          return showMap
+                              ? PropertyMapView(properties: properties)
+                              : PropertyListView(
+                                  properties: properties,
+                                  favoritedPropertyIds: [], // Empty list for guests
+                                  onFavoriteToggle: _onFavoriteToggle,
+                                );
+                        }
+                      },
+                    );
+                  }
+                },
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

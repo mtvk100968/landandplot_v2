@@ -52,6 +52,14 @@ class FavoritesScreenState extends State<FavoritesScreen> {
     return await PropertyService().getPropertiesByIds(propertyIds);
   }
 
+  // ADDED: A method to force refresh
+  Future<void> _refreshFavorites() async {
+    // If you want to force re-fetch, you can do something here
+    setState(() {
+      // This will cause the StreamBuilder to rebuild
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     User? firebaseUser = FirebaseAuth.instance.currentUser;
@@ -70,41 +78,47 @@ class FavoritesScreenState extends State<FavoritesScreen> {
       appBar: AppBar(
         title: const Text('Favorites'),
       ),
-      body: StreamBuilder<AppUser?>(
-        stream: UserService().getUserStream(firebaseUser.uid),
-        builder: (context, userSnapshot) {
-          if (userSnapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (userSnapshot.hasError) {
-            return Center(child: Text('Error: ${userSnapshot.error}'));
-          }
-          currentUser = userSnapshot.data;
-          if (currentUser == null) {
-            return const Center(child: Text('No user data available.'));
-          }
+      // ADDED: Wrap in a RefreshIndicator
+      body: RefreshIndicator(
+        onRefresh: _refreshFavorites,
+        child: StreamBuilder<AppUser?>(
+          stream: UserService().getUserStream(firebaseUser.uid),
+          builder: (context, userSnapshot) {
+            if (userSnapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (userSnapshot.hasError) {
+              return Center(child: Text('Error: ${userSnapshot.error}'));
+            }
+            currentUser = userSnapshot.data;
+            if (currentUser == null) {
+              return const Center(child: Text('No user data available.'));
+            }
 
-          // Just call FutureBuilder without the key to re-run whenever the stream updates
-          return FutureBuilder<List<Property>>(
-            future: _fetchFavoriteProperties(currentUser!.favoritedPropertyIds),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              } else if (snapshot.hasError) {
-                return Center(child: Text('Error: ${snapshot.error}'));
-              } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                return const Center(child: Text('No favorites yet.'));
-              } else {
-                final properties = snapshot.data!;
-                return PropertyListView(
-                  properties: properties,
-                  favoritedPropertyIds: currentUser?.favoritedPropertyIds ?? [],
-                  onFavoriteToggle: _onFavoriteToggle,
-                );
-              }
-            },
-          );
-        },
+            // Just call FutureBuilder without the key to re-run whenever the stream updates
+            return FutureBuilder<List<Property>>(
+              future:
+                  _fetchFavoriteProperties(currentUser!.favoritedPropertyIds),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                } else if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return const Center(child: Text('No favorites yet.'));
+                } else {
+                  final properties = snapshot.data!;
+                  return PropertyListView(
+                    properties: properties,
+                    favoritedPropertyIds:
+                        currentUser?.favoritedPropertyIds ?? [],
+                    onFavoriteToggle: _onFavoriteToggle,
+                  );
+                }
+              },
+            );
+          },
+        ),
       ),
     );
   }
