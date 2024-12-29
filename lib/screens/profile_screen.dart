@@ -176,7 +176,7 @@ class ProfileScreenState extends State<ProfileScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 24),
+          const SizedBox(height: 5),
           Card(
             elevation: 5,
             shape:
