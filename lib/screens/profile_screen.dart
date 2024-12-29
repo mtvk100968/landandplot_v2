@@ -18,7 +18,6 @@ class ProfileScreenState extends State<ProfileScreen> {
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _codeController = TextEditingController();
   String _verificationId = '';
-  String? _welcomeMessage;
   User? _currentUser;
 
   // State variables to hold user info
@@ -34,7 +33,7 @@ class ProfileScreenState extends State<ProfileScreen> {
   void initState() {
     super.initState();
     _checkLoginStatus();
-    _loadUserData(); // Load user details and posted properties
+    _loadUserData();
   }
 
   @override
@@ -44,7 +43,6 @@ class ProfileScreenState extends State<ProfileScreen> {
     super.dispose();
   }
 
-  // Fetch user details and their posted properties
   Future<void> _loadUserData() async {
     _currentUser = FirebaseAuth.instance.currentUser;
 
@@ -55,103 +53,116 @@ class ProfileScreenState extends State<ProfileScreen> {
       AppUser? appUser = await UserService().getUserById(_currentUser!.uid);
 
       if (appUser != null) {
-        // Update local user state
         setState(() {
           _userName = appUser.name;
           _userPhone = appUser.phoneNumber;
           _userEmail = appUser.email;
         });
 
-        // Debug: Print postedPropertyIds
-        print('DEBUG: postedPropertyIds -> ${appUser.postedPropertyIds}');
-
-        // If the user has posted properties, fetch them
+        // Fetch user properties
         if (appUser.postedPropertyIds.isNotEmpty) {
           try {
-            // Firestore allows a maximum of 10 elements in a `whereIn` query
-            // If you have more, you'll need to batch them
-            final List<String> propertyIds =
-                appUser.postedPropertyIds.length > 10
-                    ? appUser.postedPropertyIds.sublist(0, 10)
-                    : appUser.postedPropertyIds;
-
-            print('DEBUG: Fetching properties with IDs -> $propertyIds');
-
             final QuerySnapshot<Map<String, dynamic>> propertySnapshots =
                 await FirebaseFirestore.instance
                     .collection('properties')
-                    .where(FieldPath.documentId, whereIn: propertyIds)
+                    .where(FieldPath.documentId,
+                        whereIn: appUser.postedPropertyIds)
                     .get();
 
-            print(
-                'DEBUG: Retrieved ${propertySnapshots.docs.length} properties');
-
-            final List<Property> fetchedProperties =
-                propertySnapshots.docs.map((doc) {
-              // Use the new fromDocument constructor
-              return Property.fromDocument(doc);
-            }).toList();
-
             setState(() {
-              _userPostedProperties = fetchedProperties;
+              _userPostedProperties = propertySnapshots.docs
+                  .map((doc) => Property.fromDocument(doc))
+                  .toList();
             });
-
-            print('DEBUG: Fetched Properties -> $_userPostedProperties');
           } catch (e) {
-            print('Error fetching posted properties: $e');
+            print('Error fetching properties: $e');
           }
-        } else {
-          print('DEBUG: No postedPropertyIds found for user.');
         }
-      } else {
-        print('DEBUG: AppUser not found for UID: ${_currentUser!.uid}');
       }
 
       setState(() => _isLoadingProperties = false);
-    } else {
-      print('DEBUG: No current user found.');
     }
   }
 
   void _checkLoginStatus() {
     _currentUser = FirebaseAuth.instance.currentUser;
-    if (_currentUser != null) {
-      setState(() {
-        _welcomeMessage =
-            'Welcome, ${_currentUser!.email ?? _currentUser!.phoneNumber}';
-      });
-    }
   }
 
-  // ADDED: Pull-to-refresh method to reload user data
   Future<void> _refreshProfile() async {
     await _loadUserData();
-    // The setState calls happen inside _loadUserData, so no need for an extra setState here
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // A gradient background for the entire screen
+      appBar: AppBar(
+        title: const Text('Profile'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: _signOut,
+          ),
+        ],
+      ),
       body: RefreshIndicator(
         onRefresh: _refreshProfile,
-        // Use a scrollable widget so the user can pull down
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          child: Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.teal, Colors.white],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              ),
-            ),
-            child: SafeArea(
-              child: Center(
-                child: _currentUser == null
-                    ? _buildLoginButtons()
-                    : _buildProfilePage(),
-              ),
+        child: _currentUser == null ? _buildSignInUI() : _buildProfilePage(),
+      ),
+    );
+  }
+
+  Widget _buildSignInUI() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Card(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          elevation: 5,
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Login to LANDANDPLOT',
+                  style: TextStyle(
+                    fontSize: 24,
+                    color: Colors.lightGreen,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton.icon(
+                  onPressed: () => _signInWithGoogle(),
+                  label: const Text('With Google'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.black,
+                    elevation: 3,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 30, vertical: 15),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton.icon(
+                  onPressed: () => _showPhoneNumberDialog(),
+                  label: const Text('With Number'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: Colors.black,
+                    elevation: 3,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 30, vertical: 15),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -159,85 +170,14 @@ class ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildLoginButtons() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          ElevatedButton.icon(
-            onPressed: () => _signInWithGoogle(),
-            icon: const Icon(Icons.login),
-            label: const Text('Sign in with Google'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white,
-              foregroundColor: Colors.black,
-              elevation: 3,
-              padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          ElevatedButton.icon(
-            onPressed: () => _showPhoneNumberDialog(),
-            icon: const Icon(Icons.phone),
-            label: const Text('Sign in with Phone Number'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.amber[700],
-              foregroundColor: Colors.white,
-              elevation: 3,
-              padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildProfilePage() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(16, 24, 16, 24),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Welcome Message with Avatar
-          Row(
-            children: [
-              if (_currentUser != null && _currentUser!.photoURL != null)
-                CircleAvatar(
-                  radius: 30,
-                  backgroundImage: NetworkImage(_currentUser!.photoURL!),
-                )
-              else
-                const CircleAvatar(
-                  radius: 30,
-                  backgroundImage:
-                      AssetImage('assets/images/default_avatar.png'),
-                ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Text(
-                  _welcomeMessage ?? '',
-                  style: const TextStyle(
-                    fontSize: 24,
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
-          ),
-
           const SizedBox(height: 24),
-
-          // A card for user info
           Card(
-            color: Colors.white.withOpacity(0.85),
             elevation: 5,
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -255,129 +195,39 @@ class ProfileScreenState extends State<ProfileScreen> {
                     ),
                   ),
                   const Divider(),
-                  if (_userName != null)
-                    Text(
-                      'Name: $_userName',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        color: Colors.black54,
-                      ),
-                    ),
-                  if (_userPhone != null)
-                    Text(
-                      'Phone: $_userPhone',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        color: Colors.black54,
-                      ),
-                    ),
-                  if (_userEmail != null)
-                    Text(
-                      'Email: $_userEmail',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        color: Colors.black54,
-                      ),
-                    ),
+                  if (_userName != null) Text('Name: $_userName'),
+                  if (_userPhone != null) Text('Phone: $_userPhone'),
+                  if (_userEmail != null) Text('Email: $_userEmail'),
                 ],
               ),
             ),
           ),
-
           const SizedBox(height: 24),
-
-          // Posted Properties section
           Text(
             'Your Posted Properties',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: Colors.white,
+                  color: Colors.black87,
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                 ),
           ),
           const SizedBox(height: 8),
-
-          // Display posted properties
           _isLoadingProperties
               ? const Center(child: CircularProgressIndicator())
               : _userPostedProperties.isEmpty
-                  ? const Text(
-                      'No properties posted yet.',
-                      style: TextStyle(color: Colors.white70),
-                    )
+                  ? const Text('No properties posted yet.')
                   : ListView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       itemCount: _userPostedProperties.length,
                       itemBuilder: (context, index) {
-                        final property = _userPostedProperties[index];
-                        return Card(
-                          color: Colors.white.withOpacity(0.9),
-                          elevation: 3,
-                          margin: const EdgeInsets.symmetric(vertical: 10),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(8),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                // Your custom PropertyCard widget
-                                PropertyCard(
-                                  property: property,
-                                  isFavorited: false,
-                                  onFavoriteToggle: (bool newState) {
-                                    // Handle favorite toggle if needed
-                                  },
-                                ),
-
-                                const SizedBox(height: 4),
-
-                                Align(
-                                  alignment: Alignment.centerRight,
-                                  child: ElevatedButton.icon(
-                                    onPressed: () {
-                                      // Currently does nothing
-                                      // Could later link to WhatsApp Business
-                                    },
-                                    icon: const Icon(Icons.edit),
-                                    label: const Text('Request to Edit'),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.teal,
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 20, vertical: 10),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+                        return PropertyCard(
+                          property: _userPostedProperties[index],
+                          isFavorited: false,
+                          onFavoriteToggle: (bool newState) {},
                         );
                       },
                     ),
-
-          const SizedBox(height: 24),
-
-          // Sign out button
-          Center(
-            child: ElevatedButton.icon(
-              onPressed: _signOut,
-              icon: const Icon(Icons.logout),
-              label: const Text('Sign Out'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.redAccent,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-            ),
-          ),
         ],
       ),
     );
@@ -387,7 +237,6 @@ class ProfileScreenState extends State<ProfileScreen> {
     await FirebaseAuth.instance.signOut();
     setState(() {
       _currentUser = null;
-      _welcomeMessage = null;
       _userName = null;
       _userPhone = null;
       _userEmail = null;
@@ -401,9 +250,8 @@ class ProfileScreenState extends State<ProfileScreen> {
       if (user != null && mounted) {
         setState(() {
           _currentUser = user;
-          _welcomeMessage = 'Welcome, ${user.email}';
         });
-        _loadUserData(); // Reload user data after successful login
+        _loadUserData();
       }
     } catch (e) {
       _showErrorSnackBar('Failed to sign in with Google');
@@ -432,15 +280,11 @@ class ProfileScreenState extends State<ProfileScreen> {
           ),
           actions: [
             TextButton(
-              onPressed: () async {
-                await _sendCode();
-              },
+              onPressed: _sendCode,
               child: const Text('Send Code'),
             ),
             TextButton(
-              onPressed: () async {
-                await _signInWithPhone();
-              },
+              onPressed: _signInWithPhone,
               child: const Text('Sign In'),
             ),
           ],
@@ -477,13 +321,9 @@ class ProfileScreenState extends State<ProfileScreen> {
       if (user != null && mounted) {
         setState(() {
           _currentUser = user;
-          _welcomeMessage = 'Welcome, ${user.phoneNumber}';
         });
-        // Refresh user data
         _loadUserData();
-        if (mounted) {
-          Navigator.pop(context); // Close the dialog
-        }
+        Navigator.pop(context);
       }
     } catch (e) {
       _showErrorSnackBar('Failed to sign in with phone number');
@@ -491,10 +331,8 @@ class ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _showErrorSnackBar(String message) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
-    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
   }
 }
