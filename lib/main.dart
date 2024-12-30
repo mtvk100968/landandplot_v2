@@ -1,40 +1,45 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:provider/provider.dart';
+
+import 'firebase_options.dart';
 import './components/bottom_nav_bar.dart';
 import './utils/keys.dart'; // Import global keys and tab indices
-import 'firebase_options.dart';
 
+// Example providers. Replace these with your real ones:
+import './providers/property_provider.dart';
+import './services/property_service.dart';
+
+/// Top-level or static function for background messages.
+/// Recommended to add the entry-point annotation for Flutter 3.3+.
+@pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  // Handle background messages
   print("Handling a background message: ${message.messageId}");
 }
 
 Future<void> main() async {
-  // Ensure Flutter bindings are initialized
   WidgetsFlutterBinding.ensureInitialized();
 
   try {
-    // Initialize Firebase with the default options for the current platform
+    // 1. Initialize Firebase
     await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
+        options: DefaultFirebaseOptions.currentPlatform);
 
-    // Initialize Firebase Messaging for background notifications
+    // 2. Setup background message handling
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
-    // Retrieve the FCM token for this device
-    FirebaseMessaging messaging = FirebaseMessaging.instance;
-    String? fcmToken = await messaging.getToken();
+    // 3. Get FCM token (for debugging/logging or your backend)
+    final messaging = FirebaseMessaging.instance;
+    final fcmToken = await messaging.getToken();
     print("FCM Token: $fcmToken");
 
-    // Request permission (for iOS)
-    NotificationSettings settings = await messaging.requestPermission(
+    // 4. iOS permissions (no effect on Android)
+    final settings = await messaging.requestPermission(
       alert: true,
       badge: true,
       sound: true,
     );
-
     if (settings.authorizationStatus == AuthorizationStatus.authorized) {
       print('User granted permission');
     } else if (settings.authorizationStatus ==
@@ -47,8 +52,22 @@ Future<void> main() async {
     print("Error initializing Firebase: $e");
   }
 
-  // Run the Flutter application
-  runApp(const MyApp());
+  // Wrap your app in the MultiProvider at the root level:
+  runApp(
+    MultiProvider(
+      providers: [
+        // Put your real providers here:
+        ChangeNotifierProvider<PropertyProvider>(
+          create: (_) => PropertyProvider(),
+        ),
+        Provider<PropertyService>(
+          create: (_) => PropertyService(),
+        ),
+        // Add more providers if needed
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -62,10 +81,8 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.lightGreen),
         useMaterial3: true, // Opt into Material 3 design
       ),
-      debugShowCheckedModeBanner: false, // Hide the debug banner
-      home: BottomNavBar(
-        key: bottomNavBarKey, // Assign the global key here
-      ), // Use the BottomNavBar as the home
+      debugShowCheckedModeBanner: false,
+      home: BottomNavBar(key: bottomNavBarKey),
     );
   }
 }

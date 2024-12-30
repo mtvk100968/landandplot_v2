@@ -5,6 +5,7 @@ import '../services/property_service.dart';
 import '../models/user_model.dart';
 import '../models/property_model.dart';
 import '../components/views/property_list_view.dart';
+import 'property_details_screen.dart';
 
 class FavoritesScreen extends StatefulWidget {
   const FavoritesScreen({Key? key}) : super(key: key);
@@ -28,9 +29,6 @@ class FavoritesScreenState extends State<FavoritesScreen> {
     }
 
     try {
-      // Corrected logic:
-      // isFavorited == true means after toggle, it is favorited. So we need to remove it.
-      // isFavorited == false means after toggle, it is unfavorited. So we add it.
       if (nowFavorited) {
         await UserService().addFavoriteProperty(firebaseUser.uid, propertyId);
       } else {
@@ -52,12 +50,18 @@ class FavoritesScreenState extends State<FavoritesScreen> {
     return await PropertyService().getPropertiesByIds(propertyIds);
   }
 
-  // ADDED: A method to force refresh
   Future<void> _refreshFavorites() async {
-    // If you want to force re-fetch, you can do something here
-    setState(() {
-      // This will cause the StreamBuilder to rebuild
-    });
+    setState(() {});
+  }
+
+  // ADDED: Method to handle property taps
+  void _onTapProperty(Property property) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PropertyDetailsScreen(property: property),
+      ),
+    );
   }
 
   @override
@@ -78,7 +82,6 @@ class FavoritesScreenState extends State<FavoritesScreen> {
       appBar: AppBar(
         title: const Text('Favorites'),
       ),
-      // ADDED: Wrap in a RefreshIndicator
       body: RefreshIndicator(
         onRefresh: _refreshFavorites,
         child: StreamBuilder<AppUser?>(
@@ -95,7 +98,6 @@ class FavoritesScreenState extends State<FavoritesScreen> {
               return const Center(child: Text('No user data available.'));
             }
 
-            // Just call FutureBuilder without the key to re-run whenever the stream updates
             return FutureBuilder<List<Property>>(
               future:
                   _fetchFavoriteProperties(currentUser!.favoritedPropertyIds),
@@ -113,6 +115,7 @@ class FavoritesScreenState extends State<FavoritesScreen> {
                     favoritedPropertyIds:
                         currentUser?.favoritedPropertyIds ?? [],
                     onFavoriteToggle: _onFavoriteToggle,
+                    onTapProperty: _onTapProperty, // Pass the new callback
                   );
                 }
               },

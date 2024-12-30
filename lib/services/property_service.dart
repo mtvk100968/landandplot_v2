@@ -1,8 +1,5 @@
-// lib/services/property_service.dart
-
 import 'dart:io';
 import 'dart:async';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import '../models/property_model.dart';
@@ -383,8 +380,57 @@ class PropertyService {
     }
   }
 
-  /// Private helper method to upload media files to Firebase Storage.
-  /// Returns a list of download URLs for the uploaded files.
+  /// **New Method: Add Proposed Price**
+  Future<void> addProposedPrice(
+      String propertyId, double price, String remark) async {
+    try {
+      final userId = FirebaseAuth.instance.currentUser?.uid;
+
+      if (userId == null) {
+        throw Exception("User must be logged in to propose a price.");
+      }
+
+      final proposal = {
+        'userId': userId,
+        'price': price,
+        'remark': remark,
+        'timestamp': Timestamp.now(),
+      };
+
+      await _firestore.collection(collectionPath).doc(propertyId).update({
+        'proposedPrices': FieldValue.arrayUnion([proposal]),
+      });
+    } catch (e, stacktrace) {
+      print('Error adding proposed price: $e');
+      print(stacktrace); // Print stack trace for debugging
+      Error.throwWithStackTrace(
+          Exception('Failed to add proposed price'), stacktrace);
+    }
+  }
+
+  /// **New Method: Get Proposed Prices**
+  Future<List<Map<String, dynamic>>> getProposedPrices(
+      String propertyId) async {
+    try {
+      DocumentSnapshot<Map<String, dynamic>> doc =
+          await _firestore.collection(collectionPath).doc(propertyId).get();
+
+      if (doc.exists && doc.data() != null) {
+        final data = doc.data()!;
+        if (data.containsKey('proposedPrices')) {
+          return List<Map<String, dynamic>>.from(data['proposedPrices']);
+        }
+      }
+      return [];
+    } catch (e, stacktrace) {
+      print('Error fetching proposed prices: $e');
+      print(stacktrace); // Print stack trace for debugging
+      Error.throwWithStackTrace(
+          Exception('Failed to fetch proposed prices'), stacktrace);
+    }
+  }
+
+  /// **Private Helper Method: Upload Media Files**
   Future<List<String>> _uploadMediaFiles(String propertyId, List<File> files,
       String folder, String mediaType) async {
     List<String> downloadUrls = [];
@@ -423,7 +469,7 @@ class PropertyService {
     return downloadUrls;
   }
 
-  /// Private helper method to delete files from Firebase Storage given their URLs.
+  /// **Private Helper Method: Delete Files**
   Future<void> _deleteFiles(List<String> fileUrls) async {
     for (String url in fileUrls) {
       try {
@@ -437,7 +483,7 @@ class PropertyService {
     }
   }
 
-  /// Private helper method to generate a random string for unique file naming.
+  /// **Private Helper Method: Generate Random String**
   String _generateRandomString(int length) {
     const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
     final rand = DateTime.now().millisecondsSinceEpoch;
@@ -445,12 +491,12 @@ class PropertyService {
         length, (index) => chars[(rand + index) % chars.length]).join();
   }
 
-  /// Private helper method to get file extension.
+  /// **Private Helper Method: Get File Extension**
   String _getFileExtension(String path) {
     return path.substring(path.lastIndexOf('.'));
   }
 
-  /// Private helper method to generate a custom property ID.
+  /// **Private Helper Method: Generate Custom Property ID**
   Future<String> _generatePropertyId(String district, String mandal) async {
     // Extract first two letters of district and mandal, uppercase
     String districtCode =

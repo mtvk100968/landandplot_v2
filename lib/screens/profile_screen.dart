@@ -6,6 +6,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user_model.dart';
 import '../models/property_model.dart';
 import '../components/property_card.dart';
+import './property_details_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -225,6 +226,17 @@ class ProfileScreenState extends State<ProfileScreen> {
                           property: _userPostedProperties[index],
                           isFavorited: false,
                           onFavoriteToggle: (bool newState) {},
+                          onTap: () {
+                            // Navigate to property details or perform desired action
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => PropertyDetailsScreen(
+                                  property: _userPostedProperties[index],
+                                ),
+                              ),
+                            );
+                          },
                         );
                       },
                     ),

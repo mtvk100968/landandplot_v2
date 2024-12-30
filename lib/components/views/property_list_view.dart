@@ -6,17 +6,20 @@ import '../property_card.dart';
 
 typedef FavoriteToggleCallback = void Function(
     String propertyId, bool isFavorited);
+typedef PropertyTapCallback = void Function(Property property);
 
 class PropertyListView extends StatelessWidget {
   final List<Property> properties;
   final List<String> favoritedPropertyIds;
   final FavoriteToggleCallback onFavoriteToggle;
+  final PropertyTapCallback onTapProperty; // New callback for property taps
 
   const PropertyListView({
     Key? key,
     required this.properties,
     required this.favoritedPropertyIds,
     required this.onFavoriteToggle,
+    required this.onTapProperty, // Require the callback in constructor
   }) : super(key: key);
 
   @override
@@ -40,6 +43,7 @@ class PropertyListView extends StatelessWidget {
             // Pass the property.id along with the new favorited status
             onFavoriteToggle(property.id, newIsFavorited);
           },
+          onTap: () => onTapProperty(property), // Handle property tap
         );
       },
     );

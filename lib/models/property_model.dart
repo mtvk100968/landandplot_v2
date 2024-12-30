@@ -1,5 +1,3 @@
-// lib/models/property_model.dart
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Property {
@@ -13,30 +11,29 @@ class Property {
   final double totalPrice;
   final String surveyNumber;
   final List<String> plotNumbers;
-  final String? district; // Kept for backward compatibility
+  final String? district;
   final String? mandal;
-  final String? village; // <--- Added Village Field
+  final String? village;
   final String? city;
-  // final String town;
   final String pincode;
   final double latitude;
   final double longitude;
   final String? state;
-  final String roadAccess; // Optional
-  final String roadType; // Optional
-  final double roadWidth; // Optional
-  final String landFacing; // Optional
+  final String roadAccess;
+  final String roadType;
+  final double roadWidth;
+  final String landFacing;
   final String propertyOwner;
   final List<String> images;
   final List<String> videos;
   final List<String> documents;
-  final String? address; // <--- Added Address Field
-
-  // **New Fields**
-  final String userType; // 'Owner' or 'Agent'
-  final String? ventureName; // Required for 'Plot' or 'Farm Land'
-
+  final String? address;
+  final String userType;
+  final String? ventureName;
   final Timestamp createdAt;
+
+  // **Added proposedPrices field**
+  final List<Map<String, dynamic>> proposedPrices;
 
   Property({
     this.id = '',
@@ -49,16 +46,14 @@ class Property {
     required this.totalPrice,
     required this.surveyNumber,
     required this.plotNumbers,
-    this.city, // Added
-    this.district, // Updated
+    this.city,
+    this.district,
     this.mandal,
-    this.village, // Updated
+    this.village,
     this.state,
-    // required this.town,
     required this.pincode,
     required this.latitude,
     required this.longitude,
-    // Updated
     this.roadAccess = '',
     this.roadType = '',
     this.roadWidth = 0.0,
@@ -68,11 +63,10 @@ class Property {
     required this.videos,
     required this.documents,
     this.address,
-
-    // **Initialize New Fields**
     required this.userType,
     this.ventureName,
     required this.createdAt,
+    this.proposedPrices = const [], // Initialize as an empty list
   });
 
   Map<String, dynamic> toMap() {
@@ -91,7 +85,6 @@ class Property {
       'mandal': mandal,
       'village': village,
       'city': city,
-      // 'town': town,
       'pincode': pincode,
       'latitude': latitude,
       'longitude': longitude,
@@ -105,12 +98,12 @@ class Property {
       'videos': videos,
       'documents': documents,
       'address': address,
-
-      // **Include New Fields**
       'userType': userType,
       'ventureName': ventureName,
-
       'createdAt': createdAt,
+
+      // **Include proposedPrices field in Firestore**
+      'proposedPrices': proposedPrices,
     };
   }
 
@@ -126,15 +119,14 @@ class Property {
       totalPrice: map['totalPrice']?.toDouble() ?? 0.0,
       surveyNumber: map['surveyNumber'] ?? '',
       plotNumbers: List<String>.from(map['plotNumbers'] ?? []),
-      district: map['district'], // Updated
+      district: map['district'],
       mandal: map['mandal'],
-      village: map['village'], // Updated
-      city: map['city'], // Added
-      // town: map['town'] ?? '',
+      village: map['village'],
+      city: map['city'],
       pincode: map['pincode'] ?? '',
       latitude: map['latitude']?.toDouble() ?? 0.0,
       longitude: map['longitude']?.toDouble() ?? 0.0,
-      state: map['state'] ?? '',
+      state: map['state'],
       roadAccess: map['roadAccess'] ?? '',
       roadType: map['roadType'] ?? '',
       roadWidth: map['roadWidth']?.toDouble() ?? 0.0,
@@ -144,16 +136,17 @@ class Property {
       videos: List<String>.from(map['videos'] ?? []),
       documents: List<String>.from(map['documents'] ?? []),
       address: map['address'],
-
-      // **Initialize New Fields from Map**
       userType: map['userType'] ?? 'Owner',
       ventureName: map['ventureName'],
-
       createdAt: map['createdAt'] ?? Timestamp.now(),
+
+      // **Parse proposedPrices**
+      proposedPrices: List<Map<String, dynamic>>.from(
+        map['proposedPrices'] ?? [],
+      ),
     );
   }
 
-  // Added fromDocument factory constructor
   factory Property.fromDocument(DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data()!;
     return Property.fromMap(doc.id, data);
