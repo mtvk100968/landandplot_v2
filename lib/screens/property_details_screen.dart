@@ -175,14 +175,6 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                             markerId: MarkerId(widget.property.id),
                             position: LatLng(widget.property.latitude,
                                 widget.property.longitude),
-                            infoWindow: InfoWindow(
-                              title: widget.property.name,
-                              snippet: widget.property.address ?? '',
-                              onTap: () {
-                                _openGoogleMaps(widget.property.latitude,
-                                    widget.property.longitude);
-                              },
-                            ),
                             onTap: () {
                               _openGoogleMaps(widget.property.latitude,
                                   widget.property.longitude);
