@@ -5,6 +5,8 @@ import '../models/property_model.dart';
 import 'package:provider/provider.dart';
 import '../providers/property_provider.dart';
 import '../components/image_gallery_screen.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class PropertyDetailsScreen extends StatefulWidget {
   final Property property;
@@ -18,6 +20,23 @@ class PropertyDetailsScreen extends StatefulWidget {
 
 class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
   late Future<void> _fetchProposedPricesFuture;
+
+  Future<void> _openGoogleMaps(double latitude, double longitude) async {
+    final googleMapsUrl = Uri.parse(
+        'https://www.google.com/maps/search/?api=1&query=$latitude,$longitude');
+    final appleMapsUrl =
+        Uri.parse('https://maps.apple.com/?q=$latitude,$longitude');
+
+    if (await canLaunchUrl(googleMapsUrl)) {
+      await launchUrl(googleMapsUrl, mode: LaunchMode.externalApplication);
+    } else if (await canLaunchUrl(appleMapsUrl)) {
+      await launchUrl(appleMapsUrl, mode: LaunchMode.externalApplication);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not launch maps')),
+      );
+    }
+  }
 
   @override
   void initState() {
@@ -139,53 +158,47 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                   ),
 
                   const SizedBox(height: 16),
-                  // Address Card
+
+                  // Map Card
                   buildCard(
-                    title: 'Address',
-                    content: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '${widget.property.city} / ${widget.property.ventureName ?? ''}',
-                          style: const TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold),
+                    title: 'Location',
+                    content: Container(
+                      height: 300, // Adjust height as needed
+                      child: GoogleMap(
+                        initialCameraPosition: CameraPosition(
+                          target: LatLng(widget.property.latitude,
+                              widget.property.longitude),
+                          zoom: 14,
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          '${widget.property.village ?? ''}, ${widget.property.mandal ?? ''}, ${widget.property.district ?? ''}',
-                          style: const TextStyle(fontSize: 16),
-                        ),
-                      ],
+                        markers: {
+                          Marker(
+                            markerId: MarkerId(widget.property.id),
+                            position: LatLng(widget.property.latitude,
+                                widget.property.longitude),
+                            infoWindow: InfoWindow(
+                              title: widget.property.name,
+                              snippet: widget.property.address ?? '',
+                              onTap: () {
+                                _openGoogleMaps(widget.property.latitude,
+                                    widget.property.longitude);
+                              },
+                            ),
+                            onTap: () {
+                              _openGoogleMaps(widget.property.latitude,
+                                  widget.property.longitude);
+                            },
+                          ),
+                        },
+                        onTap: (LatLng position) {
+                          // Optionally handle map taps
+                        },
+                        myLocationButtonEnabled: false,
+                        zoomControlsEnabled: true,
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 16),
 
-                  // const SizedBox(height: 16),
-                  // Road Details Card
-                  // buildCard(
-                  //   title: 'Road Details',
-                  //   content: Column(
-                  //     crossAxisAlignment: CrossAxisAlignment.start,
-                  //     children: [
-                  //       Text(
-                  //         'Road Access: ${widget.property.roadAccess}',
-                  //         style: const TextStyle(fontSize: 16),
-                  //       ),
-                  //       Text(
-                  //         'Road Type: ${widget.property.roadType}',
-                  //         style: const TextStyle(fontSize: 16),
-                  //       ),
-                  //       Text(
-                  //         'Road Width: ${widget.property.roadWidth} ft',
-                  //         style: const TextStyle(fontSize: 16),
-                  //       ),
-                  //       Text(
-                  //         'Land Facing: ${widget.property.landFacing}',
-                  //         style: const TextStyle(fontSize: 16),
-                  //       ),
-                  //     ],
-                  //   ),
-                  // ),
+                  const SizedBox(height: 16),
                 ],
               ),
             );
