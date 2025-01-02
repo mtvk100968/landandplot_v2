@@ -4,12 +4,13 @@ import 'package:flutter/material.dart';
 import '../../../models/property_model.dart';
 import '../utils/format.dart';
 import '../../screens/property_details_screen.dart';
+// import 'google_fonts';
 
 class PropertyCard extends StatefulWidget {
   final Property property;
   final bool isFavorited;
   final ValueChanged<bool> onFavoriteToggle;
-  final VoidCallback onTap; // New callback for taps
+  final VoidCallback onTap; // Callback for taps
 
   const PropertyCard({
     Key? key,
@@ -25,6 +26,7 @@ class PropertyCard extends StatefulWidget {
 
 class _PropertyCardState extends State<PropertyCard> {
   late bool isFavorited;
+  int currentPage = 0; // For Carousel Dots
 
   @override
   void initState() {
@@ -34,10 +36,10 @@ class _PropertyCardState extends State<PropertyCard> {
 
   void _toggleFavorite() {
     // Toggle favorite status and notify parent
-    widget.onFavoriteToggle(!widget.isFavorited);
     setState(() {
       isFavorited = !isFavorited;
     });
+    widget.onFavoriteToggle(isFavorited);
   }
 
   @override
@@ -45,177 +47,205 @@ class _PropertyCardState extends State<PropertyCard> {
     final screenWidth = MediaQuery.of(context).size.width;
 
     return InkWell(
-      onTap: widget.onTap, // Use the passed onTap callback
+      onTap: widget.onTap, // Navigate to property details
       child: Padding(
-        padding: const EdgeInsets.only(bottom: 9), // Bottom padding
-        child: Stack(
+        padding: const EdgeInsets.only(
+            bottom: 16), // Increased bottom padding for better spacing
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Image Carousel
-            AspectRatio(
-              aspectRatio: 16 / 10,
-              child: PageView.builder(
-                itemCount: widget.property.images.length,
-                itemBuilder: (context, index) {
-                  return Image.network(
-                    widget.property.images[index],
-                    fit: BoxFit.cover,
-                    width: screenWidth,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Image.asset(
-                        'assets/images/no_image_available.png',
-                        fit: BoxFit.cover,
-                        width: screenWidth,
-                      );
-                    },
-                  );
-                },
-              ),
-            ),
-            // Text Overlay
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                // Optional: Uncomment to add a semi-transparent background
-                // color: Colors.black.withOpacity(0.6),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Price and Unit
-                    Text(
-                      '${formatPrice(widget.property.pricePerUnit)}/${widget.property.propertyType == 'Agri Land' ? 'ac' : 'sqyd'}',
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        fontFamily:
-                            'Roboto', // Professional font for better design
-                        color: Colors.white,
+            // Center the Image Container to control its width independently
+            Center(
+              child: SizedBox(
+                width: screenWidth *
+                    0.95, // Set desired width for the image container
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12), // Rounded corners
+                  child: Stack(
+                    children: [
+                      // Image Carousel
+                      AspectRatio(
+                        aspectRatio: 16 / 10,
+                        child: PageView.builder(
+                          itemCount: widget.property.images.length,
+                          onPageChanged: (index) {
+                            setState(() {
+                              currentPage = index;
+                            });
+                          },
+                          itemBuilder: (context, index) {
+                            return Image.network(
+                              widget.property.images[index],
+                              fit: BoxFit.cover,
+                              width: double.infinity, // Fill the SizedBox width
+                              loadingBuilder: (context, child, progress) {
+                                if (progress == null) return child;
+                                return Center(
+                                  child: CircularProgressIndicator(
+                                    value: progress.expectedTotalBytes != null
+                                        ? progress.cumulativeBytesLoaded /
+                                            (progress.expectedTotalBytes ?? 1)
+                                        : null,
+                                  ),
+                                );
+                              },
+                              errorBuilder: (context, error, stackTrace) {
+                                return Image.asset(
+                                  'assets/images/no_image_available.png',
+                                  fit: BoxFit.cover,
+                                  width: double
+                                      .infinity, // Fill the SizedBox width
+                                );
+                              },
+                            );
+                          },
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    // Town and City
-                    Text(
-                      '${widget.property.village ?? ''}, ${widget.property.city ?? ''}',
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                        fontFamily: 'Roboto', // Consistent professional font
-                        color: Colors.white,
+                      // Heart Icon Positioned on the Image
+                      Positioned(
+                        top: 10,
+                        right: 10,
+                        child: GestureDetector(
+                          onTap: () {
+                            // Prevent the tap from triggering the card's onTap
+                            _toggleFavorite();
+                          },
+                          child: Icon(
+                            isFavorited
+                                ? Icons.favorite
+                                : Icons
+                                    .favorite_border, // Filled or outlined heart
+                            size: 30, // Adjust the size as needed
+                            color: isFavorited
+                                ? Colors.red
+                                : Colors
+                                    .black, // Pink for favorited, black for not favorited
+                            shadows: isFavorited
+                                ? [
+                                    Shadow(
+                                      offset: Offset(0, 0),
+                                      blurRadius: 2,
+                                      color: Colors
+                                          .white, // Adds a subtle glow when favorited
+                                    ),
+                                  ]
+                                : null, // No shadow for the outline
+                          ),
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 2),
-                    // Mandal and District
-                    Text(
-                      '${widget.property.mandal ?? ''}, ${widget.property.district ?? ''}',
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                        fontFamily: 'Roboto', // Consistent professional font
-                        color: Colors.white,
+                      // Carousel Dots
+                      Positioned(
+                        bottom: 8,
+                        left: 0,
+                        right: 0,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: List.generate(
+                            widget.property.images.length,
+                            (index) => Container(
+                              margin: const EdgeInsets.symmetric(horizontal: 4),
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: index == currentPage
+                                    ? Colors.white
+                                    : Colors.white.withOpacity(0.5),
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            // Property Type Badge
-            Positioned(
-              top: 8,
-              left: 8,
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.2), // Matching color scheme
-                  borderRadius: BorderRadius.circular(4), // Subtle rounding
-                ),
-                child: Text(
-                  widget.property.propertyType,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'Roboto', // Consistent professional font
-                    color: Colors.white,
+                      // Property Type Badge
+                      Positioned(
+                        top: 8,
+                        left: 8,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            widget.property.propertyType,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
             ),
-            // Share and Heart Icons
-            Positioned(
-              top: 8,
-              right: 8,
+            const SizedBox(height: 8),
+            // Property Details with PopupMenuButton
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Share Icon
-                  GestureDetector(
-                    onTap: widget.onTap, // Use onTap to navigate to details
-                    child: Container(
-                      width: 40, // Increased width
-                      height: 40, // Increased height
-                      decoration: BoxDecoration(
-                        color: Colors.black
-                            .withOpacity(0.2), // Matching color scheme
-                        shape: BoxShape.rectangle, // Square shape
-                        borderRadius:
-                            BorderRadius.circular(8), // More rounded corners
-                      ),
-                      alignment: Alignment.center, // Center the icon
-                      child: const Icon(
-                        Icons.share,
-                        size: 24, // Larger icon size
-                        color: Colors.white, // White icon on black background
-                      ),
+                  // Expanded Column for Details
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Total Price
+                        if (widget.property.totalPrice !=
+                            null) // Check if totalPrice exists
+                          Text(
+                            '${formatPrice(widget.property.totalPrice!)}',
+                            style: const TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        // Price per unit
+                        Text(
+                          '${formatPrice(widget.property.pricePerUnit)}/${widget.property.propertyType == 'Agri Land' ? 'acre' : 'sqyd'}',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        // Address (2 lines)
+                        Text(
+                          '${widget.property.village ?? ''}, ${widget.property.city ?? ''}',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Colors.black,
+                          ),
+                        ),
+                        Text(
+                          '${widget.property.mandal ?? ''}, ${widget.property.district ?? ''}',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(width: 12), // Added spacing between icons
-                  // Heart Icon
-                  GestureDetector(
-                    onTap: _toggleFavorite, // Use the local method
-                    child: Container(
-                      width: 40, // Increased width
-                      height: 40, // Increased height
-                      decoration: BoxDecoration(
-                        color: Colors.black
-                            .withOpacity(0.2), // Matching color scheme
-                        shape: BoxShape.rectangle, // Square shape
-                        borderRadius:
-                            BorderRadius.circular(8), // More rounded corners
-                      ),
-                      alignment: Alignment.center,
-                      child: Icon(
-                        isFavorited ? Icons.favorite : Icons.favorite_border,
-                        size: 24,
-                        color: isFavorited ? Colors.red : Colors.white,
+                  // Land Area
+                  if (widget.property.landArea !=
+                      null) // Check if landArea exists
+                    Text(
+                      '${formatValue(widget.property.landArea)} ${widget.property.propertyType == 'Agri Land' ? 'acres' : 'sqyds'}',
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                  ),
                 ],
               ),
             ),
-            // Total Area
-            Positioned(
-              bottom: 0,
-              right: 0,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  // Optional: Uncomment to add a semi-transparent background
-                  // color: Colors.black.withOpacity(0.7),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  '${formatValue(widget.property.landArea)} ${widget.property.propertyType == 'Agri Land' ? 'ac' : 'sqyd'}',
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'Roboto', // Consistent professional font
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ),
+            const SizedBox(height: 8),
+            // Optional: Additional spacing or elements can go here
           ],
         ),
       ),

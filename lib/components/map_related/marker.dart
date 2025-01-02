@@ -20,8 +20,8 @@ class CustomMarker {
 
     // Define the fixed marker height and pointer height.
     const double height = 80; // Fixed height as requested
-    const double pointerHeight = 10; // Triangle pointer height
-    const double cornerRadius = 15; // Corner radius for rounded corners
+    const double pointerHeight = 16; // Triangle pointer height
+    const double cornerRadius = 0; // Corner radius for rounded corners
 
     // Define the width based on the length of the price text
     final double width = _calculateWidthBasedOnText(price);
@@ -33,11 +33,11 @@ class CustomMarker {
     // Define the paint for the rectangle and pointer.
     final Paint rectPaint = Paint()
       // ..color = const ui.Color.fromARGB(255, 30, 67, 31)
-      ..color = Colors.lightGreen
+      ..color = Colors.green
       ..style = PaintingStyle.fill;
 
     // Define the paint for the border.
-    final Paint borderPaint = Paint()
+    Paint borderPaint = Paint()
       ..color = Colors.black
       ..strokeWidth = 2
       ..style = PaintingStyle.stroke;

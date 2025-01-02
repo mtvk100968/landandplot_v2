@@ -5,7 +5,6 @@ import '../models/property_model.dart';
 import 'package:provider/provider.dart';
 import '../providers/property_provider.dart';
 import '../components/image_gallery_screen.dart';
-import '../components/full_screen_image_view.dart';
 
 class PropertyDetailsScreen extends StatefulWidget {
   final Property property;
@@ -63,7 +62,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                   Stack(
                     children: [
                       AspectRatio(
-                        aspectRatio: 16 / 9,
+                        aspectRatio: 16 / 12,
                         child: GestureDetector(
                           onTap: () {
                             Navigator.push(
@@ -88,38 +87,20 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                         ),
                       ),
                       Positioned(
-                        top: 16,
-                        left: 16,
+                        top: 35,
+                        left: 7,
                         child: IconButton(
-                          icon:
-                              const Icon(Icons.arrow_back, color: Colors.white),
+                          icon: const Icon(
+                            Icons.arrow_back_ios,
+                            color: Colors.black,
+                            size: 28,
+                          ),
                           onPressed: () => Navigator.pop(context),
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 16),
-                  // Address Card
-                  buildCard(
-                    title: 'Address',
-                    content: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '${widget.property.city} / ${widget.property.ventureName ?? ''}',
-                          style: const TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          '${widget.property.village ?? ''}, ${widget.property.mandal ?? ''}, ${widget.property.district ?? ''}',
-                          style: const TextStyle(fontSize: 16),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
                   // Price Card
                   buildCard(
                     title: 'Price Details',
@@ -158,31 +139,53 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                   ),
 
                   const SizedBox(height: 16),
-                  // Road Details Card
+                  // Address Card
                   buildCard(
-                    title: 'Road Details',
+                    title: 'Address',
                     content: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Road Access: ${widget.property.roadAccess}',
-                          style: const TextStyle(fontSize: 16),
+                          '${widget.property.city} / ${widget.property.ventureName ?? ''}',
+                          style: const TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold),
                         ),
+                        const SizedBox(height: 8),
                         Text(
-                          'Road Type: ${widget.property.roadType}',
-                          style: const TextStyle(fontSize: 16),
-                        ),
-                        Text(
-                          'Road Width: ${widget.property.roadWidth} ft',
-                          style: const TextStyle(fontSize: 16),
-                        ),
-                        Text(
-                          'Land Facing: ${widget.property.landFacing}',
+                          '${widget.property.village ?? ''}, ${widget.property.mandal ?? ''}, ${widget.property.district ?? ''}',
                           style: const TextStyle(fontSize: 16),
                         ),
                       ],
                     ),
                   ),
+                  const SizedBox(height: 16),
+
+                  // const SizedBox(height: 16),
+                  // Road Details Card
+                  // buildCard(
+                  //   title: 'Road Details',
+                  //   content: Column(
+                  //     crossAxisAlignment: CrossAxisAlignment.start,
+                  //     children: [
+                  //       Text(
+                  //         'Road Access: ${widget.property.roadAccess}',
+                  //         style: const TextStyle(fontSize: 16),
+                  //       ),
+                  //       Text(
+                  //         'Road Type: ${widget.property.roadType}',
+                  //         style: const TextStyle(fontSize: 16),
+                  //       ),
+                  //       Text(
+                  //         'Road Width: ${widget.property.roadWidth} ft',
+                  //         style: const TextStyle(fontSize: 16),
+                  //       ),
+                  //       Text(
+                  //         'Land Facing: ${widget.property.landFacing}',
+                  //         style: const TextStyle(fontSize: 16),
+                  //       ),
+                  //     ],
+                  //   ),
+                  // ),
                 ],
               ),
             );

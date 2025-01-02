@@ -124,6 +124,10 @@ class BottomNavBarState extends State<BottomNavBar> {
           currentIndex: _selectedIndex,
           selectedItemColor: Colors.black,
           unselectedItemColor: Colors.grey,
+          selectedLabelStyle: const TextStyle(
+              fontSize: 12), // Custom font size for selected label
+          unselectedLabelStyle: const TextStyle(
+              fontSize: 12), // Custom font size for unselected labels
           onTap: (index) {
             switchTab(index);
           },

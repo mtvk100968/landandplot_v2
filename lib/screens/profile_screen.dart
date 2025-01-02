@@ -99,10 +99,11 @@ class ProfileScreenState extends State<ProfileScreen> {
       appBar: AppBar(
         title: const Text('Profile'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: _signOut,
-          ),
+          if (_currentUser != null)
+            IconButton(
+              icon: const Icon(Icons.logout),
+              onPressed: _signOut,
+            ),
         ],
       ),
       body: RefreshIndicator(
@@ -129,13 +130,14 @@ class ProfileScreenState extends State<ProfileScreen> {
                   'Login to LANDANDPLOT',
                   style: TextStyle(
                     fontSize: 24,
-                    color: Colors.lightGreen,
+                    color: Colors.green,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SizedBox(height: 16),
                 ElevatedButton.icon(
                   onPressed: () => _signInWithGoogle(),
+                  icon: const Icon(Icons.login),
                   label: const Text('With Google'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
@@ -151,6 +153,7 @@ class ProfileScreenState extends State<ProfileScreen> {
                 const SizedBox(height: 16),
                 ElevatedButton.icon(
                   onPressed: () => _showPhoneNumberDialog(),
+                  icon: const Icon(Icons.phone),
                   label: const Text('With Number'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
@@ -173,11 +176,12 @@ class ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildProfilePage() {
     return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 5),
+          // User Information Card
           Card(
             elevation: 5,
             shape:
@@ -204,41 +208,68 @@ class ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
           const SizedBox(height: 24),
-          Text(
-            'Your Posted Properties',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: Colors.black87,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-          ),
-          const SizedBox(height: 8),
+          // Posted Properties Section
           _isLoadingProperties
               ? const Center(child: CircularProgressIndicator())
               : _userPostedProperties.isEmpty
-                  ? const Text('No properties posted yet.')
-                  : ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: _userPostedProperties.length,
-                      itemBuilder: (context, index) {
-                        return PropertyCard(
-                          property: _userPostedProperties[index],
-                          isFavorited: false,
-                          onFavoriteToggle: (bool newState) {},
-                          onTap: () {
-                            // Navigate to property details or perform desired action
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => PropertyDetailsScreen(
-                                  property: _userPostedProperties[index],
-                                ),
-                              ),
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: const [
+                          Text(
+                            'Your Posted Properties',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          SizedBox(height: 16),
+                          Text(
+                            'No properties posted yet.',
+                            style:
+                                TextStyle(fontSize: 16, color: Colors.black54),
+                          ),
+                        ],
+                      ),
+                    )
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Your Posted Properties',
+                          style:
+                              Theme.of(context).textTheme.titleLarge?.copyWith(
+                                    color: Colors.black87,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                        ),
+                        const SizedBox(height: 8),
+                        ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: _userPostedProperties.length,
+                          itemBuilder: (context, index) {
+                            return PropertyCard(
+                              property: _userPostedProperties[index],
+                              isFavorited: false,
+                              onFavoriteToggle: (bool newState) {},
+                              onTap: () {
+                                // Navigate to property details or perform desired action
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => PropertyDetailsScreen(
+                                      property: _userPostedProperties[index],
+                                    ),
+                                  ),
+                                );
+                              },
                             );
                           },
-                        );
-                      },
+                        ),
+                      ],
                     ),
         ],
       ),
@@ -276,19 +307,23 @@ class ProfileScreenState extends State<ProfileScreen> {
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('Enter Phone Number'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: _phoneController,
-                decoration: const InputDecoration(labelText: 'Phone Number'),
-              ),
-              TextField(
-                controller: _codeController,
-                decoration:
-                    const InputDecoration(labelText: 'Verification Code'),
-              ),
-            ],
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: _phoneController,
+                  decoration: const InputDecoration(labelText: 'Phone Number'),
+                  keyboardType: TextInputType.phone,
+                ),
+                TextField(
+                  controller: _codeController,
+                  decoration:
+                      const InputDecoration(labelText: 'Verification Code'),
+                  keyboardType: TextInputType.number,
+                ),
+              ],
+            ),
           ),
           actions: [
             TextButton(
@@ -318,6 +353,7 @@ class ProfileScreenState extends State<ProfileScreen> {
           _showErrorSnackBar('Failed to verify phone number: ${e.message}');
         },
       );
+      _showSuccessSnackBar('Verification code sent.');
     } catch (e) {
       _showErrorSnackBar('Failed to send verification code');
     }
@@ -344,7 +380,19 @@ class ProfileScreenState extends State<ProfileScreen> {
 
   void _showErrorSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.redAccent,
+      ),
+    );
+  }
+
+  void _showSuccessSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green,
+      ),
     );
   }
 }

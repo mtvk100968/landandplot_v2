@@ -226,26 +226,25 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
     });
   }
 
-  void showUnitsExplanation() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Units Explanation'),
-        content: const Text('C = Crores, L = Lakhs, K = Thousands'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
-  }
+  // void showUnitsExplanation() {
+  //   showDialog(
+  //     context: context,
+  //     builder: (context) => AlertDialog(
+  //       title: const Text('Units Explanation'),
+  //       content: const Text('C = Crores; L = Lakhs; K = Thousands'),
+  //       actions: [
+  //         TextButton(
+  //           onPressed: () => Navigator.pop(context),
+  //           child: const Text('OK'),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
-  Widget buildPropertyTypeRadio(
-      PropertyType type, IconData icon, String label) {
+  Widget buildPropertyTypeRadio(PropertyType type, String label) {
     return RadioListTile<PropertyType>(
-      secondary: Icon(icon, semanticLabel: '$label icon'),
+      // secondary: Icon(icon, semanticLabel: '$label icon'),
       title: Text(label, style: const TextStyle(fontSize: 16)),
       value: type,
       groupValue: selectedPropertyType,
@@ -268,7 +267,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
     return Theme(
       data: Theme.of(context).copyWith(
         colorScheme: ColorScheme.light(
-          primary: Colors.green,
+          primary: Colors.lightGreen,
           onPrimary: Colors.white,
           secondary: Colors.greenAccent,
         ),
@@ -285,13 +284,13 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                 children: [
                   const Text(
                     'Filter Properties',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 20),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.info_outline),
-                    onPressed: showUnitsExplanation,
-                    tooltip: 'Units Explanation',
-                  ),
+                  // IconButton(
+                  //   icon: const Icon(Icons.info_outline),
+                  //   onPressed: showUnitsExplanation,
+                  //   tooltip: 'Units Explanation',
+                  // ),
                 ],
               ),
               const SizedBox(height: 8),
@@ -300,15 +299,12 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                 alignment: Alignment.centerLeft,
                 child: Text(
                   'Select Property Type',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 18),
                 ),
               ),
-              buildPropertyTypeRadio(
-                  PropertyType.Plot, Icons.landscape, 'Plot'),
-              buildPropertyTypeRadio(
-                  PropertyType.FarmLand, Icons.agriculture, 'Farm Land'),
-              buildPropertyTypeRadio(
-                  PropertyType.AgriLand, Icons.grass, 'Agri Land'),
+              buildPropertyTypeRadio(PropertyType.Plot, 'Plot'),
+              buildPropertyTypeRadio(PropertyType.FarmLand, 'Farm Land'),
+              buildPropertyTypeRadio(PropertyType.AgriLand, 'Agri Land'),
               const SizedBox(height: 16),
               // Price Range Selection
               if (pricePerUnitUnit.isNotEmpty)
@@ -317,14 +313,18 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                   children: [
                     Text(
                       'Price ($pricePerUnitUnit): ${formatPrice(selectedPriceRange.start)} - ${formatPrice(selectedPriceRange.end)}',
-                      style: const TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.bold),
+                      style: const TextStyle(fontSize: 18),
                     ),
                     RangeSlider(
                       values: selectedPriceRange,
                       min: minPricePerUnit,
                       max: maxPricePerUnit,
                       divisions: 10,
+                      activeColor:
+                          Colors.green, // Color of the filled slider track
+                      inactiveColor: Colors
+                          .grey[300], // Color of the unfilled slider track
+
                       labels: RangeLabels(
                         formatPrice(selectedPriceRange.start),
                         formatPrice(selectedPriceRange.end),
@@ -345,14 +345,18 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                   children: [
                     Text(
                       'Area ($landAreaUnit): ${selectedLandAreaRange.start.toStringAsFixed(1)} - ${selectedLandAreaRange.end.toStringAsFixed(1)}',
-                      style: const TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.bold),
+                      style: const TextStyle(fontSize: 18),
                     ),
                     RangeSlider(
                       values: selectedLandAreaRange,
                       min: minLandArea,
                       max: maxLandArea,
                       divisions: 10,
+                      activeColor:
+                          Colors.green, // Color of the filled slider track
+                      inactiveColor: Colors
+                          .grey[300], // Color of the unfilled slider track
+
                       labels: RangeLabels(
                         selectedLandAreaRange.start.toStringAsFixed(1),
                         selectedLandAreaRange.end.toStringAsFixed(1),
@@ -365,14 +369,18 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                     ),
                   ],
                 ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 5),
               // Action Buttons: Reset and Apply
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   TextButton(
                     onPressed: resetFilters,
-                    child: const Text('Reset Filters'),
+                    child: const Text('Reset Filters',
+                        style: TextStyle(
+                          color: Colors.blue, // Set text color to blue
+                          fontSize: 16,
+                        )),
                   ),
                   ElevatedButton(
                     onPressed: isLoading ? null : applyFilters,
@@ -385,7 +393,11 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                               color: Colors.white,
                             ),
                           )
-                        : const Text('Apply Filters'),
+                        : const Text('Apply Filters',
+                            style: TextStyle(
+                              color: Colors.black,
+                              fontSize: 16,
+                            )),
                   ),
                 ],
               ),

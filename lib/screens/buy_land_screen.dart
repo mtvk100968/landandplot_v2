@@ -194,15 +194,16 @@ class BuyLandScreenState extends State<BuyLandScreen> {
     });
   }
 
-  void _onFavoriteToggle(String propertyId, bool nowFavorited) async {
+  Future<bool> _onFavoriteToggle(String propertyId, bool nowFavorited) async {
     User? firebaseUser = FirebaseAuth.instance.currentUser;
     if (firebaseUser == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text('You need to be logged in to favorite properties.')),
+          content: Text('You need to be logged in to favorite properties.'),
+        ),
       );
-      Navigator.pushNamed(context, '/profile'); // Navigate to profile page
-      return;
+      // Return false so the UI knows not to "turn pink".
+      return false;
     }
 
     try {
@@ -212,11 +213,13 @@ class BuyLandScreenState extends State<BuyLandScreen> {
         await UserService()
             .removeFavoriteProperty(firebaseUser.uid, propertyId);
       }
+      return true; // Toggling was successful
     } catch (e) {
       print('Error toggling favorite: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to update favorite: $e')),
       );
+      return false; // Something went wrong
     }
   }
 
@@ -259,37 +262,11 @@ class BuyLandScreenState extends State<BuyLandScreen> {
               title: const Text(
                 'LANDANDPLOT',
                 style: TextStyle(
-                  color: Colors.lightGreen,
+                  color: Colors.green,
                   fontSize: 30,
                   fontWeight: FontWeight.w800,
                 ),
               ),
-              actions: [
-                StreamBuilder<User?>(
-                  stream: FirebaseAuth.instance.authStateChanges(),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const SizedBox.shrink(); // Or a placeholder widget
-                    } else if (snapshot.hasData && snapshot.data != null) {
-                      return IconButton(
-                        icon: const Icon(Icons.logout),
-                        onPressed: () async {
-                          await FirebaseAuth.instance.signOut();
-                          Navigator.pushReplacementNamed(
-                              childContext, '/profile');
-                        },
-                      );
-                    } else {
-                      return IconButton(
-                        icon: const Icon(Icons.login),
-                        onPressed: () {
-                          Navigator.pushNamed(childContext, '/profile');
-                        },
-                      );
-                    }
-                  },
-                ),
-              ],
             ),
             body: RefreshIndicator(
               onRefresh: _refreshProperties,
@@ -311,7 +288,7 @@ class BuyLandScreenState extends State<BuyLandScreen> {
                         const SizedBox(width: 8),
                         // **Filter Button**
                         CircleAvatar(
-                          backgroundColor: Colors.lightGreen,
+                          backgroundColor: Colors.green,
                           child: IconButton(
                             icon: const Icon(Icons.tune, color: Colors.white),
                             onPressed: () async {
@@ -322,7 +299,7 @@ class BuyLandScreenState extends State<BuyLandScreen> {
                         const SizedBox(width: 8),
                         // **Toggle Button (Map/List)**
                         CircleAvatar(
-                          backgroundColor: Colors.lightGreen,
+                          backgroundColor: Colors.green,
                           child: IconButton(
                             icon: Icon(
                               showMap ? Icons.view_list : Icons.map,

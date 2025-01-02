@@ -78,7 +78,8 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'LANDANDPLOT',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.lightGreen),
+        fontFamily: 'Lato',
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
         useMaterial3: true, // Opt into Material 3 design
       ),
       debugShowCheckedModeBanner: false,
