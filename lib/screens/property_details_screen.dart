@@ -58,9 +58,22 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
     }
   }
 
+  // Function to initiate a phone call
+  Future<void> _makePhoneCall(String phoneNumber) async {
+    final Uri phoneUri = Uri(scheme: 'tel', path: phoneNumber);
+    if (await canLaunchUrl(phoneUri)) {
+      await launchUrl(phoneUri);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not initiate call')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // Existing body remains unchanged
       body: FutureBuilder<void>(
         future: _fetchProposedPricesFuture,
         builder: (context, snapshot) {
@@ -117,8 +130,43 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                           onPressed: () => Navigator.pop(context),
                         ),
                       ),
+                      // Add this Positioned widget for the image count with an icon
+                      if (widget.property.images.isNotEmpty)
+                        Positioned(
+                          bottom: 8,
+                          right: 8,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.7),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.image, // Use the image icon
+                                  color: Colors.white,
+                                  size: 16,
+                                ),
+                                const SizedBox(
+                                    width: 4), // Space between icon and count
+                                Text(
+                                  '${widget.property.images.length}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                     ],
                   ),
+
                   const SizedBox(height: 16),
                   // Price Card
                   buildCard(
@@ -142,7 +190,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                           ),
                         ],
                         Text(
-                          'Land Area: ${widget.property.landArea} ${widget.property.propertyType.toLowerCase() == 'agri land' ? 'Acres' : 'Sq. Yards'}',
+                          'Land Area: ${widget.property.landArea} ${widget.property.propertyType.toLowerCase() == 'agri land' ? 'Acres' : 'sqyds'}',
                           style: const TextStyle(fontSize: 16),
                         ),
                         Text(
@@ -196,6 +244,90 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
             );
           }
         },
+      ),
+      bottomNavigationBar: Container(
+        height: 70, // Increase the height of the bottom bar
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 6,
+              offset: Offset(0, -2), // Shadow above the bar
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+          child: Row(
+            children: [
+              // Call Button
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () {
+                    _makePhoneCall('+919959788005');
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green, // Green background for Call
+                    shape: RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.circular(12), // Rounded corners
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 12), // Reduced padding
+                    elevation: 2,
+                  ),
+                  child: const Text(
+                    'Call',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      height:
+                          1.2, // Line height to ensure proper text alignment
+                    ),
+                    textAlign: TextAlign.center, // Align text properly
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16), // Spacing between buttons
+              // Message Button
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                            'WhatsApp messaging is currently unavailable.'),
+                      ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue, // Blue background for Message
+                    shape: RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.circular(12), // Rounded corners
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 12), // Reduced padding
+                    elevation: 2,
+                  ),
+                  child: const Text(
+                    'Message',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      height:
+                          1.2, // Line height to ensure proper text alignment
+                    ),
+                    textAlign: TextAlign.center, // Align text properly
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
