@@ -27,7 +27,7 @@ class PropertyMapViewState extends State<PropertyMapView> {
 
   // Create a ClusterManagerId
   final ClusterManagerId _clusterManagerId =
-      ClusterManagerId('propertyClusterManager');
+      const ClusterManagerId('propertyClusterManager');
 
   // Create a ClusterManager
   late ClusterManager _clusterManager;
@@ -41,8 +41,6 @@ class PropertyMapViewState extends State<PropertyMapView> {
       clusterManagerId: _clusterManagerId,
       onClusterTap: _onClusterTap,
     );
-
-    _addCustomMarkers();
   }
 
   Future<void> _addCustomMarkers() async {
@@ -72,6 +70,7 @@ class PropertyMapViewState extends State<PropertyMapView> {
     // Update state to display the markers
     setState(() {
       _markers = markers;
+      print("Markers added: ${_markers.length}");
     });
   }
 
@@ -125,33 +124,41 @@ class PropertyMapViewState extends State<PropertyMapView> {
 
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
+
+    // Ensure markers are added after the map is created
+    _addCustomMarkers();
+
+    // Adjust initial zoom if needed
+    mapController.animateCamera(
+      CameraUpdate.newCameraPosition(
+        CameraPosition(
+          target: LatLng(20.5937, 78.9629),
+          zoom: 10,
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder(
-        future: _addCustomMarkers(),
-        builder: (context, snapshot) {
-          // Show a loading indicator until markers are loaded
-          if (snapshot.connectionState == ConnectionState.waiting &&
-              _markers.isEmpty) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return const Center(child: Text('Error loading markers'));
-          } else {
-            return GoogleMap(
-              initialCameraPosition: const CameraPosition(
-                target: LatLng(20.5937, 78.9629), // Center of India
-                zoom: 5,
-              ),
-              onMapCreated: _onMapCreated,
-              markers: _markers,
-              myLocationEnabled: true,
-              myLocationButtonEnabled: true, // Enable default location button
-              // Add the ClusterManager to the GoogleMap widget
-              clusterManagers: {_clusterManager},
-            );
-          }
-        });
+    return Material(
+      child: Container(
+        color: Colors.white,
+        child: SizedBox.expand(
+          child: GoogleMap(
+            mapType: MapType.normal,
+            initialCameraPosition: const CameraPosition(
+              target: LatLng(20.5937, 78.9629), // Center of India
+              zoom: 5,
+            ),
+            onMapCreated: _onMapCreated,
+            markers: _markers,
+            myLocationEnabled: true,
+            myLocationButtonEnabled: true, // Enable default location button
+            clusterManagers: {_clusterManager}, // Ensure this works correctly
+          ),
+        ),
+      ),
+    );
   }
 }
