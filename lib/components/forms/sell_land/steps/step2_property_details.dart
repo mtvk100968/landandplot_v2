@@ -97,7 +97,7 @@ class _Step2PropertyDetailsState extends State<Step2PropertyDetails> {
                   decoration: InputDecoration(
                     labelText: isAgri ? 'Area (in acres)' : 'Area (in sqyds)',
                   ),
-                  keyboardType: TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   validator: Validators.areaValidator,
                   onChanged: (value) {
                     String formattedValue = _formatToIndianSystem(value);
@@ -112,7 +112,7 @@ class _Step2PropertyDetailsState extends State<Step2PropertyDetails> {
                     propertyProvider.setArea(parsedValue ?? 0.0);
                   },
                 ),
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
 
                 // Price per Unit Field
                 TextFormField(
@@ -135,7 +135,7 @@ class _Step2PropertyDetailsState extends State<Step2PropertyDetails> {
                     propertyProvider.setPricePerUnit(parsedValue ?? 0.0);
                   },
                 ),
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
 
                 // Total Land Price Field (Auto-calculated)
                 TextFormField(
@@ -166,7 +166,7 @@ class _Step2PropertyDetailsState extends State<Step2PropertyDetails> {
                     onChanged: (value) => propertyProvider.addPlotNumber(value),
                   ),
                 ],
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
               ],
             ),
           ),

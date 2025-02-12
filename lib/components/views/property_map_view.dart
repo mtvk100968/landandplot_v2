@@ -5,6 +5,8 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../../models/property_model.dart';
 import '../map_related/marker.dart'; // Ensure correct import path
 import '../../utils/format.dart';
+import '../property_card2.dart';
+import '../../screens/property_details_screen.dart';
 
 class PropertyMapView extends StatefulWidget {
   final List<Property> properties;
@@ -60,11 +62,7 @@ class PropertyMapViewState extends State<PropertyMapView> {
           markerId: MarkerId(property.id),
           position: LatLng(property.latitude, property.longitude),
           icon: customIcon,
-          infoWindow: InfoWindow(
-            title:
-                'Land Area: ${property.landArea} ${property.propertyType == 'agri land' ? 'Acres' : 'Sq Yards'}',
-            snippet: 'Price: $priceText',
-          ),
+          onTap: () => _showPropertyCard(property),
           // Associate this marker with the ClusterManager
           clusterManagerId: _clusterManagerId,
         ),
@@ -98,6 +96,30 @@ class PropertyMapViewState extends State<PropertyMapView> {
           zoom: newZoomLevel,
         ),
       ),
+    );
+  }
+
+  void _showPropertyCard(Property property) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return PropertyCard2(
+          property: property,
+          isFavorited: false, // Update with your favorite logic if needed
+          onFavoriteToggle: (bool newValue) {
+            // Implement your favorite toggle logic here
+          },
+          onTap: () {
+            // Navigate to the property details screen
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => PropertyDetailsScreen(property: property),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 

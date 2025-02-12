@@ -74,9 +74,9 @@ class UserService {
   /// Add a property to the user's favorites
   Future<void> addFavoriteProperty(String userId, String propertyId) async {
     try {
-      await _usersCollection.doc(userId).update({
+      await _usersCollection.doc(userId).set({
         'favoritedPropertyIds': FieldValue.arrayUnion([propertyId]),
-      });
+      }, SetOptions(merge: true));
     } catch (e) {
       print('Error adding favorite property: $e');
       throw Exception('Failed to add favorite property');
@@ -86,9 +86,9 @@ class UserService {
   /// Remove a property from the user's favorites
   Future<void> removeFavoriteProperty(String userId, String propertyId) async {
     try {
-      await _usersCollection.doc(userId).update({
+      await _usersCollection.doc(userId).set({
         'favoritedPropertyIds': FieldValue.arrayRemove([propertyId]),
-      });
+      }, SetOptions(merge: true));
     } catch (e) {
       print('Error removing favorite property: $e');
       throw Exception('Failed to remove favorite property');

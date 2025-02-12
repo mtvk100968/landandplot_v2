@@ -26,16 +26,25 @@ class AppUser {
 
   // Convert AppUser object to a Map for Firestore
   Map<String, dynamic> toMap() {
-    return {
+    final data = <String, dynamic>{
       'uid': uid,
       'name': name,
       'email': email,
       'phoneNumber': phoneNumber,
-      'postedPropertyIds': postedPropertyIds,
-      'favoritedPropertyIds': favoritedPropertyIds,
-      'inTalksPropertyIds': inTalksPropertyIds,
-      'boughtPropertyIds': boughtPropertyIds,
     };
+    if (postedPropertyIds.isNotEmpty) {
+      data['postedPropertyIds'] = postedPropertyIds;
+    }
+    if (favoritedPropertyIds.isNotEmpty) {
+      data['favoritedPropertyIds'] = favoritedPropertyIds;
+    }
+    if (inTalksPropertyIds.isNotEmpty) {
+      data['inTalksPropertyIds'] = inTalksPropertyIds;
+    }
+    if (boughtPropertyIds.isNotEmpty) {
+      data['boughtPropertyIds'] = boughtPropertyIds;
+    }
+    return data;
   }
 
   // Create AppUser object from a Firestore DocumentSnapshot

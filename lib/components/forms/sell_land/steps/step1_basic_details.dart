@@ -8,7 +8,6 @@ import '../../../../providers/property_provider.dart';
 import '../../../../utils/validators.dart';
 import '../../../../utils/format.dart';
 import '../../../../models/user_model.dart';
-import '../../../../providers/property_provider.dart';
 
 class Step1BasicDetails extends StatefulWidget {
   final GlobalKey<FormState> formKey;

@@ -6,13 +6,13 @@ import '../utils/format.dart';
 import '../../screens/property_details_screen.dart';
 // import 'google_fonts';
 
-class PropertyCard extends StatefulWidget {
+class PropertyCard2 extends StatefulWidget {
   final Property property;
   final bool isFavorited;
   final ValueChanged<bool> onFavoriteToggle;
   final VoidCallback onTap; // Callback for taps
 
-  const PropertyCard({
+  const PropertyCard2({
     Key? key,
     required this.property,
     required this.isFavorited,
@@ -21,10 +21,10 @@ class PropertyCard extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _PropertyCardState createState() => _PropertyCardState();
+  _PropertyCardState2 createState() => _PropertyCardState2();
 }
 
-class _PropertyCardState extends State<PropertyCard> {
+class _PropertyCardState2 extends State<PropertyCard2> {
   late bool isFavorited;
   int currentPage = 0; // For Carousel Dots
 
@@ -43,16 +43,6 @@ class _PropertyCardState extends State<PropertyCard> {
   }
 
   @override
-  void didUpdateWidget(covariant PropertyCard oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.isFavorited != widget.isFavorited) {
-      setState(() {
-        isFavorited = widget.isFavorited;
-      });
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
 
@@ -60,8 +50,9 @@ class _PropertyCardState extends State<PropertyCard> {
       onTap: widget.onTap, // Navigate to property details
       child: Padding(
         padding: const EdgeInsets.only(
-            bottom: 16), // Increased bottom padding for better spacing
+            bottom: 5, top: 10), // Increased bottom padding for better spacing
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Center the Image Container to control its width independently

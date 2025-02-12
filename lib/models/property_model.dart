@@ -31,6 +31,13 @@ class Property {
   final String userType;
   final String? ventureName;
   final Timestamp createdAt;
+  final bool? status;
+  final bool? fencing;
+  final bool? gate;
+  final bool? bore;
+  final bool? pipeline;
+  final bool? electricity;
+  final bool? plantation;
 
   // **Added proposedPrices field**
   final List<Map<String, dynamic>> proposedPrices;
@@ -66,6 +73,13 @@ class Property {
     required this.userType,
     this.ventureName,
     required this.createdAt,
+    this.status,
+    this.fencing,
+    this.gate,
+    this.bore,
+    this.pipeline,
+    this.electricity,
+    this.plantation,
     this.proposedPrices = const [], // Initialize as an empty list
   });
 
@@ -101,7 +115,13 @@ class Property {
       'userType': userType,
       'ventureName': ventureName,
       'createdAt': createdAt,
-
+      'status': status,
+      'fencing': fencing,
+      'gate': gate,
+      'bore': bore,
+      'pipeline': pipeline,
+      'electricity': electricity,
+      'plantation': plantation,
       // **Include proposedPrices field in Firestore**
       'proposedPrices': proposedPrices,
     };
@@ -139,6 +159,13 @@ class Property {
       userType: map['userType'] ?? 'Owner',
       ventureName: map['ventureName'],
       createdAt: map['createdAt'] ?? Timestamp.now(),
+      status: map['status'],
+      fencing: map['fencing'],
+      gate: map['gate'],
+      bore: map['bore'],
+      pipeline: map['pipeline'],
+      electricity: map['electricity'],
+      plantation: map['plantation'],
 
       // **Parse proposedPrices**
       proposedPrices: List<Map<String, dynamic>>.from(

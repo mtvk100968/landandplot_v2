@@ -15,6 +15,7 @@ import '../../components/views/property_map_view.dart';
 import '../../components/filter_bottom_sheet.dart';
 import '../../components/location_search_bar.dart';
 import './property_details_screen.dart';
+import '../components/bottom_nav_bar.dart';
 
 class BuyLandScreen extends StatefulWidget {
   const BuyLandScreen({Key? key}) : super(key: key);
@@ -259,13 +260,47 @@ class BuyLandScreenState extends State<BuyLandScreen> {
         builder: (childContext) {
           return Scaffold(
             appBar: AppBar(
-              title: const Text(
-                'LANDANDPLOT',
-                style: TextStyle(
-                  color: Colors.green,
-                  fontSize: 30,
-                  fontWeight: FontWeight.w800,
-                ),
+              title: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // "LANDANDPLOT" on the left
+                  const Text(
+                    'LANDANDPLOT',
+                    style: TextStyle(
+                      color: Colors.green,
+                      fontSize: 28, // Adjust font size for better fit
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  // "Add Property" button
+                  ElevatedButton(
+                    onPressed: () {
+                      // Navigate to the "Sell Land" tab
+                      final navBarState =
+                          context.findAncestorStateOfType<BottomNavBarState>();
+                      if (navBarState != null) {
+                        navBarState.switchTab(2); // Index for "Sell Land"
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green, // Button background color
+                      foregroundColor: Colors.white, // Button text color
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 8), // Button padding
+                      shape: RoundedRectangleBorder(
+                        borderRadius:
+                            BorderRadius.circular(20), // Rounded corners
+                      ),
+                    ),
+                    child: const Text(
+                      'Add Property',
+                      style: TextStyle(
+                        fontSize: 14, // Adjust text size
+                        fontWeight: FontWeight.w800, // Semi-bold for emphasis
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
             body: RefreshIndicator(

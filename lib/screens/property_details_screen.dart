@@ -91,6 +91,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  // Image Section
                   Stack(
                     children: [
                       AspectRatio(
@@ -130,7 +131,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                           onPressed: () => Navigator.pop(context),
                         ),
                       ),
-                      // Add this Positioned widget for the image count with an icon
+                      // Image Count Overlay
                       if (widget.property.images.isNotEmpty)
                         Positioned(
                           bottom: 8,
@@ -146,12 +147,11 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 const Icon(
-                                  Icons.image, // Use the image icon
+                                  Icons.image,
                                   color: Colors.white,
                                   size: 16,
                                 ),
-                                const SizedBox(
-                                    width: 4), // Space between icon and count
+                                const SizedBox(width: 4),
                                 Text(
                                   '${widget.property.images.length}',
                                   style: const TextStyle(
@@ -168,29 +168,30 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                   ),
 
                   const SizedBox(height: 16),
-                  // Price Card
+
+                  // Price Details Card
                   buildCard(
                     title: 'Price Details',
                     content: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Property Type: ${widget.property.propertyType}',
+                          'Property Type: ${widget.property.propertyType ?? 'N/A'}',
                           style: const TextStyle(fontSize: 16),
                         ),
                         if (widget.property.propertyType.toLowerCase() ==
-                            'plot') ...[
+                            'Plot') ...[
                           Text(
-                            'Survey Number: ${widget.property.surveyNumber}',
+                            'Survey Number: ${widget.property.surveyNumber ?? 'N/A'}',
                             style: const TextStyle(fontSize: 16),
                           ),
                           Text(
-                            'Plot Numbers: ${widget.property.plotNumbers.join(', ')}',
+                            'Plot Numbers: ${widget.property.plotNumbers.isNotEmpty ? widget.property.plotNumbers.join(', ') : 'N/A'}',
                             style: const TextStyle(fontSize: 16),
                           ),
                         ],
                         Text(
-                          'Land Area: ${widget.property.landArea} ${widget.property.propertyType.toLowerCase() == 'agri land' ? 'Acres' : 'sqyds'}',
+                          'Land Area: ${widget.property.landArea ?? '0'} ${widget.property.propertyType.toLowerCase() == 'agri land' ? 'Acres' : 'sqyds'}',
                           style: const TextStyle(fontSize: 16),
                         ),
                         Text(
@@ -201,6 +202,74 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                           'Total Price: \$${formatPrice(widget.property.totalPrice)}',
                           style: const TextStyle(fontSize: 16),
                         ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Status Card
+                  buildCard(
+                    title: 'Status',
+                    content: Text(
+                      widget.property.status == true ? 'Active' : 'Inactive',
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Address Card
+                  buildCard(
+                    title: 'Address',
+                    content: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (widget.property.propertyType.toLowerCase() ==
+                            'Plot')
+                          Text(
+                            'Venture Name: ${widget.property.ventureName ?? 'N/A'}',
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                        Text(
+                          [
+                            widget.property.village ?? '',
+                            widget.property.mandal ?? '',
+                            widget.property.district ?? '',
+                            widget.property.pincode ?? '',
+                          ].where((element) => element.isNotEmpty).join(', '),
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Description Card
+                  // buildCard(
+                  //   title: 'Description',
+                  //   content: Text(
+                  //     widget.property.description ??
+                  //         'A beautiful and valuable piece of land',
+                  //     style: const TextStyle(fontSize: 16),
+                  //   ),
+                  // ),
+
+                  // const SizedBox(height: 16),
+
+                  // Features Card
+                  buildCard(
+                    title: 'Features',
+                    content: Column(
+                      children: [
+                        featureRow('Fencing', widget.property.fencing),
+                        featureRow('Gate', widget.property.gate),
+                        featureRow('Bore', widget.property.bore),
+                        featureRow('Pipeline', widget.property.pipeline),
+                        featureRow('Electricity', widget.property.electricity),
+                        featureRow('Plantation', widget.property.plantation),
                       ],
                     ),
                   ),
@@ -332,6 +401,28 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
     );
   }
 
+  /// Helper method to build feature rows with check marks or cross icons
+  Widget featureRow(String featureName, bool? isAvailable) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        children: [
+          Icon(
+            isAvailable == true ? Icons.check_circle : Icons.cancel,
+            color: isAvailable == true ? Colors.green : Colors.red,
+            size: 20,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            featureName,
+            style: const TextStyle(fontSize: 16),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Helper method to build reusable Card widgets
   Widget buildCard({required String title, required Widget content}) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),

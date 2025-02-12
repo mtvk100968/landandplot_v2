@@ -7,6 +7,8 @@ import '../models/user_model.dart';
 import '../models/property_model.dart';
 import '../components/property_card.dart';
 import './property_details_screen.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -127,18 +129,16 @@ class ProfileScreenState extends State<ProfileScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Text(
-                  'Login to LANDANDPLOT',
+                  'Sign-In/Sign-Up',
                   style: TextStyle(
                     fontSize: 24,
                     color: Colors.green,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
                 const SizedBox(height: 16),
-                ElevatedButton.icon(
+                ElevatedButton(
                   onPressed: () => _signInWithGoogle(),
-                  icon: const Icon(Icons.login),
-                  label: const Text('With Google'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
                     foregroundColor: Colors.black,
@@ -148,6 +148,14 @@ class ProfileScreenState extends State<ProfileScreen> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8),
                     ),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      FaIcon(FontAwesomeIcons.google, size: 20),
+                      SizedBox(width: 10),
+                      Text('With Google'),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 16),
