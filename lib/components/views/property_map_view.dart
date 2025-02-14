@@ -36,19 +36,27 @@ class PropertyMapViewState extends State<PropertyMapView> {
   void initState() {
     super.initState();
 
-    // Initialize ClusterManager with the ClusterManagerId and onClusterTap callback
+    // Initialize ClusterManager
     _clusterManager = ClusterManager(
       clusterManagerId: _clusterManagerId,
       onClusterTap: _onClusterTap,
     );
+
+    // Wait for the first frame before adding markers
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _addCustomMarkers();
+    });
   }
 
   Future<void> _addCustomMarkers() async {
     Set<Marker> markers = {};
+    print("Number of properties: ${widget.properties.length}");
 
     for (Property property in widget.properties) {
       // Format the price
-      final String priceText = formatPrice(property.totalPrice);
+      final String priceText = property.totalPrice != null
+          ? formatPrice(property.totalPrice!)
+          : 'N/A';
 
       // Create custom marker with the formatted price
       final BitmapDescriptor customIcon =
