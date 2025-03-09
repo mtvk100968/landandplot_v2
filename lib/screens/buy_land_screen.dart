@@ -1,9 +1,9 @@
-// lib/screens/buy_land_screen.dart
-
 import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../services/property_service.dart';
 import '../models/property_model.dart';
@@ -16,6 +16,11 @@ import '../../components/filter_bottom_sheet.dart';
 import '../../components/location_search_bar.dart';
 import './property_details_screen.dart';
 import '../components/bottom_nav_bar.dart';
+
+/// Defines the type of geo search:
+/// - point: a single location (with a given radius)
+/// - polygon: a drawn or selected area (2D)
+enum GeoSearchType { point, polygon }
 
 class BuyLandScreen extends StatefulWidget {
   const BuyLandScreen({Key? key}) : super(key: key);
@@ -35,7 +40,7 @@ class BuyLandScreenState extends State<BuyLandScreen> {
   RangeValues selectedLandAreaRange = const RangeValues(0, 0);
   String landAreaUnit = '';
 
-  // New variables for location search
+  // Variables for location search
   Map<String, dynamic>? selectedPlace;
   double searchRadius = 10; // in kilometers
 
@@ -45,12 +50,16 @@ class BuyLandScreenState extends State<BuyLandScreen> {
   String? selectedPincode;
   String? selectedState;
 
+  // Geo search type & supporting variable for 2D area searches
+  GeoSearchType geoSearchType = GeoSearchType.point; // Default to point search
+  List<LatLng>? selectedPolygon; // For 2D (area) searches
+
   Future<List<Property>>? _propertyFuture;
 
   @override
   void initState() {
     super.initState();
-    _propertyFuture = fetchProperties();
+    _propertyFuture = fetchPropertiesWithGeo();
   }
 
   @override
@@ -59,8 +68,13 @@ class BuyLandScreenState extends State<BuyLandScreen> {
     super.dispose();
   }
 
-  Future<List<Property>> fetchProperties() async {
-    print('fetchProperties called with filters:');
+  /// Fetch properties based on geo-search type.
+  /// • For polygon searches, it computes the bounding box of the polygon,
+  ///   fetches properties within that box, and then filters client-side using
+  ///   a point-in-polygon test.
+  /// • For point searches, it uses the selectedPlace with a search radius.
+  Future<List<Property>> fetchPropertiesWithGeo() async {
+    print('fetchPropertiesWithGeo called with filters:');
     print('  selectedPropertyTypes: $selectedPropertyTypes');
     print('  selectedPriceRange: $selectedPriceRange');
     print('  selectedLandAreaRange: $selectedLandAreaRange');
@@ -68,66 +82,101 @@ class BuyLandScreenState extends State<BuyLandScreen> {
     print('  selectedDistrict: $selectedDistrict');
     print('  selectedPincode: $selectedPincode');
     print('  selectedPlace: $selectedPlace');
+    print('  geoSearchType: $geoSearchType');
+    print('  selectedPolygon: $selectedPolygon');
     print('  searchRadius: $searchRadius');
 
-    // Use the injected PropertyService from the MultiProvider
     final propertyService = context.read<PropertyService>();
 
-    // Check if filters are applied
-    if (selectedPropertyTypes.isNotEmpty ||
-        selectedPlace != null ||
-        selectedCity != null ||
-        selectedDistrict != null ||
-        selectedPincode != null) {
-      double? minLat;
-      double? maxLat;
-      double? minLon;
-      double? maxLon;
+    double? minLat, maxLat, minLon, maxLon;
 
-      // For point searches
-      if (selectedPlace != null &&
-          selectedCity == null &&
-          selectedDistrict == null &&
-          selectedPincode == null) {
-        if (selectedPlace!['geometry'] != null) {
-          double lat = selectedPlace!['geometry']['location']['lat'];
-          double lon = selectedPlace!['geometry']['location']['lng'];
-
-          // Approximate conversion from km to degrees
-          double radiusInDegrees = searchRadius / 111;
-
-          minLat = lat - radiusInDegrees;
-          maxLat = lat + radiusInDegrees;
-          minLon = lon - radiusInDegrees;
-          maxLon = lon + radiusInDegrees;
-        }
-      }
-
-      return await propertyService.getPropertiesWithFilters(
-        propertyTypes: selectedPropertyTypes,
-        minPricePerUnit:
-            (selectedPriceRange.start > 0) ? selectedPriceRange.start : null,
-        maxPricePerUnit:
-            (selectedPriceRange.end > 0) ? selectedPriceRange.end : null,
-        minLandArea: (selectedLandAreaRange.start > 0)
-            ? selectedLandAreaRange.start
-            : null,
-        maxLandArea:
-            (selectedLandAreaRange.end > 0) ? selectedLandAreaRange.end : null,
-        minLat: minLat,
-        maxLat: maxLat,
-        minLon: minLon,
-        maxLon: maxLon,
-        city: selectedCity,
-        district: selectedDistrict,
-        pincode: selectedPincode,
-      );
-    } else {
-      return await propertyService.getAllProperties();
+    if (geoSearchType == GeoSearchType.polygon &&
+        selectedPolygon != null &&
+        selectedPolygon!.isNotEmpty) {
+      // 2D area search: compute bounding box from polygon
+      minLat = selectedPolygon!.map((p) => p.latitude).reduce(math.min);
+      maxLat = selectedPolygon!.map((p) => p.latitude).reduce(math.max);
+      minLon = selectedPolygon!.map((p) => p.longitude).reduce(math.min);
+      maxLon = selectedPolygon!.map((p) => p.longitude).reduce(math.max);
+    } else if (selectedPlace != null) {
+      // Point search: use selectedPlace with a search radius
+      double lat = selectedPlace!['geometry']['location']['lat'];
+      double lon = selectedPlace!['geometry']['location']['lng'];
+      double radiusInDegrees =
+          searchRadius / 111; // Approx conversion km -> degrees
+      minLat = lat - radiusInDegrees;
+      maxLat = lat + radiusInDegrees;
+      minLon = lon - radiusInDegrees;
+      maxLon = lon + radiusInDegrees;
     }
+
+    // When using geo-based search, we relax the pincode filter by passing null.
+    List<Property> properties = await propertyService.getPropertiesWithFilters(
+      propertyTypes: selectedPropertyTypes,
+      minPricePerUnit:
+          (selectedPriceRange.start > 0) ? selectedPriceRange.start : null,
+      maxPricePerUnit:
+          (selectedPriceRange.end > 0) ? selectedPriceRange.end : null,
+      minLandArea: (selectedLandAreaRange.start > 0)
+          ? selectedLandAreaRange.start
+          : null,
+      maxLandArea:
+          (selectedLandAreaRange.end > 0) ? selectedLandAreaRange.end : null,
+      minLat: minLat,
+      maxLat: maxLat,
+      minLon: minLon,
+      maxLon: maxLon,
+      city: selectedCity,
+      district: selectedDistrict,
+      // Relax the pincode filter if a place is selected (i.e. using geo search).
+      pincode: (selectedPlace != null) ? null : selectedPincode,
+    );
+
+    // For polygon searches, further filter properties using point-in-polygon test.
+    if (geoSearchType == GeoSearchType.polygon &&
+        selectedPolygon != null &&
+        selectedPolygon!.isNotEmpty) {
+      properties = properties.where((property) {
+        return isPointInsidePolygon(
+            LatLng(property.latitude, property.longitude), selectedPolygon!);
+      }).toList();
+    }
+
+    return properties;
   }
 
-  // Method to open the FilterBottomSheet and get the selected filters
+  /// Helper: Check if a point is inside a polygon using the ray-casting algorithm.
+  bool isPointInsidePolygon(LatLng point, List<LatLng> polygon) {
+    int intersectCount = 0;
+    for (int j = 0; j < polygon.length - 1; j++) {
+      if (_rayCastIntersect(point, polygon[j], polygon[j + 1])) {
+        intersectCount++;
+      }
+    }
+    // Check edge between last and first point.
+    if (_rayCastIntersect(point, polygon.last, polygon.first)) {
+      intersectCount++;
+    }
+    return (intersectCount % 2) == 1;
+  }
+
+  bool _rayCastIntersect(LatLng point, LatLng vertA, LatLng vertB) {
+    double aY = vertA.latitude;
+    double bY = vertB.latitude;
+    double aX = vertA.longitude;
+    double bX = vertB.longitude;
+    double pY = point.latitude;
+    double pX = point.longitude;
+
+    if ((aY > pY && bY > pY) || (aY < pY && bY < pY) || (aX < pX && bX < pX)) {
+      return false;
+    }
+    double m = (bY - aY) / (bX - aX);
+    double x = (pY - aY) / m + aX;
+    return x > pX;
+  }
+
+  /// Opens the filter bottom sheet and applies filters.
   Future<void> openFilterBottomSheet() async {
     final result = await showModalBottomSheet<Map<String, dynamic>>(
       context: context,
@@ -154,7 +203,8 @@ class BuyLandScreenState extends State<BuyLandScreen> {
         selectedLandAreaRange =
             result['selectedLandAreaRange'] ?? const RangeValues(0, 0);
         landAreaUnit = result['landAreaUnit'] ?? '';
-        _propertyFuture = fetchProperties(); // Update the property list
+        // Optionally, update geoSearchType here if your filters include it.
+        _propertyFuture = fetchPropertiesWithGeo(); // Update the property list
       });
     }
   }
@@ -163,13 +213,14 @@ class BuyLandScreenState extends State<BuyLandScreen> {
     setState(() {
       selectedPlace = place;
 
-      // Reset administrative filters
+      // Reset administrative filters.
       selectedCity = null;
       selectedDistrict = null;
-      selectedPincode = null;
+      selectedPincode =
+          null; // <-- Remove the pincode filter for geo-based search.
       selectedState = null;
 
-      // Extract administrative components
+      // Extract administrative components.
       if (place['address_components'] != null) {
         for (var component in place['address_components']) {
           var types = component['types'] as List<dynamic>;
@@ -178,7 +229,9 @@ class BuyLandScreenState extends State<BuyLandScreen> {
           } else if (types.contains('administrative_area_level_2')) {
             selectedDistrict = component['long_name'];
           } else if (types.contains('postal_code')) {
-            selectedPincode = component['long_name'];
+            // Instead of using postal_code as a filter, we clear it.
+            // selectedPincode = component['long_name'];
+            selectedPincode = null;
           } else if (types.contains('administrative_area_level_1')) {
             selectedState = component['long_name'];
           }
@@ -191,7 +244,12 @@ class BuyLandScreenState extends State<BuyLandScreen> {
       print('Selected Pincode: $selectedPincode');
       print('Selected State: $selectedState');
 
-      _propertyFuture = fetchProperties(); // Re-fetch properties
+      // For a place selection, default to point search.
+      geoSearchType = GeoSearchType.point;
+      // Clear any polygon selection.
+      selectedPolygon = null;
+
+      _propertyFuture = fetchPropertiesWithGeo();
     });
   }
 
@@ -203,7 +261,6 @@ class BuyLandScreenState extends State<BuyLandScreen> {
           content: Text('You need to be logged in to favorite properties.'),
         ),
       );
-      // Return false so the UI knows not to "turn pink".
       return false;
     }
 
@@ -214,31 +271,31 @@ class BuyLandScreenState extends State<BuyLandScreen> {
         await UserService()
             .removeFavoriteProperty(firebaseUser.uid, propertyId);
       }
-      return true; // Toggling was successful
+      return true;
     } catch (e) {
       print('Error toggling favorite: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to update favorite: $e')),
       );
-      return false; // Something went wrong
+      return false;
     }
   }
 
-  // Pull-to-refresh method
+  // Pull-to-refresh method.
   Future<void> _refreshProperties() async {
     setState(() {
-      _propertyFuture = fetchProperties();
+      _propertyFuture = fetchPropertiesWithGeo();
     });
   }
 
-  // Helper method to format price
+  // Helper method to format price.
   String formatPrice(double value) {
     if (value >= 10000000) {
-      return '${(value / 10000000).toStringAsFixed(1)}C'; // Crores
+      return '${(value / 10000000).toStringAsFixed(1)}C';
     } else if (value >= 100000) {
-      return '${(value / 100000).toStringAsFixed(1)}L'; // Lakhs
+      return '${(value / 100000).toStringAsFixed(1)}L';
     } else if (value >= 1000) {
-      return '${(value / 1000).toStringAsFixed(1)}K'; // Thousands
+      return '${(value / 1000).toStringAsFixed(1)}K';
     } else {
       return value.toStringAsFixed(0);
     }
@@ -246,7 +303,6 @@ class BuyLandScreenState extends State<BuyLandScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Wrap the entire widget tree in a MultiProvider
     return MultiProvider(
       providers: [
         ChangeNotifierProvider<PropertyProvider>(
@@ -263,40 +319,36 @@ class BuyLandScreenState extends State<BuyLandScreen> {
               title: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // "LANDANDPLOT" on the left
                   const Text(
                     'LANDANDPLOT',
                     style: TextStyle(
                       color: Colors.green,
-                      fontSize: 28, // Adjust font size for better fit
+                      fontSize: 28,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  // "Add Property" button
                   ElevatedButton(
                     onPressed: () {
-                      // Navigate to the "Sell Land" tab
                       final navBarState =
                           context.findAncestorStateOfType<BottomNavBarState>();
                       if (navBarState != null) {
-                        navBarState.switchTab(2); // Index for "Sell Land"
+                        navBarState.switchTab(2);
                       }
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green, // Button background color
-                      foregroundColor: Colors.white, // Button text color
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 8), // Button padding
+                          horizontal: 16, vertical: 8),
                       shape: RoundedRectangleBorder(
-                        borderRadius:
-                            BorderRadius.circular(20), // Rounded corners
+                        borderRadius: BorderRadius.circular(20),
                       ),
                     ),
                     child: const Text(
                       'Add Property',
                       style: TextStyle(
-                        fontSize: 14, // Adjust text size
-                        fontWeight: FontWeight.w800, // Semi-bold for emphasis
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
                   ),
@@ -307,21 +359,21 @@ class BuyLandScreenState extends State<BuyLandScreen> {
               onRefresh: _refreshProperties,
               child: Column(
                 children: [
-                  // **Search and Filter Section**
+                  // Search and Filter Section
                   Padding(
                     padding:
                         const EdgeInsets.symmetric(vertical: 2, horizontal: 8),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        // **Location Search Bar**
+                        // Location Search Bar
                         Expanded(
                           child: LocationSearchBar(
                             onPlaceSelected: _handlePlaceSelected,
                           ),
                         ),
                         const SizedBox(width: 8),
-                        // **Filter Button**
+                        // Filter Button
                         CircleAvatar(
                           backgroundColor: Colors.green,
                           child: IconButton(
@@ -332,7 +384,7 @@ class BuyLandScreenState extends State<BuyLandScreen> {
                           ),
                         ),
                         const SizedBox(width: 8),
-                        // **Toggle Button (Map/List)**
+                        // Toggle Map/List view
                         CircleAvatar(
                           backgroundColor: Colors.green,
                           child: IconButton(
@@ -350,16 +402,13 @@ class BuyLandScreenState extends State<BuyLandScreen> {
                       ],
                     ),
                   ),
-                  // **Active Filters**
+                  // Active Filters Display
                   if (selectedPropertyTypes.isNotEmpty ||
                       (selectedPriceRange.start > 0 &&
                           selectedPriceRange.end > 0) ||
                       (selectedLandAreaRange.start > 0 &&
                           selectedLandAreaRange.end > 0) ||
-                      selectedPlace != null ||
-                      selectedCity != null ||
-                      selectedDistrict != null ||
-                      selectedPincode != null)
+                      selectedPlace != null)
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16.0),
                       child: Wrap(
@@ -371,7 +420,7 @@ class BuyLandScreenState extends State<BuyLandScreen> {
                               onDeleted: () {
                                 setState(() {
                                   selectedCity = null;
-                                  _propertyFuture = fetchProperties();
+                                  _propertyFuture = fetchPropertiesWithGeo();
                                 });
                               },
                             ),
@@ -381,7 +430,7 @@ class BuyLandScreenState extends State<BuyLandScreen> {
                               onDeleted: () {
                                 setState(() {
                                   selectedDistrict = null;
-                                  _propertyFuture = fetchProperties();
+                                  _propertyFuture = fetchPropertiesWithGeo();
                                 });
                               },
                             ),
@@ -391,7 +440,7 @@ class BuyLandScreenState extends State<BuyLandScreen> {
                               onDeleted: () {
                                 setState(() {
                                   selectedPincode = null;
-                                  _propertyFuture = fetchProperties();
+                                  _propertyFuture = fetchPropertiesWithGeo();
                                 });
                               },
                             ),
@@ -402,7 +451,7 @@ class BuyLandScreenState extends State<BuyLandScreen> {
                               onDeleted: () {
                                 setState(() {
                                   selectedPlace = null;
-                                  _propertyFuture = fetchProperties();
+                                  _propertyFuture = fetchPropertiesWithGeo();
                                 });
                               },
                             ),
@@ -428,7 +477,7 @@ class BuyLandScreenState extends State<BuyLandScreen> {
                       ),
                     ),
                   const SizedBox(height: 2),
-                  // **Property Listings**
+                  // Property Listings
                   Expanded(
                     child: FutureBuilder<List<Property>>(
                       future: _propertyFuture,
@@ -460,7 +509,6 @@ class BuyLandScreenState extends State<BuyLandScreen> {
                               }
                               final user = authSnapshot.data;
                               if (user != null) {
-                                // User is logged in
                                 return StreamBuilder<AppUser?>(
                                   stream: UserService().getUserStream(user.uid),
                                   builder: (context, userSnapshot) {
@@ -480,7 +528,6 @@ class BuyLandScreenState extends State<BuyLandScreen> {
                                           child:
                                               Text('No user data available.'));
                                     }
-
                                     return showMap
                                         ? PropertyMapView(
                                             properties: properties)
@@ -495,8 +542,7 @@ class BuyLandScreenState extends State<BuyLandScreen> {
                                                 MaterialPageRoute(
                                                   builder: (_) =>
                                                       PropertyDetailsScreen(
-                                                    property: property,
-                                                  ),
+                                                          property: property),
                                                 ),
                                               );
                                             },
@@ -504,12 +550,11 @@ class BuyLandScreenState extends State<BuyLandScreen> {
                                   },
                                 );
                               } else {
-                                // User is not logged in
                                 return showMap
                                     ? PropertyMapView(properties: properties)
                                     : PropertyListView(
                                         properties: properties,
-                                        favoritedPropertyIds: [], // Empty list for guests
+                                        favoritedPropertyIds: [],
                                         onFavoriteToggle: _onFavoriteToggle,
                                         onTapProperty: (property) {
                                           Navigator.push(
@@ -517,8 +562,7 @@ class BuyLandScreenState extends State<BuyLandScreen> {
                                             MaterialPageRoute(
                                               builder: (_) =>
                                                   PropertyDetailsScreen(
-                                                property: property,
-                                              ),
+                                                      property: property),
                                             ),
                                           );
                                         },

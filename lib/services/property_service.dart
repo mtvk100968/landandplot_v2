@@ -80,11 +80,9 @@ class PropertyService {
         propertyOwner: property.propertyOwner,
         city: property.city,
         address: property.address,
-
         // **Set New Fields**
         userType: property.userType,
         ventureName: property.ventureName,
-
         createdAt: createdAt, // Set the creation time
       );
 
@@ -230,7 +228,6 @@ class PropertyService {
       // Apply search filter
       if (searchQuery != null && searchQuery.isNotEmpty) {
         // Firestore doesn't support full-text search; this is a basic implementation.
-        // For more advanced search, consider integrating with Algolia or Firebase Extensions.
         query = query
             .where('name', isGreaterThanOrEqualTo: searchQuery)
             .where('name', isLessThanOrEqualTo: searchQuery + '\uf8ff');
@@ -319,7 +316,7 @@ class PropertyService {
         query = query.where('pincode', isEqualTo: pincode);
       }
 
-      // Apply inequality filter on a single field (e.g., pricePerUnit)
+      // Apply inequality filter on pricePerUnit
       if (minPricePerUnit != null || maxPricePerUnit != null) {
         if (minPricePerUnit != null && maxPricePerUnit != null) {
           query = query.where('pricePerUnit',
@@ -334,7 +331,25 @@ class PropertyService {
         }
       }
 
-      // Fetch data
+      // Apply location filtering as Firestore queries
+      if (minLat != null && maxLat != null) {
+        query = query
+            .where('latitude', isGreaterThanOrEqualTo: minLat)
+            .where('latitude', isLessThanOrEqualTo: maxLat);
+      }
+      if (minLon != null && maxLon != null) {
+        query = query
+            .where('longitude', isGreaterThanOrEqualTo: minLon)
+            .where('longitude', isLessThanOrEqualTo: maxLon);
+      }
+
+      // Apply search query for property name if provided
+      if (searchQuery != null && searchQuery.isNotEmpty) {
+        query = query
+            .where('name', isGreaterThanOrEqualTo: searchQuery)
+            .where('name', isLessThanOrEqualTo: searchQuery + '\uf8ff');
+      }
+
       QuerySnapshot<Map<String, dynamic>> snapshot = await query.get();
       print(
           'Number of properties fetched from Firestore: ${snapshot.docs.length}');
@@ -344,7 +359,7 @@ class PropertyService {
           .map((doc) => Property.fromMap(doc.id, doc.data()))
           .toList();
 
-      // Apply additional filters client-side
+      // Apply additional filtering client-side for land area if needed
       if (minLandArea != null || maxLandArea != null) {
         properties = properties.where((property) {
           bool matches = true;
@@ -357,19 +372,6 @@ class PropertyService {
           return matches;
         }).toList();
         print('Properties after land area filter: ${properties.length}');
-      }
-
-      if (minLat != null &&
-          maxLat != null &&
-          minLon != null &&
-          maxLon != null) {
-        properties = properties.where((property) {
-          return property.latitude >= minLat &&
-              property.latitude <= maxLat &&
-              property.longitude >= minLon &&
-              property.longitude <= maxLon;
-        }).toList();
-        print('Properties after location filter: ${properties.length}');
       }
 
       return properties;
