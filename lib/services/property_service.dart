@@ -93,7 +93,9 @@ class PropertyService {
           .set(propertyWithMedia.toMap());
 
       // Step 6: Link the property to the user's posted properties
-      await _userService.addPropertyToUser(property.userId, propertyId);
+      await _firestore.collection('users').doc(property.userId).update({
+        'postedPropertyIds': FieldValue.arrayUnion([propertyId])
+      });
 
       return propertyId;
     } catch (e, stacktrace) {

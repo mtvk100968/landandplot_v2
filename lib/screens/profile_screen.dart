@@ -5,7 +5,7 @@ import '../services/user_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user_model.dart';
 import '../models/property_model.dart';
-import '../components/property_card.dart';
+import '../components/basic_property_card.dart';
 import './property_details_screen.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -18,8 +18,6 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class ProfileScreenState extends State<ProfileScreen> {
-  final TextEditingController _phoneController = TextEditingController();
-  final TextEditingController _codeController = TextEditingController();
   String _verificationId = '';
   User? _currentUser;
 
@@ -41,8 +39,6 @@ class ProfileScreenState extends State<ProfileScreen> {
 
   @override
   void dispose() {
-    _phoneController.dispose();
-    _codeController.dispose();
     super.dispose();
   }
 
@@ -50,12 +46,11 @@ class ProfileScreenState extends State<ProfileScreen> {
     _currentUser = FirebaseAuth.instance.currentUser;
 
     if (_currentUser != null) {
-      setState(() => _isLoadingProperties = true);
+      if (mounted) setState(() => _isLoadingProperties = true);
 
-      // Fetch user details from Firestore
       AppUser? appUser = await UserService().getUserById(_currentUser!.uid);
 
-      if (appUser != null) {
+      if (appUser != null && mounted) {
         setState(() {
           _userName = appUser.name;
           _userPhone = appUser.phoneNumber;
@@ -64,26 +59,49 @@ class ProfileScreenState extends State<ProfileScreen> {
 
         // Fetch user properties
         if (appUser.postedPropertyIds.isNotEmpty) {
+          print('Debug: postedPropertyIds: ${appUser.postedPropertyIds}');
           try {
-            final QuerySnapshot<Map<String, dynamic>> propertySnapshots =
-                await FirebaseFirestore.instance
-                    .collection('properties')
-                    .where(FieldPath.documentId,
-                        whereIn: appUser.postedPropertyIds)
-                    .get();
+            List<Property> properties = [];
+            if (appUser.postedPropertyIds.length == 1) {
+              print(
+                  'Debug: Only one property found. Fetching single property.');
+              final doc = await FirebaseFirestore.instance
+                  .collection('properties')
+                  .doc(appUser.postedPropertyIds.first)
+                  .get();
+              print('Debug: Fetched document data: ${doc.data()}');
+              if (doc.exists && doc.data() != null) {
+                properties.add(Property.fromDocument(doc));
+                print('Debug: Added property from single fetch.');
+              } else {
+                print('Debug: Document does not exist or contains null data.');
+              }
+            } else {
+              print('Debug: Multiple properties found. Fetching in batches.');
+              properties = await UserService()
+                  .getPropertiesByIds(appUser.postedPropertyIds);
+              print(
+                  'Debug: Batch fetch returned ${properties.length} properties.');
+            }
 
-            setState(() {
-              _userPostedProperties = propertySnapshots.docs
-                  .map((doc) => Property.fromDocument(doc))
-                  .toList();
-            });
+            if (mounted) {
+              setState(() {
+                _userPostedProperties = properties;
+                print(
+                    'Debug: _userPostedProperties updated with ${properties.length} properties.');
+              });
+            }
           } catch (e) {
-            print('Error fetching properties: $e');
+            print('Debug: Error fetching properties: $e');
           }
+        } else {
+          print('Debug: postedPropertyIds is empty.');
         }
       }
 
-      setState(() => _isLoadingProperties = false);
+      if (mounted) {
+        setState(() => _isLoadingProperties = false);
+      }
     }
   }
 
@@ -95,22 +113,212 @@ class ProfileScreenState extends State<ProfileScreen> {
     await _loadUserData();
   }
 
+  void _editPhoneNumber() {
+    final phoneCtrl = TextEditingController(text: '+91');
+    final codeCtrl = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Update Phone Number'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: phoneCtrl,
+                  decoration:
+                      const InputDecoration(labelText: 'New Phone Number'),
+                  keyboardType: TextInputType.phone,
+                ),
+                TextField(
+                  controller: codeCtrl,
+                  decoration:
+                      const InputDecoration(labelText: 'Verification Code'),
+                  keyboardType: TextInputType.number,
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () async {
+                await signInWithPhoneNumber(
+                  phoneCtrl.text,
+                  (String verId) {
+                    setState(() => _verificationId = verId);
+                    _showSuccessSnackBar('Verification code sent.');
+                  },
+                  (FirebaseAuthException e) {
+                    _showErrorSnackBar(e.message ?? 'Verification failed.');
+                  },
+                );
+              },
+              child: const Text('Send Code'),
+            ),
+            TextButton(
+              onPressed: () async {
+                final credential = PhoneAuthProvider.credential(
+                  verificationId: _verificationId,
+                  smsCode: codeCtrl.text,
+                );
+
+                try {
+                  await FirebaseAuth.instance.currentUser!
+                      .linkWithCredential(credential);
+                  await UserService().updateUser(
+                    AppUser(
+                      uid: _currentUser!.uid,
+                      phoneNumber: phoneCtrl.text,
+                    ),
+                  );
+                  setState(() => _userPhone = phoneCtrl.text);
+                  Navigator.pop(context);
+                  _showSuccessSnackBar('Phone updated successfully.');
+                } catch (e) {
+                  _showErrorSnackBar('Verification failed.');
+                }
+              },
+              child: const Text('Verify & Update'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _signOut() async {
+    await FirebaseAuth.instance.signOut();
+    setState(() {
+      _currentUser = null;
+      _userName = null;
+      _userPhone = null;
+      _userEmail = null;
+      _userPostedProperties.clear();
+    });
+  }
+
+  Future<void> _signInWithGoogle() async {
+    try {
+      User? user = await signInWithGoogle();
+      if (user != null && mounted) {
+        setState(() {
+          _currentUser = user;
+        });
+        _loadUserData();
+      }
+    } catch (e) {
+      _showErrorSnackBar('Failed to sign in with Google');
+    }
+  }
+
+  void _showPhoneNumberDialog() {
+    final phoneCtrl = TextEditingController(text: '+91');
+    final codeCtrl = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Enter Phone Number'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: phoneCtrl,
+                  decoration: const InputDecoration(labelText: 'Phone Number'),
+                  keyboardType: TextInputType.phone,
+                ),
+                TextField(
+                  controller: codeCtrl,
+                  decoration:
+                      const InputDecoration(labelText: 'Verification Code'),
+                  keyboardType: TextInputType.number,
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => _sendCode(phoneCtrl.text),
+              child: const Text('Send Code'),
+            ),
+            TextButton(
+              onPressed: () => _signInWithPhone(codeCtrl.text),
+              child: const Text('Sign In'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _sendCode(String phoneNumber) async {
+    try {
+      await signInWithPhoneNumber(
+        phoneNumber,
+        (String verId) {
+          if (mounted) {
+            setState(() => _verificationId = verId);
+          }
+        },
+        (FirebaseAuthException e) {
+          _showErrorSnackBar('Failed to verify phone number: ${e.message}');
+        },
+      );
+      _showSuccessSnackBar('Verification code sent.');
+    } catch (e) {
+      _showErrorSnackBar('Failed to send verification code');
+    }
+  }
+
+  Future<void> _signInWithPhone(String code) async {
+    try {
+      final PhoneAuthCredential credential = PhoneAuthProvider.credential(
+        verificationId: _verificationId,
+        smsCode: code,
+      );
+      User? user = await signInWithPhoneAuthCredential(credential);
+      if (user != null && mounted) {
+        setState(() {
+          _currentUser = user;
+        });
+        _loadUserData();
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      _showErrorSnackBar('Failed to sign in with phone number');
+    }
+  }
+
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.redAccent,
+      ),
+    );
+  }
+
+  void _showSuccessSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Profile'),
-        actions: [
-          if (_currentUser != null)
-            IconButton(
-              icon: const Icon(Icons.logout),
-              onPressed: _signOut,
-            ),
-        ],
-      ),
-      body: RefreshIndicator(
-        onRefresh: _refreshProfile,
-        child: _currentUser == null ? _buildSignInUI() : _buildProfilePage(),
+      body: SafeArea(
+        child: RefreshIndicator(
+          onRefresh: _refreshProfile,
+          child: _currentUser == null ? _buildSignInUI() : _buildProfilePage(),
+        ),
       ),
     );
   }
@@ -146,8 +354,7 @@ class ProfileScreenState extends State<ProfileScreen> {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 30, vertical: 15),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+                        borderRadius: BorderRadius.circular(8)),
                   ),
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
@@ -170,8 +377,7 @@ class ProfileScreenState extends State<ProfileScreen> {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 30, vertical: 15),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+                        borderRadius: BorderRadius.circular(8)),
                   ),
                 ),
               ],
@@ -184,222 +390,95 @@ class ProfileScreenState extends State<ProfileScreen> {
 
   Widget _buildProfilePage() {
     return SingleChildScrollView(
-      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // User Information Card
+          // Profile Header
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'My Profile',
+                style: Theme.of(context)
+                    .textTheme
+                    .headlineMedium
+                    ?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              IconButton(
+                icon: const Icon(Icons.edit, color: Colors.blue),
+                onPressed: _editPhoneNumber,
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
           Card(
-            elevation: 5,
+            elevation: 3,
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
+            child: ListTile(
+              leading: const Icon(Icons.person, color: Colors.green, size: 40),
+              title: Text(
+                _userName ?? 'No Name',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              subtitle: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'User Information',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  const Divider(),
-                  if (_userName != null) Text('Name: $_userName'),
-                  if (_userPhone != null) Text('Phone: $_userPhone'),
-                  if (_userEmail != null) Text('Email: $_userEmail'),
+                  Text('Email: ${_userEmail ?? "Not provided"}'),
+                  Text('Phone: ${_userPhone ?? "Not provided"}'),
                 ],
               ),
             ),
           ),
-          const SizedBox(height: 24),
-          // Posted Properties Section
+          const SizedBox(height: 20),
+          // Properties Posted Section
+          Text(
+            'My Listings',
+            style: Theme.of(context)
+                .textTheme
+                .titleLarge
+                ?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 10),
           _isLoadingProperties
               ? const Center(child: CircularProgressIndicator())
               : _userPostedProperties.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
-                          Text(
-                            'Your Posted Properties',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87,
-                            ),
-                          ),
-                          SizedBox(height: 16),
-                          Text(
-                            'No properties posted yet.',
-                            style:
-                                TextStyle(fontSize: 16, color: Colors.black54),
-                          ),
-                        ],
+                  ? const Center(
+                      child: Text(
+                        'No listings yet.',
+                        style: TextStyle(color: Colors.grey, fontSize: 16),
                       ),
                     )
                   : Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Your Posted Properties',
-                          style:
-                              Theme.of(context).textTheme.titleLarge?.copyWith(
-                                    color: Colors.black87,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                        ),
-                        const SizedBox(height: 8),
-                        ListView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: _userPostedProperties.length,
-                          itemBuilder: (context, index) {
-                            return PropertyCard(
-                              property: _userPostedProperties[index],
-                              isFavorited: false,
-                              onFavoriteToggle: (bool newState) {},
-                              onTap: () {
-                                // Navigate to property details or perform desired action
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => PropertyDetailsScreen(
-                                      property: _userPostedProperties[index],
-                                    ),
-                                  ),
-                                );
-                              },
-                            );
-                          },
-                        ),
-                      ],
+                      children: _userPostedProperties.map((property) {
+                        return BasicPropertyCard(
+                          property: property,
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  PropertyDetailsScreen(property: property),
+                            ),
+                          ),
+                        );
+                      }).toList(),
                     ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _signOut() async {
-    await FirebaseAuth.instance.signOut();
-    setState(() {
-      _currentUser = null;
-      _userName = null;
-      _userPhone = null;
-      _userEmail = null;
-      _userPostedProperties.clear();
-    });
-  }
-
-  Future<void> _signInWithGoogle() async {
-    try {
-      User? user = await signInWithGoogle();
-      if (user != null && mounted) {
-        setState(() {
-          _currentUser = user;
-        });
-        _loadUserData();
-      }
-    } catch (e) {
-      _showErrorSnackBar('Failed to sign in with Google');
-    }
-  }
-
-  void _showPhoneNumberDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Enter Phone Number'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: _phoneController,
-                  decoration: const InputDecoration(labelText: 'Phone Number'),
-                  keyboardType: TextInputType.phone,
-                ),
-                TextField(
-                  controller: _codeController,
-                  decoration:
-                      const InputDecoration(labelText: 'Verification Code'),
-                  keyboardType: TextInputType.number,
-                ),
-              ],
+          const SizedBox(height: 20),
+          // Logout Button
+          Center(
+            child: TextButton(
+              onPressed: _signOut,
+              child: const Text(
+                'Logout',
+                style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.redAccent),
+              ),
             ),
           ),
-          actions: [
-            TextButton(
-              onPressed: _sendCode,
-              child: const Text('Send Code'),
-            ),
-            TextButton(
-              onPressed: _signInWithPhone,
-              child: const Text('Sign In'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Future<void> _sendCode() async {
-    try {
-      await signInWithPhoneNumber(
-        _phoneController.text,
-        (String verId) {
-          if (mounted) {
-            setState(() => _verificationId = verId);
-          }
-        },
-        (FirebaseAuthException e) {
-          _showErrorSnackBar('Failed to verify phone number: ${e.message}');
-        },
-      );
-      _showSuccessSnackBar('Verification code sent.');
-    } catch (e) {
-      _showErrorSnackBar('Failed to send verification code');
-    }
-  }
-
-  Future<void> _signInWithPhone() async {
-    try {
-      final PhoneAuthCredential credential = PhoneAuthProvider.credential(
-        verificationId: _verificationId,
-        smsCode: _codeController.text,
-      );
-      User? user = await signInWithPhoneAuthCredential(credential);
-      if (user != null && mounted) {
-        setState(() {
-          _currentUser = user;
-        });
-        _loadUserData();
-        Navigator.pop(context);
-      }
-    } catch (e) {
-      _showErrorSnackBar('Failed to sign in with phone number');
-    }
-  }
-
-  void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.redAccent,
-      ),
-    );
-  }
-
-  void _showSuccessSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.green,
+        ],
       ),
     );
   }
