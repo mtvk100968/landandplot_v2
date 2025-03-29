@@ -169,4 +169,14 @@ class UserService {
       return [];
     }
   }
+
+  Future<AppUser?> getUserByPhoneNumber(String phoneNumber) async {
+    QuerySnapshot<Map<String, dynamic>> snapshot = await _usersCollection
+        .where('phoneNumber', isEqualTo: phoneNumber)
+        .get();
+    if (snapshot.docs.isNotEmpty) {
+      return AppUser.fromDocument(snapshot.docs.first.data());
+    }
+    return null;
+  }
 }

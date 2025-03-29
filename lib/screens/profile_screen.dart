@@ -67,6 +67,26 @@ class ProfileScreenState extends State<ProfileScreen>
       _isProcessing = true;
     });
     String phone = _phoneController.text.trim();
+
+    // NEW: Check if a user with this phone already exists with a different type.
+    AppUser? existingUser = await UserService().getUserByPhoneNumber(phone);
+    if (existingUser != null) {
+      String expectedType =
+          _selectedLoginType == UserLoginType.agent ? 'agent' : 'user';
+      if (existingUser.userType != expectedType) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                'You are already registered as ${existingUser.userType}. Please sign in as ${existingUser.userType}.'),
+          ),
+        );
+        setState(() {
+          _isProcessing = false;
+        });
+        return;
+      }
+    }
+
     await signInWithPhoneNumber(
       phone,
       (String verId) {
@@ -236,10 +256,13 @@ class ProfileScreenState extends State<ProfileScreen>
     final currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser == null) {
       return Scaffold(body: _buildLoginComponent());
+    } else if (_isLoadingProfile) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    } else if (_appUser == null) {
+      // If no profile exists after loading, fall back to the login screen.
+      return Scaffold(body: _buildLoginComponent());
     } else {
-      return _isLoadingProfile
-          ? const Scaffold(body: Center(child: CircularProgressIndicator()))
-          : _buildProfileComponent();
+      return _buildProfileComponent();
     }
   }
 }
