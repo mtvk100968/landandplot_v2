@@ -16,6 +16,7 @@ import '../../components/filter_bottom_sheet.dart';
 import '../../components/location_search_bar.dart';
 import './property_details_screen.dart';
 import '../components/bottom_nav_bar.dart';
+import '../components/sign_in_bottom_sheet.dart';
 
 /// Defines the type of geo search:
 /// - point: a single location (with a given radius)
@@ -255,21 +256,26 @@ class BuyLandScreenState extends State<BuyLandScreen> {
 
   Future<bool> _onFavoriteToggle(String propertyId, bool nowFavorited) async {
     User? firebaseUser = FirebaseAuth.instance.currentUser;
+    // If not signed in, show the bottom sheet for phone/OTP sign in.
     if (firebaseUser == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('You need to be logged in to favorite properties.'),
-        ),
-      );
-      return false;
+      bool signInSuccess = await showModalBottomSheet<bool>(
+            context: context,
+            isScrollControlled: true,
+            builder: (context) => const SignInBottomSheet(),
+          ) ??
+          false;
+      if (!signInSuccess) {
+        // If sign in fails/cancelled, simply return false.
+        return false;
+      }
+      firebaseUser = FirebaseAuth.instance.currentUser;
     }
-
     try {
       if (nowFavorited) {
-        await UserService().addFavoriteProperty(firebaseUser.uid, propertyId);
+        await UserService().addFavoriteProperty(firebaseUser!.uid, propertyId);
       } else {
         await UserService()
-            .removeFavoriteProperty(firebaseUser.uid, propertyId);
+            .removeFavoriteProperty(firebaseUser!.uid, propertyId);
       }
       return true;
     } catch (e) {
