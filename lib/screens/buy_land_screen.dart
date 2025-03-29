@@ -255,27 +255,31 @@ class BuyLandScreenState extends State<BuyLandScreen> {
   }
 
   Future<bool> _onFavoriteToggle(String propertyId, bool nowFavorited) async {
+    // Check if a user is signed in.
     User? firebaseUser = FirebaseAuth.instance.currentUser;
-    // If not signed in, show the bottom sheet for phone/OTP sign in.
     if (firebaseUser == null) {
+      // Open the sign-in bottom sheet and wait for completion.
       bool signInSuccess = await showModalBottomSheet<bool>(
             context: context,
             isScrollControlled: true,
             builder: (context) => const SignInBottomSheet(),
           ) ??
           false;
+      // If sign in fails or is cancelled, return false without updating favorite state.
       if (!signInSuccess) {
-        // If sign in fails/cancelled, simply return false.
         return false;
       }
       firebaseUser = FirebaseAuth.instance.currentUser;
+      // Double-check sign-in success.
+      if (firebaseUser == null) return false;
     }
     try {
+      // Update Firestore only if the user is signed in.
       if (nowFavorited) {
-        await UserService().addFavoriteProperty(firebaseUser!.uid, propertyId);
+        await UserService().addFavoriteProperty(firebaseUser.uid, propertyId);
       } else {
         await UserService()
-            .removeFavoriteProperty(firebaseUser!.uid, propertyId);
+            .removeFavoriteProperty(firebaseUser.uid, propertyId);
       }
       return true;
     } catch (e) {
