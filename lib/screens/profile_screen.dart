@@ -28,39 +28,7 @@ class ProfileScreenState extends State<ProfileScreen>
   String _verificationId = '';
   bool _isOtpSent = false;
   bool _isProcessing = false;
-
-  AppUser? _appUser;
-  bool _isLoadingProfile = false;
   TabController? _tabController;
-
-  @override
-  void initState() {
-    super.initState();
-    if (FirebaseAuth.instance.currentUser != null) {
-      _loadUserProfile();
-    }
-  }
-
-  Future<void> _loadUserProfile() async {
-    setState(() {
-      _isLoadingProfile = true;
-    });
-    User? user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      AppUser? fetchedUser = await UserService().getUserById(user.uid);
-      setState(() {
-        _appUser = fetchedUser;
-        _isLoadingProfile = false;
-        if (fetchedUser != null) {
-          if (fetchedUser.userType == 'admin') {
-            _tabController = TabController(length: 3, vsync: this);
-          } else {
-            _tabController = TabController(length: 2, vsync: this);
-          }
-        }
-      });
-    }
-  }
 
   Future<void> _sendOtp() async {
     setState(() {
@@ -68,7 +36,7 @@ class ProfileScreenState extends State<ProfileScreen>
     });
     String phone = _phoneController.text.trim();
 
-    // NEW: Check if a user with this phone already exists with a different type.
+    // Check if a user with this phone already exists with a different type.
     AppUser? existingUser = await UserService().getUserByPhoneNumber(phone);
     if (existingUser != null) {
       String expectedType =
@@ -124,7 +92,6 @@ class ProfileScreenState extends State<ProfileScreen>
               : 'user';
 
       await signInWithPhoneAuthCredential(credential, userType);
-      await _loadUserProfile();
       setState(() {
         _isProcessing = false;
       });
@@ -140,13 +107,13 @@ class ProfileScreenState extends State<ProfileScreen>
   Future<void> _signOut() async {
     await signOut();
     setState(() {
-      _appUser = null;
       _isOtpSent = false;
       _phoneController.text = '+91';
       _otpController.clear();
     });
   }
 
+  /// Login component using a ToggleButtons segmented control.
   Widget _buildLoginComponent() {
     return Center(
       child: SingleChildScrollView(
@@ -169,37 +136,23 @@ class ProfileScreenState extends State<ProfileScreen>
             ),
             const SizedBox(height: 20),
             if (!_isOtpSent)
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        setState(() {
-                          _selectedLoginType = UserLoginType.agent;
-                        });
-                        _sendOtp();
-                      },
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
-                      child: const Text('As Agent'),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        setState(() {
-                          _selectedLoginType = UserLoginType.user;
-                        });
-                        _sendOtp();
-                      },
-                      style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
-                      child: const Text('As User'),
-                    ),
-                  ),
+              ToggleButtons(
+                borderRadius: BorderRadius.circular(8),
+                isSelected: [
+                  _selectedLoginType == UserLoginType.agent,
+                  _selectedLoginType == UserLoginType.user
+                ],
+                onPressed: (index) {
+                  setState(() {
+                    _selectedLoginType =
+                        index == 0 ? UserLoginType.agent : UserLoginType.user;
+                  });
+                  _sendOtp();
+                },
+                constraints: const BoxConstraints(minWidth: 120, minHeight: 40),
+                children: const [
+                  Text('As Agent'),
+                  Text('As User'),
                 ],
               ),
             if (_isOtpSent) ...[
@@ -228,11 +181,17 @@ class ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  Widget _buildProfileComponent() {
-    if (_appUser == null) {
-      return const Center(child: CircularProgressIndicator());
+  /// Builds the appropriate profile component based on the user's type.
+  Widget _buildProfileComponent(AppUser appUser) {
+    // Initialize TabController if not already set.
+    if (_tabController == null) {
+      if (appUser.userType == 'admin') {
+        _tabController = TabController(length: 3, vsync: this);
+      } else {
+        _tabController = TabController(length: 2, vsync: this);
+      }
     }
-    switch (_appUser!.userType) {
+    switch (appUser.userType) {
       case 'admin':
         return AdminProfile(
           tabController: _tabController!,
@@ -253,16 +212,51 @@ class ProfileScreenState extends State<ProfileScreen>
 
   @override
   Widget build(BuildContext context) {
-    final currentUser = FirebaseAuth.instance.currentUser;
-    if (currentUser == null) {
-      return Scaffold(body: _buildLoginComponent());
-    } else if (_isLoadingProfile) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    } else if (_appUser == null) {
-      // If no profile exists after loading, fall back to the login screen.
-      return Scaffold(body: _buildLoginComponent());
-    } else {
-      return _buildProfileComponent();
-    }
+    // Listen to Firebase Auth changes.
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, authSnapshot) {
+        // While waiting for auth state, show a loader.
+        if (authSnapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+              body: Center(child: CircularProgressIndicator()));
+        }
+        // If no user is signed in, show the login component.
+        if (authSnapshot.data == null) {
+          return Scaffold(body: _buildLoginComponent());
+        }
+        // If user is signed in, listen to Firestore user document changes.
+        return StreamBuilder<AppUser?>(
+          stream: UserService().getUserStream(authSnapshot.data!.uid),
+          builder: (context, profileSnapshot) {
+            // While waiting for the profile stream, show a loader.
+            if (profileSnapshot.connectionState == ConnectionState.waiting) {
+              return const Scaffold(
+                  body: Center(child: CircularProgressIndicator()));
+            }
+            // If profile data is not available, show an error with a sign-out option.
+            if (!profileSnapshot.hasData || profileSnapshot.data == null) {
+              return Scaffold(
+                body: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text('Profile not found.'),
+                      const SizedBox(height: 20),
+                      ElevatedButton(
+                        onPressed: _signOut,
+                        child: const Text('Sign Out'),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+            // Otherwise, show the profile component.
+            return _buildProfileComponent(profileSnapshot.data!);
+          },
+        );
+      },
+    );
   }
 }
