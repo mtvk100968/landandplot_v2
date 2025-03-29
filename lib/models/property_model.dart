@@ -166,7 +166,6 @@ class Property {
       pipeline: map['pipeline'],
       electricity: map['electricity'],
       plantation: map['plantation'],
-
       // **Parse proposedPrices**
       proposedPrices: List<Map<String, dynamic>>.from(
         map['proposedPrices'] ?? [],
