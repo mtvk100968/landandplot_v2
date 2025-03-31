@@ -69,6 +69,7 @@ dependencies:
   google_maps_flutter_android: ^2.14.12
   flutter_svg: ^2.0.17
   font_awesome_flutter: ^10.8.0
+  flutter_native_splash: ^2.4.5
 
 dev_dependencies:
   flutter_test:
@@ -80,6 +81,13 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^5.0.0
+
+flutter_native_splash:
+  color: "#FFFFFF"
+  image: assets/images/splash.png
+  android: true
+  ios: true
+  fullscreen: true
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

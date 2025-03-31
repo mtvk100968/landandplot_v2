@@ -21,6 +21,9 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // ✅ Add this line right before runApp to hold splash screen for 3 seconds
+  await Future.delayed(Duration(seconds: 3));
+
   try {
     // 1. Initialize Firebase
     await Firebase.initializeApp(
