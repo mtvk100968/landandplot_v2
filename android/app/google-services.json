@@ -14,11 +14,11 @@
       },
       "oauth_client": [
         {
-          "client_id": "423847166550-06umbqp3nen07e50a88nhis2hiqhk1io.apps.googleusercontent.com",
+          "client_id": "423847166550-k0f0s4rj5dhqrjmjb05q6r8hqp9vg1a5.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.landandplotv2.app",
-            "certificate_hash": "ac5981d545220b4e3da1507982031aaaf679cc59"
+            "certificate_hash": "1b113e3e820892d2063901120db9874e61a03291"
           }
         },
         {

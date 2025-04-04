@@ -3,9 +3,9 @@
 <plist version="1.0">
 <dict>
 	<key>CLIENT_ID</key>
-	<string>423847166550-sddpkmpf1knger600lq2c8m04p336kr7.apps.googleusercontent.com</string>
+	<string>423847166550-jf8gb1o8cbojo5ccladh3e8eqv32vhnf.apps.googleusercontent.com</string>
 	<key>REVERSED_CLIENT_ID</key>
-	<string>com.googleusercontent.apps.423847166550-sddpkmpf1knger600lq2c8m04p336kr7</string>
+	<string>com.googleusercontent.apps.423847166550-jf8gb1o8cbojo5ccladh3e8eqv32vhnf</string>
 	<key>ANDROID_CLIENT_ID</key>
 	<string>423847166550-06umbqp3nen07e50a88nhis2hiqhk1io.apps.googleusercontent.com</string>
 	<key>API_KEY</key>
@@ -15,7 +15,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.example.landandplot</string>
+	<string>com.lumpsumify.landandplot</string>
 	<key>PROJECT_ID</key>
 	<string>landandplot-v2</string>
 	<key>STORAGE_BUCKET</key>
@@ -31,6 +31,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:423847166550:ios:b648167e1eaaa2349531f7</string>
+	<string>1:423847166550:ios:4647dfcb2fbf23fd9531f7</string>
 </dict>
 </plist>

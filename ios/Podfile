@@ -2,6 +2,12 @@
 platform :ios, '14.0'
 use_frameworks!
 
+# ✅ Add this line BELOW platform
+install! 'cocoapods',
+  :disable_input_output_paths => true
+
+use_frameworks!
+
 # CocoaPods analytics sends network stats synchronously affecting flutter build latency.
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
 
