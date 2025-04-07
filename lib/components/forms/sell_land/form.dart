@@ -164,7 +164,12 @@ class _SellLandFormState extends State<SellLandForm> {
                 });
               },
               children: [
-                Step1BasicDetails(formKey: _formKeys[0]),
+                SingleChildScrollView(
+                  padding: EdgeInsets.only(
+                    bottom: MediaQuery.of(context).viewInsets.bottom + 100,
+                  ),
+                  child: Step1BasicDetails(formKey: _formKeys[0]),
+                ),
                 Step2PropertyDetails(formKey: _formKeys[1]),
                 Step3AddressDetails(formKey: _formKeys[2]),
                 Step4MapLocation(formKey: _formKeys[3]),
@@ -172,6 +177,7 @@ class _SellLandFormState extends State<SellLandForm> {
               ],
             ),
           ),
+
           // Navigation Buttons
           Padding(
             padding: const EdgeInsets.all(16.0),

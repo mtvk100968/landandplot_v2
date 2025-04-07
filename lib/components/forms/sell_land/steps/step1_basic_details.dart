@@ -67,7 +67,7 @@ class _Step1BasicDetailsState extends State<Step1BasicDetails> {
     final propertyProvider = Provider.of<PropertyProvider>(context);
     return Form(
       key: widget.formKey,
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
