@@ -28,39 +28,45 @@ class TimelineView extends StatelessWidget {
         return Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Timeline Line + Dot
-            Column(
-              children: [
-                // Top line
-                if (index != 0)
-                  Container(
-                    width: 2,
-                    height: 12,
-                    color:
-                        index <= currentIndex ? Colors.green : Colors.grey[300],
-                  ),
-                // Dot
-                Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: isActive ? Colors.green : Colors.white,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: isActive ? Colors.green : Colors.grey,
+            // Dot + Line Column
+            SizedBox(
+              width: 24,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Top line
+                  if (index != 0)
+                    Container(
                       width: 2,
+                      height: 12,
+                      color: index <= currentIndex
+                          ? Colors.green
+                          : Colors.grey[300],
                     ),
-                  ),
-                  child: const SizedBox(width: 8, height: 8),
-                ),
-                // Bottom line
-                if (!isLast)
+                  // Dot
                   Container(
-                    width: 2,
-                    height: 30,
-                    color:
-                        index < currentIndex ? Colors.green : Colors.grey[300],
+                    padding: EdgeInsets.only(bottom: 2),
+                    decoration: BoxDecoration(
+                      color: isActive ? Colors.green : Colors.white,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: isActive ? Colors.green : Colors.grey,
+                        width: 2,
+                      ),
+                    ),
+                    child: const SizedBox(width: 8, height: 8),
                   ),
-              ],
+                  // Bottom line
+                  if (!isLast)
+                    Container(
+                      width: 2,
+                      height: 30,
+                      color: index < currentIndex
+                          ? Colors.green
+                          : Colors.grey[300],
+                    ),
+                ],
+              ),
             ),
             const SizedBox(width: 12),
             // Step Text
