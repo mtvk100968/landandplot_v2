@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import './buyer_model.dart';
 
 class Property {
   final String id;
@@ -38,6 +39,8 @@ class Property {
   final bool? pipeline;
   final bool? electricity;
   final bool? plantation;
+  final List<Buyer> interestedUsers;
+  final List<Buyer> visitedUsers;
 
   // **Added proposedPrices field**
   final List<Map<String, dynamic>> proposedPrices;
@@ -81,6 +84,8 @@ class Property {
     this.electricity,
     this.plantation,
     this.proposedPrices = const [], // Initialize as an empty list
+    this.interestedUsers = const [],
+    this.visitedUsers = const [],
   });
 
   Map<String, dynamic> toMap() {
@@ -124,6 +129,8 @@ class Property {
       'plantation': plantation,
       // **Include proposedPrices field in Firestore**
       'proposedPrices': proposedPrices,
+      'interestedUsers': interestedUsers.map((e) => e.toMap()).toList(),
+      'visitedUsers': visitedUsers.map((e) => e.toMap()).toList(),
     };
   }
 
@@ -170,6 +177,16 @@ class Property {
       proposedPrices: List<Map<String, dynamic>>.from(
         map['proposedPrices'] ?? [],
       ),
+      interestedUsers: map['interestedUsers'] != null
+          ? List<Map<String, dynamic>>.from(map['interestedUsers'])
+              .map((e) => Buyer.fromMap(e))
+              .toList()
+          : [],
+      visitedUsers: map['visitedUsers'] != null
+          ? List<Map<String, dynamic>>.from(map['visitedUsers'])
+              .map((e) => Buyer.fromMap(e))
+              .toList()
+          : [],
     );
   }
 

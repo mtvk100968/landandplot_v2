@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../models/property_model.dart';
 import '../../../models/user_model.dart'; // Ensure correct path to your AppUser model
 import '../admin/agent_property_card.dart';
+import '../../../models/buyer_model.dart'; // Import your Buyer model
 
 class AgentProfile extends StatefulWidget {
   final TabController tabController;
@@ -27,73 +28,136 @@ class _AgentProfileState extends State<AgentProfile> {
   @override
   void initState() {
     super.initState();
-    // TODO: Replace these dummy lists with Firestore fetching code.
-    // Example: FirebaseFirestore.instance.collection('properties').where(...).get()
+
+    // Dummy posted property with all fields filled.
     postedProperties = [
       Property(
         id: '1',
         userId: 'agent1',
-        name: 'Property 1',
+        name: 'Sunny Apartments',
         mobileNumber: '1234567890',
         propertyType: 'Residential',
-        landArea: 1000,
-        pricePerUnit: 50,
-        totalPrice: 50000,
-        surveyNumber: 'SN1',
-        plotNumbers: ['P1'],
+        landArea: 1500,
+        pricePerUnit: 45,
+        totalPrice: 67500,
+        surveyNumber: 'SN-101',
+        plotNumbers: ['P1', 'P2'],
+        district: 'Central',
+        mandal: 'Mandal A',
+        village: 'Sunny Village',
+        city: 'Metropolis',
         pincode: '123456',
-        latitude: 0.0,
-        longitude: 0.0,
-        propertyOwner: 'Owner 1',
-        images: [],
-        videos: [],
-        documents: [],
+        latitude: 12.9716,
+        longitude: 77.5946,
+        state: 'State X',
+        roadAccess: 'Main Road',
+        roadType: 'Paved',
+        roadWidth: 20.0,
+        landFacing: 'North',
+        propertyOwner: 'Owner One',
+        images: ['image1.jpg', 'image2.jpg'],
+        videos: ['video1.mp4'],
+        documents: ['doc1.pdf'],
+        address: '123 Sunny Street, Metropolis',
         userType: 'agent',
+        ventureName: 'Sunny Ventures',
         createdAt: Timestamp.now(),
-        proposedPrices: [], // No sale initiated
+        status: true,
+        fencing: true,
+        gate: true,
+        bore: false,
+        pipeline: true,
+        electricity: true,
+        plantation: false,
+        proposedPrices: [],
+        interestedUsers: [
+          Buyer(
+            name: 'John Doe',
+            phone: '9876543210',
+            date: DateTime.now().subtract(const Duration(days: 1)),
+            priceOffered: 65000,
+            status: 'pending',
+            notes: ['First visit'],
+          ),
+        ],
+        visitedUsers: [],
       ),
     ];
 
+    // Dummy assigned property with a sale initiated and both buyers lists filled.
     assignedProperties = [
       Property(
         id: '2',
         userId: 'agent1',
-        name: 'Property 2',
+        name: 'Grand Commercial Plaza',
         mobileNumber: '1234567890',
         propertyType: 'Commercial',
-        landArea: 2000,
+        landArea: 3000,
         pricePerUnit: 75,
-        totalPrice: 150000,
-        surveyNumber: 'SN2',
-        plotNumbers: ['P2'],
+        totalPrice: 225000,
+        surveyNumber: 'SN-202',
+        plotNumbers: ['P3'],
+        district: 'West District',
+        mandal: 'Mandal B',
+        village: 'Plaza Village',
+        city: 'Metro City',
         pincode: '654321',
-        latitude: 0.0,
-        longitude: 0.0,
-        propertyOwner: 'Owner 2',
-        images: [],
-        videos: [],
-        documents: [],
+        latitude: 13.0827,
+        longitude: 80.2707,
+        state: 'State Y',
+        roadAccess: 'Side Road',
+        roadType: 'Asphalt',
+        roadWidth: 15.0,
+        landFacing: 'East',
+        propertyOwner: 'Owner Two',
+        images: ['commercial1.jpg'],
+        videos: ['commercial_video.mp4'],
+        documents: ['commercial_doc.pdf'],
+        address: '456 Grand Ave, Metro City',
         userType: 'agent',
+        ventureName: 'Grand Ventures',
         createdAt: Timestamp.now(),
+        status: true,
+        fencing: true,
+        gate: false,
+        bore: true,
+        pipeline: true,
+        electricity: true,
+        plantation: false,
         proposedPrices: [
           {'saleStatus': 'initiated'},
-        ], // Sale initiated – will show timeline
+        ],
+        interestedUsers: [
+          Buyer(
+            name: 'Alice Smith',
+            phone: '5551234567',
+            date: DateTime.now().subtract(const Duration(days: 2)),
+            priceOffered: 220000,
+            status: 'pending',
+            notes: [],
+          ),
+        ],
+        visitedUsers: [
+          Buyer(
+            name: 'Bob Johnson',
+            phone: '5559876543',
+            date: DateTime.now().subtract(const Duration(days: 1)),
+            priceOffered: 225000,
+            status: 'accepted',
+            notes: ['Negotiated discount', 'Final offer accepted'],
+          ),
+        ],
       ),
     ];
 
-    // TODO: Replace this dummy user with a Firestore fetch.
-    // Example: FirebaseFirestore.instance.collection('users').doc('agent1').get()
+    // Dummy agent user (replace with Firestore fetch in production)
     agentUser = AppUser(
       uid: 'agent1',
       name: 'Agent Smith',
       email: 'agent.smith@example.com',
       phoneNumber: '1234567890',
       userType: 'agent',
-      agentAreas: [
-        'Downtown',
-        'Uptown',
-        'Suburbs',
-      ], // new field
+      agentAreas: ['Downtown', 'Uptown', 'Suburbs'],
     );
   }
 
@@ -106,7 +170,7 @@ class _AgentProfileState extends State<AgentProfile> {
         shape:
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
         child: Container(
-          width: double.infinity, // 👈 ensures full width
+          width: double.infinity,
           padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -180,8 +244,7 @@ class _AgentProfileState extends State<AgentProfile> {
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w500,
-                    color: Colors
-                        .blueAccent, // ✅ Visible and clean on white AppBar
+                    color: Colors.blueAccent,
                     decoration: TextDecoration.underline,
                     decorationColor: Colors.blueAccent.withOpacity(0.8),
                     decorationThickness: 1.5,

@@ -15,12 +15,41 @@ class _AgentPropertyCardState extends State<AgentPropertyCard> {
   bool isExpanded = false;
 
   String get saleStatus {
-    // Here we use the proposedPrices list to simulate sale status.
-    // You might want to add a dedicated field (e.g., property.saleStatus) in your model.
     if (widget.property.proposedPrices.isNotEmpty) {
       return widget.property.proposedPrices.first['saleStatus'] ?? '';
     }
     return '';
+  }
+
+  Widget _detailText(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2.0),
+      child: Text('$label: $value',
+          style: const TextStyle(fontSize: 14, color: Colors.black87)),
+    );
+  }
+
+  Widget _buildPropertyDetails(Property property) {
+    final addressParts = [
+      property.ventureName,
+      property.address,
+      property.village,
+      property.mandal,
+      property.district,
+      property.state,
+    ].where((part) => part != null && part.trim().isNotEmpty).toList();
+
+    final formattedAddress = addressParts.join(', ');
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _detailText('Survey Number', property.surveyNumber),
+        if (property.plotNumbers.isNotEmpty)
+          _detailText('Plot Numbers', property.plotNumbers.join(', ')),
+        _detailText('Address', formattedAddress),
+      ],
+    );
   }
 
   @override
@@ -41,9 +70,16 @@ class _AgentPropertyCardState extends State<AgentPropertyCard> {
           if (isExpanded)
             Padding(
               padding: const EdgeInsets.all(8.0),
-              child: isSaleInitiated
-                  ? TimelineView(saleStatus: saleStatus)
-                  : const InterestedVisitedTabs(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildPropertyDetails(widget.property),
+                  const SizedBox(height: 10),
+                  isSaleInitiated
+                      ? TimelineView(saleStatus: saleStatus)
+                      : InterestedVisitedTabs(property: widget.property),
+                ],
+              ),
             ),
         ],
       ),
