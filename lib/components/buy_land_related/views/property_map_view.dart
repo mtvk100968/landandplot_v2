@@ -2,11 +2,11 @@
 
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import '../../../models/property_model.dart';
-import '../map_related/marker.dart'; // Ensure correct import path
-import '../../utils/format.dart';
+import '../../../../models/property_model.dart';
+import '../../map_related/marker.dart'; // Ensure correct import path
+import '../../../utils/format.dart';
 import '../property_card2.dart';
-import '../../screens/property_details_screen.dart';
+import '../../../screens/property_details_screen.dart';
 
 class PropertyMapView extends StatefulWidget {
   final List<Property> properties;

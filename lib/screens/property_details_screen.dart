@@ -4,7 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/property_model.dart';
 import 'package:provider/provider.dart';
 import '../providers/property_provider.dart';
-import '../components/image_gallery_screen.dart';
+import '../components/property_details_screen/image_gallery_screen.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 

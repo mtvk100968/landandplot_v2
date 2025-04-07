@@ -1,7 +1,7 @@
 // lib/components/views/property_list_view.dart
 
 import 'package:flutter/material.dart';
-import '../../../models/property_model.dart';
+import '../../../../models/property_model.dart';
 import '../property_card.dart';
 
 typedef FavoriteToggleCallback = void Function(

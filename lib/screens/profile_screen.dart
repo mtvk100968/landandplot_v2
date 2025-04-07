@@ -5,9 +5,9 @@ import '../services/user_service.dart';
 import '../models/user_model.dart';
 
 // Profile Components
-import '../components/admin_profile.dart';
-import '../components/agent_profile.dart';
-import '../components/user_profile.dart';
+import '../components/profiles/admin/admin_profile.dart';
+import '../components/profiles/agent/agent_profile.dart';
+import '../components/profiles/user/user_profile.dart';
 
 enum UserLoginType { agent, user }
 

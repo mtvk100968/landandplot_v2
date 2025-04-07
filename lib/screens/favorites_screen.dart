@@ -4,7 +4,7 @@ import '../services/user_service.dart';
 import '../services/property_service.dart';
 import '../models/user_model.dart';
 import '../models/property_model.dart';
-import '../components/views/property_list_view.dart';
+import '../components/buy_land_related/views/property_list_view.dart';
 import 'property_details_screen.dart';
 
 class FavoritesScreen extends StatefulWidget {

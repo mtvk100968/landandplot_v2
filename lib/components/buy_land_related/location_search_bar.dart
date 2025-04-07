@@ -2,7 +2,7 @@
 
 import 'dart:async';
 import 'package:flutter/material.dart';
-import '../services/places_service.dart';
+import '../../services/places_service.dart';
 
 /// A [LocationSearchBar] that lets the user type multiple places.
 /// Each selected place becomes a chip, and the user can remove chips.

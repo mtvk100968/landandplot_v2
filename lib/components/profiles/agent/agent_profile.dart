@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../models/property_model.dart';
-import '../components/agent_property_card.dart';
+import '../../../models/property_model.dart';
+import '../admin/agent_property_card.dart';
 
 class AgentProfile extends StatefulWidget {
   final TabController tabController;

@@ -10,13 +10,13 @@ import '../models/property_model.dart';
 import '../providers/property_provider.dart';
 import '../../services/user_service.dart';
 import '../../models/user_model.dart';
-import '../../components/views/property_list_view.dart';
-import '../../components/views/property_map_view.dart';
-import '../../components/filter_bottom_sheet.dart';
-import '../../components/location_search_bar.dart';
+import '../components/buy_land_related/views/property_list_view.dart';
+import '../components/buy_land_related/views/property_map_view.dart';
+import '../components/buy_land_related/filter_bottom_sheet.dart';
+import '../components/buy_land_related/location_search_bar.dart';
 import './property_details_screen.dart';
 import '../components/bottom_nav_bar.dart';
-import '../components/sign_in_bottom_sheet.dart';
+import '../components/buy_land_related/sign_in_bottom_sheet.dart';
 
 /// Defines the type of geo search:
 /// - point: a single location (with a given radius)

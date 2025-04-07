@@ -1,9 +1,9 @@
 // lib/components/property_card.dart
 
 import 'package:flutter/material.dart';
-import '../../../models/property_model.dart';
-import '../utils/format.dart';
-import '../../screens/property_details_screen.dart';
+import '../../../../models/property_model.dart';
+import '../../utils/format.dart';
+import '../../../screens/property_details_screen.dart';
 // import 'google_fonts';
 
 class PropertyCard2 extends StatefulWidget {

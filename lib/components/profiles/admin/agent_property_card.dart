@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../models/property_model.dart';
-import 'timeline_view.dart';
-import 'interested_visited_tabs.dart';
+import '../../../models/property_model.dart';
+import 'mini-components/timeline_view.dart';
+import 'mini-components/interested_visited_tabs.dart';
 
 class AgentPropertyCard extends StatefulWidget {
   final Property property;
