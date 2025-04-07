@@ -3,7 +3,6 @@ class AppUser {
   final String? name;
   final String? email;
   final String? phoneNumber;
-
   // NEW: userType (admin, agent, or user)
   final String userType;
 
@@ -16,6 +15,9 @@ class AppUser {
   // NEW: additional lists
   final List<String> interestedPropertyIds; // for buyers/sellers
   final List<String> assignedPropertyIds; // for agents
+
+  // NEW: agentAreas (for agents to show their areas of operation)
+  final List<String> agentAreas;
 
   AppUser({
     required this.uid,
@@ -30,12 +32,14 @@ class AppUser {
     List<String>? boughtPropertyIds,
     List<String>? interestedPropertyIds,
     List<String>? assignedPropertyIds,
+    List<String>? agentAreas,
   })  : postedPropertyIds = postedPropertyIds ?? [],
         favoritedPropertyIds = favoritedPropertyIds ?? [],
         inTalksPropertyIds = inTalksPropertyIds ?? [],
         boughtPropertyIds = boughtPropertyIds ?? [],
         interestedPropertyIds = interestedPropertyIds ?? [],
-        assignedPropertyIds = assignedPropertyIds ?? [];
+        assignedPropertyIds = assignedPropertyIds ?? [],
+        agentAreas = agentAreas ?? [];
 
   // Convert AppUser object to a Map for Firestore
   Map<String, dynamic> toMap() {
@@ -64,6 +68,10 @@ class AppUser {
     if (assignedPropertyIds.isNotEmpty) {
       data['assignedPropertyIds'] = assignedPropertyIds;
     }
+    // NEW: include agentAreas
+    if (agentAreas.isNotEmpty) {
+      data['agentAreas'] = agentAreas;
+    }
     return data;
   }
 
@@ -83,6 +91,8 @@ class AppUser {
       interestedPropertyIds:
           List<String>.from(doc['interestedPropertyIds'] ?? []),
       assignedPropertyIds: List<String>.from(doc['assignedPropertyIds'] ?? []),
+      // NEW: load agentAreas
+      agentAreas: List<String>.from(doc['agentAreas'] ?? []),
     );
   }
 }
