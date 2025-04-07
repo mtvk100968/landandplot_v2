@@ -143,6 +143,15 @@ class ProfileScreenState extends State<ProfileScreen>
                   _selectedLoginType == UserLoginType.user
                 ],
                 onPressed: (index) {
+                  String phone = _phoneController.text.trim();
+                  // Basic check for a 10-digit number, assuming +91 prefix
+                  if (!RegExp(r'^\+91\d{10}$').hasMatch(phone)) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                          content: Text('Enter a valid 10-digit phone number')),
+                    );
+                    return;
+                  }
                   setState(() {
                     _selectedLoginType =
                         index == 0 ? UserLoginType.agent : UserLoginType.user;
