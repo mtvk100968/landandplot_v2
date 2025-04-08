@@ -6,86 +6,81 @@ class TimelineView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Use your original step names with associated icons.
     final steps = [
-      {'title': 'Buyer Interest Shown', 'key': 'interest'},
-      {'title': 'Document Verification', 'key': 'verification'},
-      {'title': 'Legal Due Diligence & Survey Check', 'key': 'due_diligence'},
-      {'title': 'Sale Agreement & Advance Payment', 'key': 'agreement'},
-      {'title': 'Stamp Duty & Registration (SRO)', 'key': 'registration'},
-      {'title': 'Mutation in Dharani Portal', 'key': 'mutation'},
-      {'title': 'Possession Handover', 'key': 'possession'},
+      {'title': 'Buyer Interest Shown', 'icon': Icons.visibility},
+      {'title': 'Document Verification', 'icon': Icons.verified_user},
+      {'title': 'Legal Due Diligence & Survey Check', 'icon': Icons.assignment},
+      {
+        'title': 'Sale Agreement & Advance Payment',
+        'icon': Icons.assignment_turned_in
+      },
+      {
+        'title': 'Stamp Duty & Registration (SRO)',
+        'icon': Icons.app_registration
+      },
+      {'title': 'Mutation in Dharani Portal', 'icon': Icons.sync},
+      {'title': 'Possession Handover', 'icon': Icons.home},
     ];
 
-    int currentIndex = steps.indexWhere((step) => step['key'] == saleStatus);
+    // Determine the current step index based on saleStatus.
+    int currentIndex = steps.indexWhere((step) =>
+        (step['title'] as String).toLowerCase() == saleStatus.toLowerCase());
     if (currentIndex == -1) currentIndex = 0;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: List.generate(steps.length, (index) {
-        final isActive = index <= currentIndex;
-        final isLast = index == steps.length - 1;
-
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Dot + Line Column
-            SizedBox(
-              width: 24,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 12.0),
+      child: Column(
+        children: steps.asMap().entries.map((entry) {
+          int index = entry.key;
+          final step = entry.value;
+          final isActive = index <= currentIndex;
+          final isLast = index == steps.length - 1;
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Left column for the icon and connecting line.
+              Column(
                 children: [
-                  // Top line
-                  if (index != 0)
-                    Container(
-                      width: 2,
-                      height: 12,
-                      color: index <= currentIndex
-                          ? Colors.green
-                          : Colors.grey[300],
+                  // Circle representing the step.
+                  CircleAvatar(
+                    radius: 16,
+                    backgroundColor: isActive ? Colors.green : Colors.grey[300],
+                    child: Icon(
+                      step['icon'] as IconData,
+                      size: 16,
+                      color: isActive ? Colors.white : Colors.black45,
                     ),
-                  // Dot
-                  Container(
-                    padding: EdgeInsets.only(bottom: 2),
-                    decoration: BoxDecoration(
-                      color: isActive ? Colors.green : Colors.white,
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: isActive ? Colors.green : Colors.grey,
-                        width: 2,
-                      ),
-                    ),
-                    child: const SizedBox(width: 8, height: 8),
                   ),
-                  // Bottom line
+                  // Draw a vertical line, except for the last step.
                   if (!isLast)
                     Container(
                       width: 2,
                       height: 30,
-                      color: index < currentIndex
-                          ? Colors.green
-                          : Colors.grey[300],
+                      color: Colors.grey[300],
                     ),
                 ],
               ),
-            ),
-            const SizedBox(width: 12),
-            // Step Text
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text(
-                  steps[index]['title']!,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: isActive ? Colors.black : Colors.grey,
-                    fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+              const SizedBox(width: 12),
+              // Right column for the step title.
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(
+                    step['title'] as String,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight:
+                          isActive ? FontWeight.bold : FontWeight.normal,
+                      color: isActive ? Colors.black : Colors.grey,
+                    ),
                   ),
                 ),
               ),
-            ),
-          ],
-        );
-      }),
+            ],
+          );
+        }).toList(),
+      ),
     );
   }
 }
