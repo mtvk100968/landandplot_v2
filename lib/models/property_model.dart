@@ -41,8 +41,7 @@ class Property {
   final bool? plantation;
   final List<Buyer> interestedUsers;
   final List<Buyer> visitedUsers;
-
-  // **Added proposedPrices field**
+  // **New fields in the property model**
   final List<Map<String, dynamic>> proposedPrices;
   final Map<String, List<String>> proofs;
 
@@ -84,7 +83,7 @@ class Property {
     this.pipeline,
     this.electricity,
     this.plantation,
-    this.proposedPrices = const [], // Initialize as an empty list
+    this.proposedPrices = const [],
     this.interestedUsers = const [],
     this.visitedUsers = const [],
     this.proofs = const {},
@@ -176,8 +175,11 @@ class Property {
       pipeline: map['pipeline'],
       electricity: map['electricity'],
       plantation: map['plantation'],
-      proofs: (map['proofs'] ?? {}).map<String, List<String>>(
-          (key, val) => MapEntry(key, List<String>.from(val))),
+      // **Corrected transformation for proofs field**
+      proofs: Map<String, List<String>>.from(
+        (map['proofs'] ?? {}).map(
+            (key, value) => MapEntry(key.toString(), List<String>.from(value))),
+      ),
       // **Parse proposedPrices**
       proposedPrices: List<Map<String, dynamic>>.from(
         map['proposedPrices'] ?? [],

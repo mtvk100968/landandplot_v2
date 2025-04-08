@@ -2,9 +2,9 @@ import 'dart:io';
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../models/property_model.dart';
 import 'user_service.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 class PropertyService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -51,7 +51,8 @@ class PropertyService {
       DateTime nowIst = nowUtc.add(Duration(hours: 5, minutes: 30));
       Timestamp createdAt = Timestamp.fromDate(nowIst);
 
-      // Step 4: Create a new Property instance with the uploaded URLs and custom ID
+      // Step 4: Create a new Property instance with the uploaded URLs and custom ID.
+      // Now including the new fields from the updated model.
       Property propertyWithMedia = Property(
         id: propertyId,
         userId: property.userId,
@@ -83,7 +84,18 @@ class PropertyService {
         // **Set New Fields**
         userType: property.userType,
         ventureName: property.ventureName,
-        createdAt: createdAt, // Set the creation time
+        createdAt: createdAt,
+        status: property.status,
+        fencing: property.fencing,
+        gate: property.gate,
+        bore: property.bore,
+        pipeline: property.pipeline,
+        electricity: property.electricity,
+        plantation: property.plantation,
+        proposedPrices: property.proposedPrices,
+        interestedUsers: property.interestedUsers,
+        visitedUsers: property.visitedUsers,
+        proofs: property.proofs,
       );
 
       // Step 5: Add the property to Firestore with the custom property ID
