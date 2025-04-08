@@ -3,8 +3,10 @@ class Buyer {
   final String phone;
   DateTime? date;
   double? priceOffered;
-  String status; // 'pending', 'accepted', 'rejected'
+  // Options: 'pending', 'visited', 'accepted', 'rejected', 'negotiating'
+  String status;
   List<String> notes;
+  DateTime? lastUpdated;
 
   Buyer({
     required this.name,
@@ -13,6 +15,7 @@ class Buyer {
     this.priceOffered,
     this.status = 'pending',
     this.notes = const [],
+    this.lastUpdated,
   });
 
   Map<String, dynamic> toMap() {
@@ -23,6 +26,7 @@ class Buyer {
       'priceOffered': priceOffered,
       'status': status,
       'notes': notes,
+      'lastUpdated': lastUpdated?.toIso8601String(),
     };
   }
 
@@ -31,9 +35,14 @@ class Buyer {
       name: map['name'] ?? '',
       phone: map['phone'] ?? '',
       date: map['date'] != null ? DateTime.tryParse(map['date']) : null,
-      priceOffered: map['priceOffered']?.toDouble(),
+      priceOffered: map['priceOffered'] != null
+          ? (map['priceOffered'] as num).toDouble()
+          : null,
       status: map['status'] ?? 'pending',
       notes: List<String>.from(map['notes'] ?? []),
+      lastUpdated: map['lastUpdated'] != null
+          ? DateTime.tryParse(map['lastUpdated'])
+          : null,
     );
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../models/property_model.dart';
 import 'mini-components/timeline_view.dart';
 import 'mini-components/interested_visited_tabs.dart';
+import '../../../models/buyer_model.dart';
 
 class AgentPropertyCard extends StatefulWidget {
   final Property property;
@@ -48,6 +49,14 @@ class _AgentPropertyCardState extends State<AgentPropertyCard> {
         if (property.plotNumbers.isNotEmpty)
           _detailText('Plot Numbers', property.plotNumbers.join(', ')),
         _detailText('Address', formattedAddress),
+        // Display property price.
+        _detailText('Price', '\$${property.totalPrice}'),
+        _detailText('Price Per Unit', '\$${property.pricePerUnit}'),
+        // Display property area with conditional unit based on property type.
+        _detailText(
+          'Area (${property.propertyType.toLowerCase().contains("agri") ? "acre" : "sqyds"})',
+          property.landArea.toString(),
+        ),
       ],
     );
   }
@@ -60,7 +69,8 @@ class _AgentPropertyCardState extends State<AgentPropertyCard> {
       child: Column(
         children: [
           ListTile(
-            title: Text(widget.property.name),
+            title: Text(
+                '${widget.property.propertyOwner} / ${widget.property.mobileNumber}'),
             subtitle: Text(widget.property.propertyType),
             trailing: IconButton(
               icon: Icon(isExpanded ? Icons.expand_less : Icons.expand_more),
@@ -76,8 +86,15 @@ class _AgentPropertyCardState extends State<AgentPropertyCard> {
                   _buildPropertyDetails(widget.property),
                   const SizedBox(height: 10),
                   isSaleInitiated
-                      ? TimelineView(saleStatus: saleStatus)
-                      : InterestedVisitedTabs(property: widget.property),
+                      ? Container(
+                          height: 300,
+                          child: TimelineView(saleStatus: saleStatus),
+                        )
+                      : Container(
+                          height: 300,
+                          child:
+                              InterestedVisitedTabs(property: widget.property),
+                        ),
                 ],
               ),
             ),
