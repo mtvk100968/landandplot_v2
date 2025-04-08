@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../../../models/property_model.dart';
 import 'mini-components/timeline_view.dart';
 import 'mini-components/interested_visited_tabs.dart';
-import '../../../models/buyer_model.dart';
 
 class AgentPropertyCard extends StatefulWidget {
   final Property property;
@@ -25,8 +24,10 @@ class _AgentPropertyCardState extends State<AgentPropertyCard> {
   Widget _detailText(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2.0),
-      child: Text('$label: $value',
-          style: const TextStyle(fontSize: 14, color: Colors.black87)),
+      child: Text(
+        '$label: $value',
+        style: const TextStyle(fontSize: 14, color: Colors.black87),
+      ),
     );
   }
 
@@ -49,10 +50,8 @@ class _AgentPropertyCardState extends State<AgentPropertyCard> {
         if (property.plotNumbers.isNotEmpty)
           _detailText('Plot Numbers', property.plotNumbers.join(', ')),
         _detailText('Address', formattedAddress),
-        // Display property price.
         _detailText('Price', '\$${property.totalPrice}'),
         _detailText('Price Per Unit', '\$${property.pricePerUnit}'),
-        // Display property area with conditional unit based on property type.
         _detailText(
           'Area (${property.propertyType.toLowerCase().contains("agri") ? "acre" : "sqyds"})',
           property.landArea.toString(),
@@ -63,15 +62,18 @@ class _AgentPropertyCardState extends State<AgentPropertyCard> {
 
   @override
   Widget build(BuildContext context) {
+    final property = widget.property;
     final bool isSaleInitiated = saleStatus.isNotEmpty;
+
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 2,
       child: Column(
         children: [
           ListTile(
-            title: Text(
-                '${widget.property.propertyOwner} / ${widget.property.mobileNumber}'),
-            subtitle: Text(widget.property.propertyType),
+            title: Text('${property.propertyOwner} / ${property.mobileNumber}'),
+            subtitle: Text(property.propertyType),
             trailing: IconButton(
               icon: Icon(isExpanded ? Icons.expand_less : Icons.expand_more),
               onPressed: () => setState(() => isExpanded = !isExpanded),
@@ -79,21 +81,23 @@ class _AgentPropertyCardState extends State<AgentPropertyCard> {
           ),
           if (isExpanded)
             Padding(
-              padding: const EdgeInsets.all(8.0),
+              padding: const EdgeInsets.all(12.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildPropertyDetails(widget.property),
+                  _buildPropertyDetails(property),
                   const SizedBox(height: 10),
                   isSaleInitiated
-                      ? Container(
+                      ? SizedBox(
                           height: 300,
-                          child: TimelineView(saleStatus: saleStatus),
+                          child: TimelineView(
+                            propertyId: property.id,
+                            saleStatus: saleStatus,
+                          ),
                         )
-                      : Container(
+                      : SizedBox(
                           height: 300,
-                          child:
-                              InterestedVisitedTabs(property: widget.property),
+                          child: InterestedVisitedTabs(property: property),
                         ),
                 ],
               ),

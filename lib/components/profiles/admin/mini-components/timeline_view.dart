@@ -1,9 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import '../../../../services/proof_upload_service.dart';
+import 'dart:io';
 
 class TimelineView extends StatefulWidget {
+  final String propertyId;
   final String saleStatus;
-  const TimelineView({Key? key, required this.saleStatus}) : super(key: key);
+
+  const TimelineView({
+    Key? key,
+    required this.propertyId,
+    required this.saleStatus,
+  }) : super(key: key);
 
   @override
   State<TimelineView> createState() => _TimelineViewState();
@@ -138,8 +146,30 @@ class _TimelineViewState extends State<TimelineView> {
                     Align(
                       alignment: Alignment.centerRight,
                       child: ElevatedButton(
-                        onPressed: () {
-                          // TODO: Upload to Firebase or mark as complete
+                        onPressed: () async {
+                          if (selectedFiles.isEmpty) return;
+
+                          final service = ProofUploadService();
+
+                          // Convert PlatformFile to File
+                          List<File> fileList =
+                              selectedFiles.map((f) => File(f.path!)).toList();
+
+                          // Upload
+                          final urls = await service.uploadProofFiles(
+                            propertyId:
+                                widget.propertyId, // pass from parent widget
+                            stepShortName: stepShortName,
+                            files: fileList,
+                          );
+
+                          // Update Firestore
+                          await service.updateProofInFirestore(
+                            propertyId: widget.propertyId,
+                            stepShortName: stepShortName,
+                            fileUrls: urls,
+                          );
+
                           Navigator.pop(context);
                         },
                         style: ElevatedButton.styleFrom(

@@ -44,6 +44,7 @@ class Property {
 
   // **Added proposedPrices field**
   final List<Map<String, dynamic>> proposedPrices;
+  final Map<String, List<String>> proofs;
 
   Property({
     this.id = '',
@@ -86,6 +87,7 @@ class Property {
     this.proposedPrices = const [], // Initialize as an empty list
     this.interestedUsers = const [],
     this.visitedUsers = const [],
+    this.proofs = const {},
   });
 
   Map<String, dynamic> toMap() {
@@ -131,6 +133,7 @@ class Property {
       'proposedPrices': proposedPrices,
       'interestedUsers': interestedUsers.map((e) => e.toMap()).toList(),
       'visitedUsers': visitedUsers.map((e) => e.toMap()).toList(),
+      'proofs': proofs,
     };
   }
 
@@ -173,6 +176,8 @@ class Property {
       pipeline: map['pipeline'],
       electricity: map['electricity'],
       plantation: map['plantation'],
+      proofs: (map['proofs'] ?? {}).map<String, List<String>>(
+          (key, val) => MapEntry(key, List<String>.from(val))),
       // **Parse proposedPrices**
       proposedPrices: List<Map<String, dynamic>>.from(
         map['proposedPrices'] ?? [],
