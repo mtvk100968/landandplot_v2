@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../models/property_model.dart';
 import '../../../../models/buyer_model.dart';
+import 'package:dotted_border/dotted_border.dart';
 
 class InterestedVisitedTabs extends StatefulWidget {
   final Property property;
@@ -227,96 +228,122 @@ class _InterestedVisitedTabsState extends State<InterestedVisitedTabs>
     final List<Buyer> list = widget.property.interestedUsers;
     return Column(
       children: [
-        Align(
-          alignment: Alignment.centerRight,
-          child: IconButton(
-            icon: const Icon(Icons.add_circle_outline),
-            tooltip: "Add Interested Buyer",
-            onPressed: () => _showAddBuyerDialog(),
-          ),
-        ),
         Expanded(
           child: ListView.builder(
-            itemCount: list.length,
+            itemCount: list.length + 1, // extra for "Add Buyer" card
             itemBuilder: (_, i) {
-              final buyer = list[i];
-              String dateText;
-              Color dateColor;
-              if (buyer.date == null) {
-                dateText = "No date set";
-                dateColor = Colors.black;
-              } else {
-                final formattedDate =
-                    buyer.date!.toLocal().toString().split(' ')[0];
-                dateText = "Visiting: $formattedDate";
-                final today = DateTime.now();
-                final diffDays = buyer.date!
-                    .difference(DateTime(today.year, today.month, today.day))
-                    .inDays;
-                if (diffDays > 0) {
-                  dateColor = Colors.orange;
-                } else if (diffDays == 0) {
-                  dateColor = Colors.green;
-                } else {
-                  dateColor = Colors.red;
-                }
-              }
+              if (i < list.length) {
+                final buyer = list[i];
 
-              return Card(
-                margin: const EdgeInsets.all(8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    ListTile(
-                      title: Text(buyer.name),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(buyer.phone),
-                          const SizedBox(height: 4),
-                          Text(dateText, style: TextStyle(color: dateColor)),
-                        ],
-                      ),
-                      trailing: buyer.date == null
-                          ? TextButton(
-                              onPressed: () => _editDate(buyer),
-                              child: const Text("Set Date"),
-                            )
-                          : TextButton(
-                              onPressed: () => _editDate(buyer),
-                              child: const Text("Change Date"),
-                            ),
-                      onTap: () => _completePaperwork(buyer),
-                    ),
-                    if (buyer.date != null &&
-                        (DateTime.now().isAfter(buyer.date!) ||
-                            isSameDay(DateTime.now(), buyer.date!)) &&
-                        !isPaperworkComplete(buyer))
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        color: Colors.red.withOpacity(0.1),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: const [
-                            Icon(Icons.error, color: Colors.red, size: 16),
-                            SizedBox(width: 4),
-                            Text(
-                              "Late! Please complete visit details.",
-                              style: TextStyle(
-                                color: Colors.red,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
+                String dateText;
+                Color dateColor;
+                if (buyer.date == null) {
+                  dateText = "No date set";
+                  dateColor = Colors.black;
+                } else {
+                  final formattedDate =
+                      buyer.date!.toLocal().toString().split(' ')[0];
+                  dateText = "Visiting: $formattedDate";
+                  final today = DateTime.now();
+                  final diffDays = buyer.date!
+                      .difference(DateTime(today.year, today.month, today.day))
+                      .inDays;
+                  if (diffDays > 0) {
+                    dateColor = Colors.orange;
+                  } else if (diffDays == 0) {
+                    dateColor = Colors.green;
+                  } else {
+                    dateColor = Colors.red;
+                  }
+                }
+
+                return Card(
+                  margin: const EdgeInsets.all(8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      ListTile(
+                        title: Text(buyer.name),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(buyer.phone),
+                            const SizedBox(height: 4),
+                            Text(dateText, style: TextStyle(color: dateColor)),
                           ],
                         ),
+                        trailing: buyer.date == null
+                            ? TextButton(
+                                onPressed: () => _editDate(buyer),
+                                child: const Text("Set Date"),
+                              )
+                            : TextButton(
+                                onPressed: () => _editDate(buyer),
+                                child: const Text("Change Date"),
+                              ),
+                        onTap: () => _completePaperwork(buyer),
                       ),
-                  ],
+                      if (buyer.date != null &&
+                          (DateTime.now().isAfter(buyer.date!) ||
+                              isSameDay(DateTime.now(), buyer.date!)) &&
+                          !isPaperworkComplete(buyer))
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          color: Colors.red.withOpacity(0.1),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: const [
+                              Icon(Icons.error, color: Colors.red, size: 16),
+                              SizedBox(width: 4),
+                              Text(
+                                "Late! Please complete visit details.",
+                                style: TextStyle(
+                                  color: Colors.red,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                );
+              }
+
+              // ➕ Add Interested Buyer dotted card
+              return Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: InkWell(
+                  onTap: _showAddBuyerDialog,
+                  borderRadius: BorderRadius.circular(8),
+                  child: DottedBorder(
+                    borderType: BorderType.RRect,
+                    radius: const Radius.circular(12),
+                    dashPattern: [6, 3],
+                    color: Colors.grey,
+                    strokeWidth: 1.5,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 20),
+                      alignment: Alignment.center,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: const [
+                          Icon(Icons.add_circle_outline),
+                          SizedBox(width: 8),
+                          Text(
+                            "Add Interested Buyer",
+                            style: TextStyle(fontSize: 16),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
               );
             },
           ),
-        ),
+        )
       ],
     );
   }
