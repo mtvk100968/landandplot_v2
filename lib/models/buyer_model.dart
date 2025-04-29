@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class Buyer {
   final String name;
   final String phone;
@@ -22,27 +24,33 @@ class Buyer {
     return {
       'name': name,
       'phone': phone,
-      'date': date?.toIso8601String(),
+      if (date != null) 'date': Timestamp.fromDate(date!),
       'priceOffered': priceOffered,
       'status': status,
       'notes': notes,
-      'lastUpdated': lastUpdated?.toIso8601String(),
+      if (lastUpdated != null) 'lastUpdated': Timestamp.fromDate(lastUpdated!),
     };
   }
 
   factory Buyer.fromMap(Map<String, dynamic> map) {
+    final rawDate = map['date'];
+    final rawUpdated = map['lastUpdated'];
     return Buyer(
       name: map['name'] ?? '',
       phone: map['phone'] ?? '',
-      date: map['date'] != null ? DateTime.tryParse(map['date']) : null,
-      priceOffered: map['priceOffered'] != null
-          ? (map['priceOffered'] as num).toDouble()
-          : null,
+      date: rawDate is Timestamp
+          ? rawDate.toDate()
+          : rawDate is DateTime
+              ? rawDate
+              : null,
+      priceOffered: (map['priceOffered'] as num?)?.toDouble(),
       status: map['status'] ?? 'pending',
       notes: List<String>.from(map['notes'] ?? []),
-      lastUpdated: map['lastUpdated'] != null
-          ? DateTime.tryParse(map['lastUpdated'])
-          : null,
+      lastUpdated: rawUpdated is Timestamp
+          ? rawUpdated.toDate()
+          : rawUpdated is DateTime
+              ? rawUpdated
+              : null,
     );
   }
 }
