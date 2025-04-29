@@ -31,7 +31,7 @@ class BuyLandScreen extends StatefulWidget {
 }
 
 class BuyLandScreenState extends State<BuyLandScreen> {
-  bool showMap = false;
+  bool showMap = true;
   Timer? _debounce;
 
   // Define filter variables

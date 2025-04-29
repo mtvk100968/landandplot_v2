@@ -1,5 +1,7 @@
 // lib/views/property_map_view.dart
 
+import 'dart:async';
+import 'package:geolocator/geolocator.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../../../models/property_model.dart';
@@ -24,6 +26,9 @@ class PropertyMapViewState extends State<PropertyMapView> {
   late GoogleMapController mapController;
 
   Set<Marker> _markers = {}; // Standard markers
+
+  // default to Hyderabad if location not allowed
+  LatLng _initialCenter = const LatLng(17.3850, 78.4867);
 
   // Create a ClusterManagerId
   final ClusterManagerId _clusterManagerId =
@@ -78,11 +83,29 @@ class PropertyMapViewState extends State<PropertyMapView> {
     // Update state to display the markers
     setState(() {
       _markers = markers;
-      print("Markers added: ${_markers.length}");
     });
   }
 
-  // // Callback when a cluster is tapped
+  Future<Position> _determinePosition() async {
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      throw Exception('Location services disabled');
+    }
+
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        throw Exception('Location permissions denied');
+      }
+    }
+    if (permission == LocationPermission.deniedForever) {
+      throw Exception('Location permissions permanently denied');
+    }
+
+    return await Geolocator.getCurrentPosition();
+  }
+
   void _onClusterTap(Cluster cluster) async {
     // Retrieve the current camera position
     final LatLng currentCenter = await mapController.getLatLng(
@@ -136,15 +159,23 @@ class PropertyMapViewState extends State<PropertyMapView> {
     // Ensure markers are added after the map is created
     _addCustomMarkers();
 
-    // Adjust initial zoom if needed
-    mapController.animateCamera(
-      CameraUpdate.newCameraPosition(
-        CameraPosition(
-          target: LatLng(20.5937, 78.9629),
-          zoom: 10,
+    // attempt to center on user, else Hyderabad
+    _determinePosition().then((pos) {
+      mapController.animateCamera(
+        CameraUpdate.newCameraPosition(
+          CameraPosition(
+            target: LatLng(pos.latitude, pos.longitude),
+            zoom: 12,
+          ),
         ),
-      ),
-    );
+      );
+    }).catchError((_) {
+      mapController.animateCamera(
+        CameraUpdate.newCameraPosition(
+          CameraPosition(target: _initialCenter, zoom: 10),
+        ),
+      );
+    });
   }
 
   @override
