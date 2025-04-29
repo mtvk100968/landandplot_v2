@@ -122,7 +122,7 @@ class ProfileScreenState extends State<ProfileScreen>
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Text(
-              'Welcome to LandAndPlot',
+              'Welcome to LANDANDPLOT',
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 40),

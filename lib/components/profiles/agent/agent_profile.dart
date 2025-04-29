@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../../../models/property_model.dart';
 import '../../../models/user_model.dart'; // Ensure correct path to your AppUser model
-import '../admin/agent_property_card.dart';
+import 'agent_property_card.dart';
 import '../../../models/buyer_model.dart';
 
 class AgentProfile extends StatefulWidget {
