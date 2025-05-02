@@ -20,6 +20,7 @@ class PropertyDetailsScreen extends StatefulWidget {
 
 class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
   late Future<void> _fetchProposedPricesFuture;
+  bool get _isActive => widget.property.stage != 'sold';
 
   Future<void> _openGoogleMaps(double latitude, double longitude) async {
     final googleMapsUrl = Uri.parse(
@@ -212,7 +213,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                   buildCard(
                     title: 'Status',
                     content: Text(
-                      widget.property.status == true ? 'Active' : 'Inactive',
+                      _isActive ? 'For Sale' : 'Sold',
                       style: const TextStyle(
                           fontSize: 16, fontWeight: FontWeight.w600),
                     ),

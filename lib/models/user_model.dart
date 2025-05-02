@@ -4,17 +4,17 @@ class AppUser {
   final String? email;
   final String? phoneNumber;
   // NEW: userType (admin, agent, or user)
+  //an agent can do all the things a user can do - buying and selling, and also be the agent for other's properties - either by posting them or assigning by LANDANDPLOT
   final String userType;
 
   // Existing lists
-  final List<String> postedPropertyIds;
-  final List<String> favoritedPropertyIds;
-  final List<String> inTalksPropertyIds;
-  final List<String> boughtPropertyIds;
-
-  // NEW: additional lists
-  final List<String> interestedPropertyIds; // for buyers/sellers
-  final List<String> assignedPropertyIds; // for agents
+  final List<String> postedPropertyIds; //posted by a user/agent
+  final List<String> assignedPropertyIds; // for agents only
+  final List<String> favoritedPropertyIds; //favorited by a user/agent
+  final List<String>
+      interestedPropertyIds; // for buyers/sellers - could be a user/agent
+  final List<String>
+      boughtPropertyIds; //properties you've bought, as a user/agent
 
   // NEW: agentAreas (for agents to show their areas of operation)
   final List<String> agentAreas;
@@ -28,14 +28,12 @@ class AppUser {
     this.userType = 'user',
     List<String>? postedPropertyIds,
     List<String>? favoritedPropertyIds,
-    List<String>? inTalksPropertyIds,
     List<String>? boughtPropertyIds,
     List<String>? interestedPropertyIds,
     List<String>? assignedPropertyIds,
     List<String>? agentAreas,
   })  : postedPropertyIds = postedPropertyIds ?? [],
         favoritedPropertyIds = favoritedPropertyIds ?? [],
-        inTalksPropertyIds = inTalksPropertyIds ?? [],
         boughtPropertyIds = boughtPropertyIds ?? [],
         interestedPropertyIds = interestedPropertyIds ?? [],
         assignedPropertyIds = assignedPropertyIds ?? [],
@@ -56,9 +54,7 @@ class AppUser {
     if (favoritedPropertyIds.isNotEmpty) {
       data['favoritedPropertyIds'] = favoritedPropertyIds;
     }
-    if (inTalksPropertyIds.isNotEmpty) {
-      data['inTalksPropertyIds'] = inTalksPropertyIds;
-    }
+
     if (boughtPropertyIds.isNotEmpty) {
       data['boughtPropertyIds'] = boughtPropertyIds;
     }
@@ -86,7 +82,6 @@ class AppUser {
       postedPropertyIds: List<String>.from(doc['postedPropertyIds'] ?? []),
       favoritedPropertyIds:
           List<String>.from(doc['favoritedPropertyIds'] ?? []),
-      inTalksPropertyIds: List<String>.from(doc['inTalksPropertyIds'] ?? []),
       boughtPropertyIds: List<String>.from(doc['boughtPropertyIds'] ?? []),
       interestedPropertyIds:
           List<String>.from(doc['interestedPropertyIds'] ?? []),

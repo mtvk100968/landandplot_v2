@@ -1,3 +1,5 @@
+// lib/screens/profile_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/auth_service.dart';
@@ -31,12 +33,9 @@ class ProfileScreenState extends State<ProfileScreen>
   TabController? _tabController;
 
   Future<void> _sendOtp() async {
-    setState(() {
-      _isProcessing = true;
-    });
+    setState(() => _isProcessing = true);
     String phone = _phoneController.text.trim();
 
-    // Check if a user with this phone already exists with a different type.
     AppUser? existingUser = await UserService().getUserByPhoneNumber(phone);
     if (existingUser != null) {
       String expectedType =
@@ -44,20 +43,19 @@ class ProfileScreenState extends State<ProfileScreen>
       if (existingUser.userType != expectedType) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-                'You are already registered as ${existingUser.userType}. Please sign in as ${existingUser.userType}.'),
+            content:
+                Text('You are already registered as ${existingUser.userType}. '
+                    'Please sign in as ${existingUser.userType}.'),
           ),
         );
-        setState(() {
-          _isProcessing = false;
-        });
+        setState(() => _isProcessing = false);
         return;
       }
     }
 
     await signInWithPhoneNumber(
       phone,
-      (String verId) {
+      (verId) {
         setState(() {
           _verificationId = verId;
           _isOtpSent = true;
@@ -67,21 +65,17 @@ class ProfileScreenState extends State<ProfileScreen>
             .showSnackBar(const SnackBar(content: Text('OTP sent')));
       },
       (e) {
-        setState(() {
-          _isProcessing = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(e.message ?? 'Verification failed')));
+        setState(() => _isProcessing = false);
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(e.message ?? 'Failed')));
       },
     );
   }
 
   Future<void> _verifyOtp() async {
-    setState(() {
-      _isProcessing = true;
-    });
+    setState(() => _isProcessing = true);
     try {
-      final credential = PhoneAuthProvider.credential(
+      final cred = PhoneAuthProvider.credential(
         verificationId: _verificationId,
         smsCode: _otpController.text.trim(),
       );
@@ -91,16 +85,12 @@ class ProfileScreenState extends State<ProfileScreen>
               ? 'agent'
               : 'user';
 
-      await signInWithPhoneAuthCredential(credential, userType);
-      setState(() {
-        _isProcessing = false;
-      });
-    } catch (e) {
-      setState(() {
-        _isProcessing = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('OTP Verification failed')));
+      await signInWithPhoneAuthCredential(cred, userType);
+    } catch (_) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Verification failed')));
+    } finally {
+      setState(() => _isProcessing = false);
     }
   }
 
@@ -113,7 +103,6 @@ class ProfileScreenState extends State<ProfileScreen>
     });
   }
 
-  /// Login component using a ToggleButtons segmented control.
   Widget _buildLoginComponent() {
     return Center(
       child: SingleChildScrollView(
@@ -140,31 +129,28 @@ class ProfileScreenState extends State<ProfileScreen>
                 borderRadius: BorderRadius.circular(8),
                 isSelected: [
                   _selectedLoginType == UserLoginType.agent,
-                  _selectedLoginType == UserLoginType.user
+                  _selectedLoginType == UserLoginType.user,
                 ],
-                onPressed: (index) {
-                  String phone = _phoneController.text.trim();
-                  // Basic check for a 10-digit number, assuming +91 prefix
+                onPressed: (i) {
+                  final phone = _phoneController.text.trim();
                   if (!RegExp(r'^\+91\d{10}$').hasMatch(phone)) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                          content: Text('Enter a valid 10-digit phone number')),
+                          content: Text('Enter a valid +91 10-digit number')),
                     );
                     return;
                   }
                   setState(() {
                     _selectedLoginType =
-                        index == 0 ? UserLoginType.agent : UserLoginType.user;
+                        i == 0 ? UserLoginType.agent : UserLoginType.user;
                   });
                   _sendOtp();
                 },
                 constraints: const BoxConstraints(minWidth: 120, minHeight: 40),
-                children: const [
-                  Text('As Agent'),
-                  Text('As User'),
-                ],
+                children: const [Text('As Agent'), Text('As User')],
               ),
             if (_isOtpSent) ...[
+              const SizedBox(height: 20),
               TextField(
                 controller: _otpController,
                 keyboardType: TextInputType.number,
@@ -190,29 +176,29 @@ class ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  /// Builds the appropriate profile component based on the user's type.
   Widget _buildProfileComponent(AppUser appUser) {
-    // Initialize TabController if not already set.
-    if (_tabController == null) {
-      if (appUser.userType == 'admin') {
-        _tabController = TabController(length: 3, vsync: this);
-      } else {
-        _tabController = TabController(length: 2, vsync: this);
-      }
-    }
+    // initialize TabController once
+    _tabController ??= TabController(
+      length: appUser.userType == 'admin' ? 3 : 2,
+      vsync: this,
+    );
+
     switch (appUser.userType) {
       case 'admin':
         return AdminProfile(
+          appUser: appUser, // <-- pass appUser here
           tabController: _tabController!,
           onSignOut: _signOut,
         );
       case 'agent':
         return AgentProfile(
+          appUser: appUser, // <-- and here
           tabController: _tabController!,
           onSignOut: _signOut,
         );
       default:
         return UserProfile(
+          appUser: appUser, // <-- and here
           tabController: _tabController!,
           onSignOut: _signOut,
         );
@@ -221,30 +207,27 @@ class ProfileScreenState extends State<ProfileScreen>
 
   @override
   Widget build(BuildContext context) {
-    // Listen to Firebase Auth changes.
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
-      builder: (context, authSnapshot) {
-        // While waiting for auth state, show a loader.
-        if (authSnapshot.connectionState == ConnectionState.waiting) {
+      builder: (ctx, authSnap) {
+        if (authSnap.connectionState == ConnectionState.waiting) {
           return const Scaffold(
-              body: Center(child: CircularProgressIndicator()));
+            body: Center(child: CircularProgressIndicator()),
+          );
         }
-        // If no user is signed in, show the login component.
-        if (authSnapshot.data == null) {
+        if (authSnap.data == null) {
           return Scaffold(body: _buildLoginComponent());
         }
-        // If user is signed in, listen to Firestore user document changes.
         return StreamBuilder<AppUser?>(
-          stream: UserService().getUserStream(authSnapshot.data!.uid),
-          builder: (context, profileSnapshot) {
-            // While waiting for the profile stream, show a loader.
-            if (profileSnapshot.connectionState == ConnectionState.waiting) {
+          stream: UserService().getUserStream(authSnap.data!.uid),
+          builder: (ctx, profileSnap) {
+            if (profileSnap.connectionState == ConnectionState.waiting) {
               return const Scaffold(
-                  body: Center(child: CircularProgressIndicator()));
+                body: Center(child: CircularProgressIndicator()),
+              );
             }
-            // If profile data is not available, show an error with a sign-out option.
-            if (!profileSnapshot.hasData || profileSnapshot.data == null) {
+            final appUser = profileSnap.data;
+            if (appUser == null) {
               return Scaffold(
                 body: Center(
                   child: Column(
@@ -261,8 +244,7 @@ class ProfileScreenState extends State<ProfileScreen>
                 ),
               );
             }
-            // Otherwise, show the profile component.
-            return _buildProfileComponent(profileSnapshot.data!);
+            return _buildProfileComponent(appUser);
           },
         );
       },

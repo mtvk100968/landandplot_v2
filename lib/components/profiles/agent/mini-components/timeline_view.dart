@@ -1,24 +1,32 @@
+// lib/widgets/mini-components/timeline_view.dart
+
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+
+import '../../../../models/buyer_model.dart';
 import '../../../../services/proof_upload_service.dart';
-import 'dart:io';
+import '../../../../services/property_service.dart';
 
 class TimelineView extends StatefulWidget {
   final String propertyId;
-  final String saleStatus;
+  final Buyer buyer; // now pass a Buyer instead of a String
 
   const TimelineView({
     Key? key,
     required this.propertyId,
-    required this.saleStatus,
+    required this.buyer,
   }) : super(key: key);
 
   @override
-  State<TimelineView> createState() => _TimelineViewState();
+  _TimelineViewState createState() => _TimelineViewState();
 }
 
 class _TimelineViewState extends State<TimelineView> {
   PlatformFile? selectedFile;
+  final _proofService = ProofUploadService();
+  final _propService = PropertyService();
 
   final steps = [
     {'title': 'Buyer Interest Shown', 'icon': Icons.visibility},
@@ -46,15 +54,21 @@ class _TimelineViewState extends State<TimelineView> {
     'Possession Handover': 'Possession',
   };
 
+  /// Opens the same upload dialog you had, but then:
+  /// 1. uploads files
+  /// 2. merges URLs into widget.buyer
+  /// 3. advances widget.buyer.currentStep
+  /// 4. calls PropertyService.updateBuyer(oldBuyer, widget.buyer)
   void _openUploadDialog(String stepTitle, String stepShortName) async {
     List<PlatformFile> selectedFiles = [];
+    final oldBuyer = Buyer.fromMap(widget.buyer.toMap());
 
-    showDialog(
+    await showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) {
+      builder: (ctx) {
         return StatefulBuilder(
-          builder: (context, setState) {
+          builder: (ctx, setSt) {
             return Dialog(
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12)),
@@ -69,42 +83,37 @@ class _TimelineViewState extends State<TimelineView> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Top Row: Title and Close
+                    // Title + close
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          'Upload Proof for: $stepShortName',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                        Text('Upload Proof for: $stepShortName',
+                            style: const TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.w600)),
                         IconButton(
                           icon: const Icon(Icons.close),
-                          onPressed: () => Navigator.pop(context),
+                          onPressed: () => Navigator.pop(ctx),
                         ),
                       ],
                     ),
                     const SizedBox(height: 8),
                     const Divider(),
                     const SizedBox(height: 8),
-
-                    // Instructions
                     const Text(
                       'Please upload all relevant documents for this step. Multiple files are allowed.',
                       style: TextStyle(fontSize: 13.5, color: Colors.black87),
                     ),
                     const SizedBox(height: 16),
-
-                    // File list view
                     if (selectedFiles.isNotEmpty)
                       ...selectedFiles.map((file) => Padding(
                             padding: const EdgeInsets.symmetric(vertical: 4),
                             child: Row(
                               children: [
-                                const Icon(Icons.insert_drive_file,
-                                    size: 20, color: Colors.grey),
+                                const Icon(
+                                  Icons.insert_drive_file,
+                                  size: 20,
+                                  color: Colors.grey,
+                                ),
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
@@ -116,17 +125,13 @@ class _TimelineViewState extends State<TimelineView> {
                               ],
                             ),
                           )),
-
-                    // Select Files Button
                     const SizedBox(height: 16),
                     OutlinedButton.icon(
                       onPressed: () async {
                         final result = await FilePicker.platform
                             .pickFiles(allowMultiple: true);
                         if (result != null && result.files.isNotEmpty) {
-                          setState(() {
-                            selectedFiles = result.files;
-                          });
+                          setSt(() => selectedFiles = result.files);
                         }
                       },
                       icon: const Icon(Icons.upload_file),
@@ -141,37 +146,66 @@ class _TimelineViewState extends State<TimelineView> {
                       ),
                     ),
                     const SizedBox(height: 12),
-
-                    // Done Button
                     Align(
                       alignment: Alignment.centerRight,
                       child: ElevatedButton(
-                        onPressed: () async {
-                          if (selectedFiles.isEmpty) return;
+                        onPressed: selectedFiles.isEmpty
+                            ? null
+                            : () async {
+                                // 1) upload
+                                final files = selectedFiles
+                                    .map((f) => File(f.path!))
+                                    .toList();
+                                final urls =
+                                    await _proofService.uploadProofFiles(
+                                  propertyId: widget.propertyId,
+                                  stepShortName: stepShortName,
+                                  files: files,
+                                );
 
-                          final service = ProofUploadService();
+                                // 2) merge URLs into buyer
+                                switch (stepShortName) {
+                                  case 'Interest':
+                                    widget.buyer.interestDocs.addAll(urls);
+                                    break;
+                                  case 'DocVerify':
+                                    widget.buyer.docVerifyDocs.addAll(urls);
+                                    break;
+                                  case 'LegalCheck':
+                                    widget.buyer.legalCheckDocs.addAll(urls);
+                                    break;
+                                  case 'Agreement':
+                                    widget.buyer.agreementDocs.addAll(urls);
+                                    break;
+                                  case 'Registration':
+                                    widget.buyer.registrationDocs.addAll(urls);
+                                    break;
+                                  case 'Mutation':
+                                    widget.buyer.mutationDocs.addAll(urls);
+                                    break;
+                                  case 'Possession':
+                                    widget.buyer.possessionDocs.addAll(urls);
+                                    break;
+                                }
 
-                          // Convert PlatformFile to File
-                          List<File> fileList =
-                              selectedFiles.map((f) => File(f.path!)).toList();
+                                // 3) advance to next step
+                                final idx = steps
+                                    .indexWhere((s) => s['title'] == stepTitle);
+                                final next = idx + 1;
+                                if (next < steps.length) {
+                                  widget.buyer.currentStep =
+                                      stepShortNames[steps[next]['title']]!;
+                                }
 
-                          // Upload
-                          final urls = await service.uploadProofFiles(
-                            propertyId:
-                                widget.propertyId, // pass from parent widget
-                            stepShortName: stepShortName,
-                            files: fileList,
-                          );
+                                // 4) persist oldBuyer → newBuyer
+                                await _propService.updateBuyer(
+                                  widget.propertyId,
+                                  oldBuyer,
+                                  widget.buyer,
+                                );
 
-                          // Update Firestore
-                          await service.updateProofInFirestore(
-                            propertyId: widget.propertyId,
-                            stepShortName: stepShortName,
-                            fileUrls: urls,
-                          );
-
-                          Navigator.pop(context);
-                        },
+                                Navigator.pop(ctx);
+                              },
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 20, vertical: 12),
@@ -195,9 +229,10 @@ class _TimelineViewState extends State<TimelineView> {
 
   @override
   Widget build(BuildContext context) {
+    // use buyer.currentStep instead of widget.stage
     int currentIndex = steps.indexWhere((step) =>
-        (step['title'] as String).toLowerCase() ==
-        widget.saleStatus.toLowerCase());
+        stepShortNames[step['title']]!.toLowerCase() ==
+        widget.buyer.currentStep.toLowerCase());
     if (currentIndex == -1) currentIndex = 0;
 
     return SingleChildScrollView(
@@ -277,19 +312,12 @@ class _TimelineViewState extends State<TimelineView> {
                         const SizedBox(height: 8),
                         ElevatedButton.icon(
                           onPressed: () => _openUploadDialog(
-                              step['title'] as String,
-                              stepShortNames[step['title']]!),
+                            step['title'] as String,
+                            stepShortNames[step['title']]!,
+                          ),
                           icon: const Icon(Icons.upload),
                           label: const Text('Upload Proof'),
                         ),
-                        if (selectedFile != null)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 8.0),
-                            child: Text(
-                              'Selected File: ${selectedFile!.name}',
-                              style: const TextStyle(fontSize: 12),
-                            ),
-                          ),
                       ],
                     ),
                   ),

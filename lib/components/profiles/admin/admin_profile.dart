@@ -1,14 +1,18 @@
+// lib/components/profiles/admin/admin_profile.dart
+
 import 'package:flutter/material.dart';
-import '../../../services/admin_service.dart';
 import '../../../models/user_model.dart';
 import '../../../models/property_model.dart';
+import '../../../services/admin_service.dart';
 
 class AdminProfile extends StatelessWidget {
+  final AppUser appUser;
   final TabController tabController;
   final VoidCallback onSignOut;
 
   const AdminProfile({
     Key? key,
+    required this.appUser,
     required this.tabController,
     required this.onSignOut,
   }) : super(key: key);
@@ -22,9 +26,10 @@ class AdminProfile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // You can now use appUser anywhere in this build method
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Admin Dashboard'),
+        title: Text('Admin Dashboard'),
         actions: [
           IconButton(onPressed: onSignOut, icon: const Icon(Icons.logout))
         ],
@@ -39,13 +44,13 @@ class AdminProfile extends StatelessWidget {
       ),
       body: FutureBuilder<List<dynamic>>(
         future: _fetchAdminData(),
-        builder: (context, snapshot) {
+        builder: (ctx, snapshot) {
           if (!snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
           }
-          List<AppUser> agents = snapshot.data![0];
-          List<AppUser> users = snapshot.data![1];
-          List<Property> properties = snapshot.data![2];
+          final agents = snapshot.data![0] as List<AppUser>;
+          final users = snapshot.data![1] as List<AppUser>;
+          final properties = snapshot.data![2] as List<Property>;
 
           return TabBarView(
             controller: tabController,
@@ -53,36 +58,35 @@ class AdminProfile extends StatelessWidget {
               // Agents Tab
               ListView.builder(
                 itemCount: agents.length,
-                itemBuilder: (context, index) {
-                  final agent = agents[index];
+                itemBuilder: (_, i) {
+                  final a = agents[i];
                   return ListTile(
-                    title: Text(agent.name ?? 'Agent'),
-                    subtitle: Text(agent.phoneNumber ?? ''),
+                    title: Text(a.name ?? 'Agent'),
+                    subtitle: Text(a.phoneNumber ?? ''),
                   );
                 },
               ),
+
               // Users Tab
               ListView.builder(
                 itemCount: users.length,
-                itemBuilder: (context, index) {
-                  final user = users[index];
+                itemBuilder: (_, i) {
+                  final u = users[i];
                   return ListTile(
-                    title: Text(user.name ?? 'User'),
-                    subtitle: Text(user.phoneNumber ?? ''),
+                    title: Text(u.name ?? 'User'),
+                    subtitle: Text(u.phoneNumber ?? ''),
                   );
                 },
               ),
+
               // Properties Tab
               ListView.builder(
                 itemCount: properties.length,
-                itemBuilder: (context, index) {
-                  final property = properties[index];
+                itemBuilder: (_, i) {
+                  final p = properties[i];
                   return ListTile(
-                    // The Property model uses "name" instead of "title"
-                    title: Text(
-                      property.name.isEmpty ? 'Property' : property.name,
-                    ),
-                    subtitle: Text(property.address ?? ''),
+                    title: Text(p.name.isNotEmpty ? p.name : 'Property'),
+                    subtitle: Text(p.address ?? ''),
                   );
                 },
               ),

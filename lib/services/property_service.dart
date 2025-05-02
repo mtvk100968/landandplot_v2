@@ -5,6 +5,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/property_model.dart';
 import 'user_service.dart';
+import '../models/buyer_model.dart';
 
 class PropertyService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -85,17 +86,15 @@ class PropertyService {
         userType: property.userType,
         ventureName: property.ventureName,
         createdAt: createdAt,
-        status: property.status,
+        stage: property.stage,
         fencing: property.fencing,
         gate: property.gate,
         bore: property.bore,
         pipeline: property.pipeline,
         electricity: property.electricity,
         plantation: property.plantation,
-        proposedPrices: property.proposedPrices,
         interestedUsers: property.interestedUsers,
         visitedUsers: property.visitedUsers,
-        proofs: property.proofs,
       );
 
       // Step 5: Add the property to Firestore with the custom property ID
@@ -548,5 +547,124 @@ class PropertyService {
 
       return propertyId;
     });
+  }
+
+  /// assign another agent to help find buyers
+  Future<void> assignAgent(String propertyId, String agentId) async {
+    await _firestore.collection(collectionPath).doc(propertyId).update({
+      'assignedAgentIds': FieldValue.arrayUnion([agentId])
+    });
+  }
+
+  /// agent or user clicks “interested” button
+  Future<void> addInterestedBuyer(String propertyId, Buyer buyer) async {
+    await _firestore.collection(collectionPath).doc(propertyId).update({
+      'interestedUsers': FieldValue.arrayUnion([buyer.toMap()])
+    });
+    // ensure stage moves into findingBuyers if still at findingAgents
+    await _firestore
+        .collection(collectionPath)
+        .doc(propertyId)
+        .update({'stage': 'findingBuyers'});
+  }
+
+  /// update one buyer’s record (visit date, price, notes, status)
+  Future<void> updateBuyerStatus({
+    required String propertyId,
+    required String buyerPhone,
+    String? status,
+    DateTime? visitDate,
+    double? priceOffered,
+    List<String>? notes,
+  }) async {
+    final doc =
+        await _firestore.collection(collectionPath).doc(propertyId).get();
+    if (!doc.exists) return;
+
+    final data = doc.data()!;
+    // cast the raw list into a List<Map<String,dynamic>>
+    final users = (data['interestedUsers'] as List<dynamic>?)
+            ?.map((e) => Map<String, dynamic>.from(e as Map))
+            .toList() ??
+        [];
+
+    // map over a properly‐typed list
+    final updated = users.map((u) {
+      // work on a mutable copy
+      final copy = Map<String, dynamic>.from(u);
+      if (copy['phone'] == buyerPhone) {
+        if (status != null) copy['status'] = status;
+        if (visitDate != null) copy['date'] = Timestamp.fromDate(visitDate);
+        if (priceOffered != null) copy['priceOffered'] = priceOffered;
+        if (notes != null) copy['notes'] = notes;
+        copy['lastUpdated'] = Timestamp.now();
+      }
+      return copy;
+    }).toList();
+
+    await _firestore
+        .collection(collectionPath)
+        .doc(propertyId)
+        .update({'interestedUsers': updated});
+  }
+
+  /// accept exactly one buyer, close find-buyer, open sales-in-progress
+  Future<void> acceptBuyer({
+    required String propertyId,
+    required String buyerPhone,
+    required String agentId, // the one who closed it
+  }) async {
+    final doc =
+        await _firestore.collection(collectionPath).doc(propertyId).get();
+    if (!doc.exists) return;
+    var m = doc.data()!;
+    // find the buyer map
+    var chosen = (m['interestedUsers'] as List)
+        .firstWhere((u) => u['phone'] == buyerPhone, orElse: () => null);
+    if (chosen == null) return;
+    // set acceptedBuyer, winningAgentId, stage
+    await _firestore.collection(collectionPath).doc(propertyId).update({
+      'acceptedBuyer': chosen,
+      'winningAgentId': agentId,
+      'stage': 'saleInProgress'
+    });
+  }
+
+  Future<List<Property>> getPropertiesByField(
+      String field, dynamic value) async {
+    final snap = await FirebaseFirestore.instance
+        .collection(collectionPath)
+        .where(field, isEqualTo: value)
+        .orderBy('createdAt')
+        .get();
+    return snap.docs.map((d) => Property.fromDocument(d)).toList();
+  }
+
+  Future<void> updatePropertyStage(String propertyId, String newStage) =>
+      _firestore.doc('properties/$propertyId').update({'stage': newStage});
+
+  Future<void> updateBuyer(
+    String propertyId,
+    Buyer oldBuyer,
+    Buyer updatedBuyer,
+  ) async {
+    final docRef = _firestore.collection('properties').doc(propertyId);
+
+    // 1) remove the old Buyer map
+    await docRef.update({
+      'visitedUsers': FieldValue.arrayRemove([oldBuyer.toMap()]),
+    });
+
+    // 2) add the updated Buyer, and update acceptedBuyer if needed
+    final newMap = updatedBuyer.toMap();
+    final updateData = <String, dynamic>{
+      'visitedUsers': FieldValue.arrayUnion([newMap]),
+    };
+
+    if (updatedBuyer.status == 'accepted') {
+      updateData['acceptedBuyer'] = newMap;
+    }
+
+    await docRef.update(updateData);
   }
 }

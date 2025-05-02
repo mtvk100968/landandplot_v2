@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import './buyer_model.dart';
 
+/// Real estate property, now with multi-agent & sale-stage
 class Property {
   final String id;
   final String userId;
@@ -32,18 +33,30 @@ class Property {
   final String userType;
   final String? ventureName;
   final Timestamp createdAt;
-  final bool? status;
   final bool? fencing;
   final bool? gate;
   final bool? bore;
   final bool? pipeline;
   final bool? electricity;
   final bool? plantation;
+
+  /// Buyers still in the find-buyer stage
   final List<Buyer> interestedUsers;
+
+  /// Buyers who have visited & entered negotiations or closed
   final List<Buyer> visitedUsers;
-  // **New fields in the property model**
-  final List<Map<String, dynamic>> proposedPrices;
-  final Map<String, List<String>> proofs;
+
+  /// The buyer whose offer was accepted
+  final Buyer? acceptedBuyer;
+
+  /// Agents currently working to find a buyer
+  final List<String> assignedAgentIds;
+
+  /// Agent who successfully closed the sale
+  final String? winningAgentId;
+
+  /// 'findingAgents', 'findingBuyers', 'saleInProgress', or 'sold'
+  final String stage;
 
   Property({
     this.id = '',
@@ -76,22 +89,23 @@ class Property {
     required this.userType,
     this.ventureName,
     required this.createdAt,
-    this.status,
     this.fencing,
     this.gate,
     this.bore,
     this.pipeline,
     this.electricity,
     this.plantation,
-    this.proposedPrices = const [],
     this.interestedUsers = const [],
     this.visitedUsers = const [],
-    this.proofs = const {},
-  });
+    this.acceptedBuyer,
+    List<String>? assignedAgentIds,
+    this.winningAgentId,
+    this.stage = 'findingAgents',
+  }) : assignedAgentIds = assignedAgentIds ?? [];
 
+  /// Serialize to Firestore
   Map<String, dynamic> toMap() {
-    return {
-      'id': id,
+    final map = <String, dynamic>{
       'userId': userId,
       'name': name,
       'mobileNumber': mobileNumber,
@@ -121,84 +135,79 @@ class Property {
       'userType': userType,
       'ventureName': ventureName,
       'createdAt': createdAt,
-      'status': status,
       'fencing': fencing,
       'gate': gate,
       'bore': bore,
       'pipeline': pipeline,
       'electricity': electricity,
       'plantation': plantation,
-      // **Include proposedPrices field in Firestore**
-      'proposedPrices': proposedPrices,
       'interestedUsers': interestedUsers.map((e) => e.toMap()).toList(),
       'visitedUsers': visitedUsers.map((e) => e.toMap()).toList(),
-      'proofs': proofs,
+      'acceptedBuyer': acceptedBuyer?.toMap(),
+      'assignedAgentIds': assignedAgentIds,
+      'winningAgentId': winningAgentId,
+      'stage': stage,
     };
+    return map;
   }
 
-  factory Property.fromMap(String id, Map<String, dynamic> map) {
+  /// Deserialize from Firestore map
+  factory Property.fromMap(String id, Map<String, dynamic> m) {
     return Property(
       id: id,
-      userId: map['userId'] ?? '',
-      name: map['name'] ?? '',
-      mobileNumber: map['mobileNumber'] ?? '',
-      propertyType: map['propertyType'] ?? '',
-      landArea: map['landArea']?.toDouble() ?? 0.0,
-      pricePerUnit: map['pricePerUnit']?.toDouble() ?? 0.0,
-      totalPrice: map['totalPrice']?.toDouble() ?? 0.0,
-      surveyNumber: map['surveyNumber'] ?? '',
-      plotNumbers: List<String>.from(map['plotNumbers'] ?? []),
-      district: map['district'],
-      mandal: map['mandal'],
-      village: map['village'],
-      city: map['city'],
-      pincode: map['pincode'] ?? '',
-      latitude: map['latitude']?.toDouble() ?? 0.0,
-      longitude: map['longitude']?.toDouble() ?? 0.0,
-      state: map['state'],
-      roadAccess: map['roadAccess'] ?? '',
-      roadType: map['roadType'] ?? '',
-      roadWidth: map['roadWidth']?.toDouble() ?? 0.0,
-      landFacing: map['landFacing'] ?? '',
-      propertyOwner: map['propertyOwner'] ?? '',
-      images: List<String>.from(map['images'] ?? []),
-      videos: List<String>.from(map['videos'] ?? []),
-      documents: List<String>.from(map['documents'] ?? []),
-      address: map['address'],
-      userType: map['userType'] ?? 'Owner',
-      ventureName: map['ventureName'],
-      createdAt: map['createdAt'] ?? Timestamp.now(),
-      status: map['status'],
-      fencing: map['fencing'],
-      gate: map['gate'],
-      bore: map['bore'],
-      pipeline: map['pipeline'],
-      electricity: map['electricity'],
-      plantation: map['plantation'],
-      // **Corrected transformation for proofs field**
-      proofs: Map<String, List<String>>.from(
-        (map['proofs'] ?? {}).map(
-            (key, value) => MapEntry(key.toString(), List<String>.from(value))),
-      ),
-      // **Parse proposedPrices**
-      proposedPrices: List<Map<String, dynamic>>.from(
-        map['proposedPrices'] ?? [],
-      ),
-      interestedUsers: map['interestedUsers'] != null
-          ? List<Map<String, dynamic>>.from(map['interestedUsers'])
-              .map((e) => Buyer.fromMap(e))
-              .toList()
-          : [],
-      visitedUsers: map['visitedUsers'] != null
-          ? List<Map<String, dynamic>>.from(map['visitedUsers'])
-              .map((e) => Buyer.fromMap(e))
-              .toList()
-          : [],
+      userId: m['userId'] ?? '',
+      name: m['name'] ?? '',
+      mobileNumber: m['mobileNumber'] ?? '',
+      propertyType: m['propertyType'] ?? '',
+      landArea: (m['landArea'] as num?)?.toDouble() ?? 0.0,
+      pricePerUnit: (m['pricePerUnit'] as num?)?.toDouble() ?? 0.0,
+      totalPrice: (m['totalPrice'] as num?)?.toDouble() ?? 0.0,
+      surveyNumber: m['surveyNumber'] ?? '',
+      plotNumbers: List<String>.from(m['plotNumbers'] ?? []),
+      district: m['district'],
+      mandal: m['mandal'],
+      village: m['village'],
+      city: m['city'],
+      pincode: m['pincode'] ?? '',
+      latitude: (m['latitude'] as num?)?.toDouble() ?? 0.0,
+      longitude: (m['longitude'] as num?)?.toDouble() ?? 0.0,
+      state: m['state'],
+      roadAccess: m['roadAccess'] ?? '',
+      roadType: m['roadType'] ?? '',
+      roadWidth: (m['roadWidth'] as num?)?.toDouble() ?? 0.0,
+      landFacing: m['landFacing'] ?? '',
+      propertyOwner: m['propertyOwner'] ?? '',
+      images: List<String>.from(m['images'] ?? []),
+      videos: List<String>.from(m['videos'] ?? []),
+      documents: List<String>.from(m['documents'] ?? []),
+      address: m['address'],
+      userType: m['userType'] ?? '',
+      ventureName: m['ventureName'],
+      createdAt: m['createdAt'] as Timestamp,
+      fencing: m['fencing'],
+      gate: m['gate'],
+      bore: m['bore'],
+      pipeline: m['pipeline'],
+      electricity: m['electricity'],
+      plantation: m['plantation'],
+      interestedUsers: (m['interestedUsers'] as List?)
+              ?.map((e) => Buyer.fromMap(e as Map<String, dynamic>))
+              .toList() ??
+          [],
+      visitedUsers: (m['visitedUsers'] as List?)
+              ?.map((e) => Buyer.fromMap(e as Map<String, dynamic>))
+              .toList() ??
+          [],
+      acceptedBuyer: m['acceptedBuyer'] != null
+          ? Buyer.fromMap(m['acceptedBuyer'] as Map<String, dynamic>)
+          : null,
+      assignedAgentIds: List<String>.from(m['assignedAgentIds'] ?? []),
+      winningAgentId: m['winningAgentId'] as String?,
+      stage: m['stage'] ?? 'findingAgents',
     );
   }
 
   factory Property.fromDocument(DocumentSnapshot<Map<String, dynamic>> doc) {
-    final data = doc.data()!;
-    return Property.fromMap(doc.id, data);
+    return Property.fromMap(doc.id, doc.data()!);
   }
 }

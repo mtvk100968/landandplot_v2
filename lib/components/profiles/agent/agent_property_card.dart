@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
 import '../../../models/property_model.dart';
+import '../../../models/buyer_model.dart';
 import 'mini-components/timeline_view.dart';
 import 'mini-components/interested_visited_tabs.dart';
 
 class AgentPropertyCard extends StatefulWidget {
   final Property property;
-  const AgentPropertyCard({Key? key, required this.property}) : super(key: key);
+  final String currentAgentId;
+  const AgentPropertyCard({
+    Key? key,
+    required this.property,
+    required this.currentAgentId,
+  }) : super(key: key);
 
   @override
   _AgentPropertyCardState createState() => _AgentPropertyCardState();
@@ -14,12 +20,8 @@ class AgentPropertyCard extends StatefulWidget {
 class _AgentPropertyCardState extends State<AgentPropertyCard> {
   bool isExpanded = false;
 
-  String get saleStatus {
-    if (widget.property.proposedPrices.isNotEmpty) {
-      return widget.property.proposedPrices.first['saleStatus'] ?? '';
-    }
-    return '';
-  }
+  bool get isSale => widget.property.stage == 'saleInProgress';
+  Buyer? get acceptedBuyer => widget.property.acceptedBuyer;
 
   Widget _detailText(String label, String value) {
     return Padding(
@@ -39,8 +41,7 @@ class _AgentPropertyCardState extends State<AgentPropertyCard> {
       property.mandal,
       property.district,
       property.state,
-    ].where((part) => part != null && part.trim().isNotEmpty).toList();
-
+    ].where((p) => p != null && p.trim().isNotEmpty).toList();
     final formattedAddress = addressParts.join(', ');
 
     return Column(
@@ -50,8 +51,9 @@ class _AgentPropertyCardState extends State<AgentPropertyCard> {
         if (property.plotNumbers.isNotEmpty)
           _detailText('Plot Numbers', property.plotNumbers.join(', ')),
         _detailText('Address', formattedAddress),
-        _detailText('Price', '\$${property.totalPrice}'),
-        _detailText('Price Per Unit', '\$${property.pricePerUnit}'),
+        _detailText('Price', '₹${property.totalPrice.toStringAsFixed(0)}'),
+        _detailText(
+            'Price Per Unit', '₹${property.pricePerUnit.toStringAsFixed(0)}'),
         _detailText(
           'Area (${property.propertyType.toLowerCase().contains("agri") ? "acre" : "sqyds"})',
           property.landArea.toString(),
@@ -62,8 +64,7 @@ class _AgentPropertyCardState extends State<AgentPropertyCard> {
 
   @override
   Widget build(BuildContext context) {
-    final property = widget.property;
-    final bool isSaleInitiated = saleStatus.isNotEmpty;
+    final prop = widget.property;
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
@@ -72,8 +73,8 @@ class _AgentPropertyCardState extends State<AgentPropertyCard> {
       child: Column(
         children: [
           ListTile(
-            title: Text('${property.propertyOwner} / ${property.mobileNumber}'),
-            subtitle: Text(property.propertyType),
+            title: Text('${prop.propertyOwner} / ${prop.mobileNumber}'),
+            subtitle: Text(prop.propertyType),
             trailing: IconButton(
               icon: Icon(isExpanded ? Icons.expand_less : Icons.expand_more),
               onPressed: () => setState(() => isExpanded = !isExpanded),
@@ -85,19 +86,19 @@ class _AgentPropertyCardState extends State<AgentPropertyCard> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildPropertyDetails(property),
+                  _buildPropertyDetails(prop),
                   const SizedBox(height: 10),
-                  isSaleInitiated
+                  isSale && acceptedBuyer != null
                       ? SizedBox(
                           height: 300,
                           child: TimelineView(
-                            propertyId: property.id,
-                            saleStatus: saleStatus,
+                            propertyId: prop.id,
+                            buyer: acceptedBuyer!,
                           ),
                         )
                       : SizedBox(
                           height: 300,
-                          child: InterestedVisitedTabs(property: property),
+                          child: InterestedVisitedTabs(property: prop),
                         ),
                 ],
               ),
