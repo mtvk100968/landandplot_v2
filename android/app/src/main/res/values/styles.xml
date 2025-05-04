@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Launch Theme -->
     <style name="LaunchTheme" parent="@android:style/Theme.Light.NoTitleBar.Fullscreen">
@@ -6,16 +5,17 @@
         <item name="android:windowIsTranslucent">false</item>
         <item name="android:fitsSystemWindows">true</item>
         <item name="android:statusBarColor">@android:color/white</item>
-        <!-- Prevent black bar at top -->
         <item name="android:navigationBarColor">@android:color/white</item>
-        <!-- Prevent black bar at bottom -->
         <item name="android:forceDarkAllowed">false</item>
         <item name="android:windowFullscreen">true</item>
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
         <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
     </style>
     <!-- Normal app theme -->
-    <style name="NormalTheme" parent="@android:style/Theme.Light.NoTitleBar">
+    <style name="NormalTheme" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowActionBar">false</item>
         <item name="android:windowBackground">?android:colorBackground</item>
     </style>
 </resources>
