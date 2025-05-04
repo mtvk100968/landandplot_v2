@@ -101,15 +101,11 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
-assets:
+  assets:
       - .env
-      - web/icons/assets/free_listing_image.png
-      - web/icons/assets/property_agent_image.png
-      - web/icons/assets/marker_map.png
-      - web/icons/assets/landandplot_logo.jpeg
-      - web/icons/assets/join_landandplot_image.png
-      - assets/icons/google_icon.png
+      - assets/images/google_icon.png
       - assets/images/splash.png
+      - assets/images/landandplot_logo.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
