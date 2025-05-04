@@ -39,10 +39,11 @@
               "client_type": 3
             },
             {
-              "client_id": "423847166550-sddpkmpf1knger600lq2c8m04p336kr7.apps.googleusercontent.com",
+              "client_id": "423847166550-chp4lnh08atbqkanum5b51g0tt0d45dq.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "com.example.landandplot"
+                "bundle_id": "com.lumpsumify.landandplot.macos",
+                "app_store_id": "12345"
               }
             }
           ]
