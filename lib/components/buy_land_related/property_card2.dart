@@ -85,7 +85,7 @@ class _PropertyCardState2 extends State<PropertyCard2> {
                                   child: CircularProgressIndicator(
                                     value: progress.expectedTotalBytes != null
                                         ? progress.cumulativeBytesLoaded /
-                                            (progress.expectedTotalBytes ?? 1)
+                                        (progress.expectedTotalBytes ?? 1)
                                         : null,
                                   ),
                                 );
@@ -115,21 +115,21 @@ class _PropertyCardState2 extends State<PropertyCard2> {
                             isFavorited
                                 ? Icons.favorite
                                 : Icons
-                                    .favorite_border, // Filled or outlined heart
+                                .favorite_border, // Filled or outlined heart
                             size: 30, // Adjust the size as needed
                             color: isFavorited
                                 ? Colors.pink
                                 : Colors
-                                    .pink, // Pink for favorited, black for not favorited
+                                .pink, // Pink for favorited, black for not favorited
                             shadows: isFavorited
                                 ? [
-                                    Shadow(
-                                      offset: Offset(0, 0),
-                                      blurRadius: 2,
-                                      color: Colors
-                                          .white, // Adds a subtle glow when favorited
-                                    ),
-                                  ]
+                              Shadow(
+                                offset: Offset(0, 0),
+                                blurRadius: 2,
+                                color: Colors
+                                    .white, // Adds a subtle glow when favorited
+                              ),
+                            ]
                                 : null, // No shadow for the outline
                           ),
                         ),
@@ -143,7 +143,7 @@ class _PropertyCardState2 extends State<PropertyCard2> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: List.generate(
                             widget.property.images.length,
-                            (index) => Container(
+                                (index) => Container(
                               margin: const EdgeInsets.symmetric(horizontal: 4),
                               width: 8,
                               height: 8,
@@ -236,7 +236,7 @@ class _PropertyCardState2 extends State<PropertyCard2> {
                             Text(
                               '${formatPrice(widget.property.totalPrice!)}',
                               style: const TextStyle(
-                                fontSize: 20,
+                                fontSize: 18,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.black,
                               ),
@@ -245,7 +245,7 @@ class _PropertyCardState2 extends State<PropertyCard2> {
                           Text(
                             '${formatPrice(widget.property.pricePerUnit)}/${widget.property.propertyType == 'Agri Land' ? 'acre' : 'sqyd'}',
                             style: const TextStyle(
-                              fontSize: 18,
+                              fontSize: 16,
                               fontWeight: FontWeight.w700,
                               color: Colors.grey,
                             ),
@@ -255,7 +255,7 @@ class _PropertyCardState2 extends State<PropertyCard2> {
                             Text(
                               '${formatValue(widget.property.landArea)} ${widget.property.propertyType == 'Agri Land' ? 'acres' : 'sqyds'}',
                               style: const TextStyle(
-                                fontSize: 18,
+                                fontSize: 16,
                                 fontWeight: FontWeight.w700,
                                 color: Colors.grey,
                               ),
