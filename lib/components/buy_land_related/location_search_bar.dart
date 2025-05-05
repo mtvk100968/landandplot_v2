@@ -208,17 +208,26 @@ class _LocationSearchBarState extends State<LocationSearchBar> {
                   padding: const EdgeInsets.symmetric(horizontal: 2),
                   child: Chip(
                     label: Text(_chipPlaces[i]['description']),
-                    onDeleted: () => _removeChip(i),
+                    padding:
+                        const EdgeInsets.symmetric(vertical: 0, horizontal: 4),
+                    visualDensity: VisualDensity.compact,
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    onDeleted: () => _removeChip(i), // ✅ Correct index passed
                   ),
                 ),
               // The text field for new searches
               SizedBox(
                 width: 200,
+                height: 36, // 👈 Add a height here to limit it
                 child: TextField(
                   controller: _controller,
                   onChanged: _onChanged,
+                  style: const TextStyle(fontSize: 14), // smaller font
                   decoration: const InputDecoration(
                     hintText: 'Search locations...',
+                    isDense: true, // 👈 Makes the field compact
+                    contentPadding:
+                        EdgeInsets.symmetric(vertical: 8, horizontal: 8),
                     border: InputBorder.none,
                   ),
                 ),
