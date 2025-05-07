@@ -7,6 +7,8 @@ import 'property_service.dart';
 class AgentService {
   final CollectionReference<Map<String, dynamic>> _propertiesCollection =
       FirebaseFirestore.instance.collection('properties');
+  final CollectionReference<Map<String, dynamic>> _usersCollection =
+      FirebaseFirestore.instance.collection('users');
   final _ps = PropertyService();
   final _us = UserService();
 
@@ -55,5 +57,17 @@ class AgentService {
   Future<List<Property>> getSalesInProgressProperties(String agentId) async {
     final all = await getAllAgentProperties(agentId);
     return all.where((p) => p.stage == 'saleInProgress').toList();
+  }
+
+  /// Fetch an AppUser by UID
+  Future<AppUser?> getUserById(String uid) async {
+    final snap = await _usersCollection.doc(uid).get();
+    if (!snap.exists) return null;
+    return AppUser.fromDocument(snap.data()!);
+  }
+
+  /// Update (or set) an AppUser back to Firestore
+  Future<void> updateUser(AppUser user) {
+    return _usersCollection.doc(user.uid).update(user.toMap());
   }
 }

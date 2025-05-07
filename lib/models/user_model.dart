@@ -90,4 +90,32 @@ class AppUser {
       agentAreas: List<String>.from(doc['agentAreas'] ?? []),
     );
   }
+
+  AppUser copyWith({
+    String? name,
+    String? email,
+    String? phoneNumber,
+    String? userType,
+    List<String>? postedPropertyIds,
+    List<String>? favoritedPropertyIds,
+    List<String>? boughtPropertyIds,
+    List<String>? interestedPropertyIds,
+    List<String>? assignedPropertyIds,
+    List<String>? agentAreas,
+  }) {
+    return AppUser(
+      uid: uid, // never changes
+      name: name ?? this.name,
+      email: email ?? this.email,
+      phoneNumber: phoneNumber ?? this.phoneNumber,
+      userType: userType ?? this.userType,
+      postedPropertyIds: postedPropertyIds ?? this.postedPropertyIds,
+      favoritedPropertyIds: favoritedPropertyIds ?? this.favoritedPropertyIds,
+      boughtPropertyIds: boughtPropertyIds ?? this.boughtPropertyIds,
+      interestedPropertyIds:
+          interestedPropertyIds ?? this.interestedPropertyIds,
+      assignedPropertyIds: assignedPropertyIds ?? this.assignedPropertyIds,
+      agentAreas: agentAreas ?? this.agentAreas,
+    );
+  }
 }
