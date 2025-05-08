@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import './buyer_model.dart';
 
-/// Real estate property, now with multi-agent & sale-stage
+/// Real estate property, now with unified buyers list & sale-stage
 class Property {
   final String id;
   final String userId;
@@ -40,14 +40,8 @@ class Property {
   final bool? electricity;
   final bool? plantation;
 
-  /// Buyers still in the find-buyer stage
-  final List<Buyer> interestedUsers;
-
-  /// Buyers who have visited & entered negotiations or closed
-  final List<Buyer> visitedUsers;
-
-  /// The buyer whose offer was accepted
-  final Buyer? acceptedBuyer;
+  /// All buyers in various statuses: 'pending', 'visited', 'negotiating', 'accepted', 'rejected'
+  final List<Buyer> buyers;
 
   /// Agents currently working to find a buyer
   final List<String> assignedAgentIds;
@@ -95,9 +89,7 @@ class Property {
     this.pipeline,
     this.electricity,
     this.plantation,
-    this.interestedUsers = const [],
-    this.visitedUsers = const [],
-    this.acceptedBuyer,
+    this.buyers = const [],
     List<String>? assignedAgentIds,
     this.winningAgentId,
     this.stage = 'findingAgents',
@@ -141,9 +133,7 @@ class Property {
       'pipeline': pipeline,
       'electricity': electricity,
       'plantation': plantation,
-      'interestedUsers': interestedUsers.map((e) => e.toMap()).toList(),
-      'visitedUsers': visitedUsers.map((e) => e.toMap()).toList(),
-      'acceptedBuyer': acceptedBuyer?.toMap(),
+      'buyers': buyers.map((b) => b.toMap()).toList(),
       'assignedAgentIds': assignedAgentIds,
       'winningAgentId': winningAgentId,
       'stage': stage,
@@ -190,17 +180,10 @@ class Property {
       pipeline: m['pipeline'],
       electricity: m['electricity'],
       plantation: m['plantation'],
-      interestedUsers: (m['interestedUsers'] as List?)
+      buyers: (m['buyers'] as List?)
               ?.map((e) => Buyer.fromMap(e as Map<String, dynamic>))
               .toList() ??
           [],
-      visitedUsers: (m['visitedUsers'] as List?)
-              ?.map((e) => Buyer.fromMap(e as Map<String, dynamic>))
-              .toList() ??
-          [],
-      acceptedBuyer: m['acceptedBuyer'] != null
-          ? Buyer.fromMap(m['acceptedBuyer'] as Map<String, dynamic>)
-          : null,
       assignedAgentIds: List<String>.from(m['assignedAgentIds'] ?? []),
       winningAgentId: m['winningAgentId'] as String?,
       stage: m['stage'] ?? 'findingAgents',

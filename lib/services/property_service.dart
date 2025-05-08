@@ -93,8 +93,6 @@ class PropertyService {
         pipeline: property.pipeline,
         electricity: property.electricity,
         plantation: property.plantation,
-        interestedUsers: property.interestedUsers,
-        visitedUsers: property.visitedUsers,
       );
 
       // Step 5: Add the property to Firestore with the custom property ID
@@ -557,15 +555,11 @@ class PropertyService {
   }
 
   /// agent or user clicks “interested” button
-  Future<void> addInterestedBuyer(String propertyId, Buyer buyer) async {
+  Future<void> addBuyer(String propertyId, Buyer buyer) async {
     await _firestore.collection(collectionPath).doc(propertyId).update({
-      'interestedUsers': FieldValue.arrayUnion([buyer.toMap()])
+      'buyers': FieldValue.arrayUnion([buyer.toMap()]),
+      'stage': 'findingBuyers', // if needed
     });
-    // ensure stage moves into findingBuyers if still at findingAgents
-    await _firestore
-        .collection(collectionPath)
-        .doc(propertyId)
-        .update({'stage': 'findingBuyers'});
   }
 
   /// update one buyer’s record (visit date, price, notes, status)
@@ -612,21 +606,22 @@ class PropertyService {
   Future<void> acceptBuyer({
     required String propertyId,
     required String buyerPhone,
-    required String agentId, // the one who closed it
+    required String agentId,
   }) async {
-    final doc =
-        await _firestore.collection(collectionPath).doc(propertyId).get();
-    if (!doc.exists) return;
-    var m = doc.data()!;
-    // find the buyer map
-    var chosen = (m['interestedUsers'] as List)
-        .firstWhere((u) => u['phone'] == buyerPhone, orElse: () => null);
-    if (chosen == null) return;
-    // set acceptedBuyer, winningAgentId, stage
-    await _firestore.collection(collectionPath).doc(propertyId).update({
-      'acceptedBuyer': chosen,
+    final ref = _firestore.collection(collectionPath).doc(propertyId);
+    final snap = await ref.get();
+    if (!snap.exists) return;
+    final data = snap.data()!;
+    // find and update the buyer in the single buyers list
+    final List<Map<String, dynamic>> all = List.from(data['buyers'] ?? []);
+    final idx = all.indexWhere((b) => b['phone'] == buyerPhone);
+    if (idx == -1) return;
+    all[idx]['status'] = 'accepted';
+    // push the updated list plus agent/stage
+    await ref.update({
+      'buyers': all,
       'winningAgentId': agentId,
-      'stage': 'saleInProgress'
+      'stage': 'saleInProgress',
     });
   }
 
@@ -650,21 +645,23 @@ class PropertyService {
   ) async {
     final docRef = _firestore.collection('properties').doc(propertyId);
 
-    // 1) remove the old Buyer map
+// 1) remove old entry from buyers list
     await docRef.update({
-      'visitedUsers': FieldValue.arrayRemove([oldBuyer.toMap()]),
+      'buyers': FieldValue.arrayRemove([oldBuyer.toMap()]),
     });
 
-    // 2) add the updated Buyer, and update acceptedBuyer if needed
+// 2) add updated entry back into buyers
     final newMap = updatedBuyer.toMap();
-    final updateData = <String, dynamic>{
-      'visitedUsers': FieldValue.arrayUnion([newMap]),
-    };
+    await docRef.update({
+      'buyers': FieldValue.arrayUnion([newMap]),
+    });
 
-    if (updatedBuyer.status == 'accepted') {
-      updateData['acceptedBuyer'] = newMap;
-    }
-
-    await docRef.update(updateData);
+// // 3) if they just got accepted, advance stage or set agent if you need
+// if (updatedBuyer.status == 'accepted') {
+//   await docRef.update({
+//     'winningAgentId': /* your agentId variable */,
+//     'stage': 'saleInProgress',
+//   });
+// }
   }
 }

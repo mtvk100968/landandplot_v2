@@ -21,7 +21,15 @@ class _AgentPropertyCardState extends State<AgentPropertyCard> {
   bool isExpanded = false;
 
   bool get isSale => widget.property.stage == 'saleInProgress';
-  Buyer? get acceptedBuyer => widget.property.acceptedBuyer;
+
+  /// grab the one buyer whose status is “accepted”
+  Buyer? get acceptedBuyer {
+    try {
+      return widget.property.buyers.firstWhere((b) => b.status == 'accepted');
+    } catch (_) {
+      return null;
+    }
+  }
 
   Widget _detailText(String label, String value) {
     return Padding(

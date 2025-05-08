@@ -125,11 +125,6 @@ class _InterestedVisitedTabsState extends State<InterestedVisitedTabs>
                       buyer.status = currentStatus;
                       buyer.notes.add(note);
                       buyer.lastUpdated = DateTime.now();
-                      // Move buyer from interested to visited if paperwork is complete.
-                      if (isPaperworkComplete(buyer)) {
-                        widget.property.interestedUsers.remove(buyer);
-                        widget.property.visitedUsers.add(buyer);
-                      }
                     });
                     Navigator.pop(ctx);
                   },
@@ -225,7 +220,10 @@ class _InterestedVisitedTabsState extends State<InterestedVisitedTabs>
   }
 
   Widget _buildInterestedTab() {
-    final List<Buyer> list = widget.property.interestedUsers;
+    // new: only those still pending
+    final List<Buyer> list =
+        widget.property.buyers.where((b) => b.status == 'pending').toList();
+
     return Column(
       children: [
         Expanded(
@@ -349,7 +347,10 @@ class _InterestedVisitedTabsState extends State<InterestedVisitedTabs>
   }
 
   Widget _buildVisitedTab() {
-    final List<Buyer> list = widget.property.visitedUsers;
+    // new: anything not pending
+    final List<Buyer> list =
+        widget.property.buyers.where((b) => b.status != 'pending').toList();
+
     return ListView.builder(
       itemCount: list.length,
       itemBuilder: (_, i) {
@@ -467,7 +468,7 @@ class _InterestedVisitedTabsState extends State<InterestedVisitedTabs>
                 );
 
                 setState(() {
-                  widget.property.interestedUsers.add(newBuyer);
+                  widget.property.buyers.add(newBuyer);
                 });
 
                 Navigator.pop(ctx);
