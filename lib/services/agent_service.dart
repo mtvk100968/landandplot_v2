@@ -47,10 +47,18 @@ class AgentService {
     return all;
   }
 
-  /// Fetch only those in find-buyer stage
-  Future<List<Property>> getFindBuyerProperties(String agentId) async {
-    final all = await getAllAgentProperties(agentId);
-    return all.where((p) => p.stage == 'findingBuyers').toList();
+  /// Fetch only those in find-buyer stage with a single Firestore query
+  Future<List<Property>> getFindBuyerProperties(String agentId) {
+    return FirebaseFirestore.instance
+        .collection('properties')
+        .where('userId', isEqualTo: agentId)
+        .where('stage', isEqualTo: 'findingBuyers')
+        .get()
+        .then((snap) {
+      final ids = snap.docs.map((d) => d.id).toList();
+      print('getFindBuyerProperties for $agentId returned: $ids');
+      return snap.docs.map((d) => Property.fromDocument(d)).toList();
+    });
   }
 
   /// Fetch only those in sale-in-progress stage
