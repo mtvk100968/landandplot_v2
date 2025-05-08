@@ -26,25 +26,34 @@ class _AgentProfileState extends State<AgentProfile> {
   late AppUser _agentUser;
   late Future<List<Property>> _findBuyerFuture;
   late Future<List<Property>> _inProgressFuture;
+  bool _showAllAreas = false;
 
   @override
   void initState() {
     super.initState();
+
+    // 1) Grab the passed-in user
     _agentUser = widget.appUser;
 
+    // 2) Initialize your futures immediately so they're never null
+    _loadProperties();
+
+    // 3) After the first frame, check name/email/areas and show setup dialog if needed
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (_agentUser.name == null ||
-          _agentUser.phoneNumber == null ||
+          _agentUser.email == null ||
           _agentUser.agentAreas.isEmpty) {
         final updated = await showDialog<AppUser>(
           context: context,
           barrierDismissible: false,
           builder: (_) => AgentProfileSetupDialog(user: _agentUser),
         );
-        if (updated != null) _agentUser = updated;
+        if (updated != null) {
+          _agentUser = updated;
+          _loadProperties(); // reload with the (possibly new) UID
+          setState(() {});
+        }
       }
-      _loadProperties();
-      setState(() {});
     });
   }
 
@@ -54,59 +63,8 @@ class _AgentProfileState extends State<AgentProfile> {
     _inProgressFuture = svc.getSalesInProgressProperties(_agentUser.uid);
   }
 
-  Widget _buildAgentDetails() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      child: Card(
-        elevation: 2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(_agentUser.name ?? '',
-                  style: const TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 4),
-              if (_agentUser.email != null)
-                Text(_agentUser.email!,
-                    style: const TextStyle(fontSize: 14, color: Colors.grey)),
-              const SizedBox(height: 2),
-              Text(_agentUser.phoneNumber ?? '',
-                  style: const TextStyle(fontSize: 14, color: Colors.grey)),
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: 6,
-                runSpacing: 6,
-                children: _agentUser.agentAreas
-                    .map((a) => Chip(label: Text(a)))
-                    .toList(),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPropertyList(List<Property> list) {
-    return ListView.builder(
-      itemCount: list.length,
-      itemBuilder: (ctx, i) => AgentPropertyCard(
-        property: list[i],
-        currentAgentId: _agentUser.uid,
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    if (_findBuyerFuture == null || _inProgressFuture == null) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
     return FutureBuilder<List<Property>>(
       future: _findBuyerFuture,
       builder: (c1, s1) {
@@ -124,7 +82,9 @@ class _AgentProfileState extends State<AgentProfile> {
                 title: const Text('Agent Profile'),
                 actions: [
                   TextButton(
-                      onPressed: widget.onSignOut, child: const Text('Logout')),
+                    onPressed: widget.onSignOut,
+                    child: const Text('Logout'),
+                  ),
                 ],
               ),
               body: Column(
@@ -152,6 +112,74 @@ class _AgentProfileState extends State<AgentProfile> {
           },
         );
       },
+    );
+  }
+
+  Widget _buildAgentDetails() {
+    final areas = _agentUser.agentAreas;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      child: Card(
+        elevation: 2,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                _agentUser.name ?? '',
+                style:
+                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 4),
+              if (_agentUser.email != null)
+                Text(
+                  _agentUser.email!,
+                  style: const TextStyle(fontSize: 14, color: Colors.grey),
+                ),
+              const SizedBox(height: 2),
+              Text(
+                _agentUser.phoneNumber ?? '',
+                style: const TextStyle(fontSize: 14, color: Colors.grey),
+              ),
+              const SizedBox(height: 10),
+
+              // scrollable, toggleable chip list
+              Container(
+                constraints: BoxConstraints(
+                  maxHeight: _showAllAreas ? 150 : 70,
+                ),
+                child: SingleChildScrollView(
+                  child: Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: areas.map((a) => Chip(label: Text(a))).toList(),
+                  ),
+                ),
+              ),
+
+              if (areas.length > 5)
+                TextButton(
+                  onPressed: () =>
+                      setState(() => _showAllAreas = !_showAllAreas),
+                  child: Text(_showAllAreas ? 'Show less' : 'Show more'),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPropertyList(List<Property> list) {
+    return ListView.builder(
+      itemCount: list.length,
+      itemBuilder: (ctx, i) => AgentPropertyCard(
+        property: list[i],
+        currentAgentId: _agentUser.uid,
+      ),
     );
   }
 }
