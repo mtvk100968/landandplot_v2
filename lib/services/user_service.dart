@@ -1,3 +1,5 @@
+// lib/services/user_service.dart
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user_model.dart';
 import '../models/property_model.dart';
@@ -14,8 +16,7 @@ class UserService {
   /// Fetch a user by their UID
   Future<AppUser?> getUserById(String userId) async {
     try {
-      DocumentSnapshot<Map<String, dynamic>> doc =
-          await _usersCollection.doc(userId).get();
+      final doc = await _usersCollection.doc(userId).get();
       if (doc.exists && doc.data() != null) {
         return AppUser.fromDocument(doc.data()!);
       }
@@ -41,7 +42,7 @@ class UserService {
     try {
       await _usersCollection.doc(user.uid).set(
             user.toMap(),
-            SetOptions(merge: true), // Merges with existing data if available
+            SetOptions(merge: true),
           );
     } catch (e) {
       print('Error saving user: $e');
@@ -105,11 +106,11 @@ class UserService {
     }
   }
 
-  /// Add a property to the user's in-talks properties
+  /// Add a property to the user's in-talks (interested) properties
   Future<void> addInTalksProperty(String userId, String propertyId) async {
     try {
       await _usersCollection.doc(userId).update({
-        'inTalksPropertyIds': FieldValue.arrayUnion([propertyId]),
+        'interestedPropertyIds': FieldValue.arrayUnion([propertyId]),
       });
     } catch (e) {
       print('Error adding in-talks property: $e');
@@ -129,53 +130,51 @@ class UserService {
     }
   }
 
+  /// Fetch properties this user is selling (i.e., posted by them)
+  Future<List<Property>> getSellerProperties(String userId) async {
+    final snap =
+        await _propertiesCollection.where('userId', isEqualTo: userId).get();
+    return snap.docs.map((doc) => Property.fromDocument(doc)).toList();
+  }
+
+  /// Fetch properties this user is interested in (in-talks)
+  Future<List<Property>> getInTalksProperties(String userId) async {
+    final user = await getUserById(userId);
+    if (user == null || user.interestedPropertyIds.isEmpty) return [];
+    return getPropertiesByIds(user.interestedPropertyIds);
+  }
+
+  /// Fetch properties this user has bought
+  Future<List<Property>> getBoughtProperties(String userId) async {
+    final user = await getUserById(userId);
+    if (user == null || user.boughtPropertyIds.isEmpty) return [];
+    return getPropertiesByIds(user.boughtPropertyIds);
+  }
+
   /// Fetch multiple Property documents by their IDs
   Future<List<Property>> getPropertiesByIds(List<String> propertyIds) async {
-    if (propertyIds.isEmpty) {
-      return [];
+    if (propertyIds.isEmpty) return [];
+    List<Property> all = [];
+    const batchSize = 10;
+    for (var i = 0; i < propertyIds.length; i += batchSize) {
+      final end = (i + batchSize < propertyIds.length)
+          ? i + batchSize
+          : propertyIds.length;
+      final batch = propertyIds.sublist(i, end);
+      final snap = await _propertiesCollection
+          .where(FieldPath.documentId, whereIn: batch)
+          .get();
+      all.addAll(snap.docs.map((d) => Property.fromDocument(d)));
     }
-
-    List<Property> allProperties = [];
-
-    try {
-      // Firestore's `whereIn` has a limit of 10 items per query.
-      // Split the propertyIds into batches of 10.
-      List<List<String>> batches = [];
-      int batchSize = 10;
-      for (var i = 0; i < propertyIds.length; i += batchSize) {
-        int end = (i + batchSize < propertyIds.length)
-            ? i + batchSize
-            : propertyIds.length;
-        batches.add(propertyIds.sublist(i, end));
-      }
-
-      // Iterate over each batch and fetch properties
-      for (var batch in batches) {
-        QuerySnapshot<Map<String, dynamic>> snapshot =
-            await _propertiesCollection
-                .where(FieldPath.documentId, whereIn: batch)
-                .get();
-
-        List<Property> properties = snapshot.docs.map((doc) {
-          return Property.fromDocument(doc);
-        }).toList();
-
-        allProperties.addAll(properties);
-      }
-
-      return allProperties;
-    } catch (e) {
-      print('Error fetching properties by IDs: $e');
-      return [];
-    }
+    return all;
   }
 
   Future<AppUser?> getUserByPhoneNumber(String phoneNumber) async {
-    QuerySnapshot<Map<String, dynamic>> snapshot = await _usersCollection
+    final snap = await _usersCollection
         .where('phoneNumber', isEqualTo: phoneNumber)
         .get();
-    if (snapshot.docs.isNotEmpty) {
-      return AppUser.fromDocument(snapshot.docs.first.data());
+    if (snap.docs.isNotEmpty) {
+      return AppUser.fromDocument(snap.docs.first.data());
     }
     return null;
   }
