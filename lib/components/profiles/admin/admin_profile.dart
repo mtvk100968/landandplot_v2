@@ -5,7 +5,7 @@ import '../../../models/user_model.dart';
 import '../../../models/property_model.dart';
 import '../../../services/admin_service.dart';
 
-class AdminProfile extends StatelessWidget {
+class AdminProfile extends StatefulWidget {
   final AppUser appUser;
   final TabController tabController;
   final VoidCallback onSignOut;
@@ -17,24 +17,82 @@ class AdminProfile extends StatelessWidget {
     required this.onSignOut,
   }) : super(key: key);
 
+  @override
+  _AdminProfileState createState() => _AdminProfileState();
+}
+
+class _AdminProfileState extends State<AdminProfile> {
   Future<List<dynamic>> _fetchAdminData() async {
-    var agents = await AdminService().getAgents();
-    var users = await AdminService().getRegularUsers();
-    var properties = await AdminService().getProperties();
+    final agents = await AdminService().getAgents();
+    final users = await AdminService().getRegularUsers();
+    final properties = await AdminService().getProperties();
     return [agents, users, properties];
+  }
+
+  void _openAssignDialog(BuildContext ctx, Property prop) async {
+    final allAgents = await AdminService().getAgents();
+    final selected = Set<String>.from(prop.assignedAgentIds);
+
+    await showDialog(
+      context: ctx,
+      builder: (dCtx) {
+        return StatefulBuilder(
+          builder: (ctx2, setStateDialog) {
+            return AlertDialog(
+              title: Text('Assign agents to ${prop.name}'),
+              content: SizedBox(
+                width: double.maxFinite,
+                child: ListView(
+                  children: allAgents.map((a) {
+                    final isSel = selected.contains(a.uid);
+                    return CheckboxListTile(
+                      title: Text(a.name ?? a.uid),
+                      value: isSel,
+                      onChanged: (on) {
+                        setStateDialog(() {
+                          if (on == true)
+                            selected.add(a.uid);
+                          else
+                            selected.remove(a.uid);
+                        });
+                      },
+                    );
+                  }).toList(),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dCtx),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    await AdminService()
+                        .assignAgentsToProperty(prop.id, selected.toList());
+                    Navigator.pop(dCtx);
+                    setState(() {}); // refresh tabs
+                  },
+                  child: const Text('Save'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    // You can now use appUser anywhere in this build method
     return Scaffold(
       appBar: AppBar(
-        title: Text('Admin Dashboard'),
+        title: const Text('Admin Dashboard'),
         actions: [
-          IconButton(onPressed: onSignOut, icon: const Icon(Icons.logout))
+          IconButton(
+              onPressed: widget.onSignOut, icon: const Icon(Icons.logout))
         ],
         bottom: TabBar(
-          controller: tabController,
+          controller: widget.tabController,
           tabs: const [
             Tab(text: 'Agents'),
             Tab(text: 'Users'),
@@ -53,7 +111,7 @@ class AdminProfile extends StatelessWidget {
           final properties = snapshot.data![2] as List<Property>;
 
           return TabBarView(
-            controller: tabController,
+            controller: widget.tabController,
             children: [
               // Agents Tab
               ListView.builder(
@@ -87,6 +145,10 @@ class AdminProfile extends StatelessWidget {
                   return ListTile(
                     title: Text(p.name.isNotEmpty ? p.name : 'Property'),
                     subtitle: Text(p.address ?? ''),
+                    trailing: TextButton(
+                      onPressed: () => _openAssignDialog(context, p),
+                      child: const Text('Assign'),
+                    ),
                   );
                 },
               ),

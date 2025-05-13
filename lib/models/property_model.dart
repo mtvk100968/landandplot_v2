@@ -40,7 +40,7 @@ class Property {
   final bool? electricity;
   final bool? plantation;
 
-  /// All buyers in various statuses: 'pending', 'visited', 'negotiating', 'accepted', 'rejected'
+  /// All buyers in various statuses: 'visitPending', 'negotiating', 'accepted', 'rejected'
   final List<Buyer> buyers;
 
   /// Agents currently working to find a buyer

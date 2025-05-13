@@ -1,4 +1,4 @@
-// lib/screens/profile_screen.dart
+/// lib/screens/profile_screen.dart
 
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -35,12 +35,16 @@ class ProfileScreenState extends State<ProfileScreen>
   Future<void> _sendOtp() async {
     setState(() => _isProcessing = true);
     String phone = _phoneController.text.trim();
+    debugPrint('ProfileScreen: sending OTP to $phone as $_selectedLoginType');
 
     AppUser? existingUser = await UserService().getUserByPhoneNumber(phone);
+    debugPrint('ProfileScreen: existingUser=$existingUser');
+
     if (existingUser != null) {
       String expectedType =
           _selectedLoginType == UserLoginType.agent ? 'agent' : 'user';
       if (existingUser.userType != expectedType) {
+        debugPrint('ProfileScreen: wrong userType, expected $expectedType');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content:
@@ -56,6 +60,7 @@ class ProfileScreenState extends State<ProfileScreen>
     await signInWithPhoneNumber(
       phone,
       (verId) {
+        debugPrint('ProfileScreen: OTP sent, verId=$verId');
         setState(() {
           _verificationId = verId;
           _isOtpSent = true;
@@ -65,6 +70,7 @@ class ProfileScreenState extends State<ProfileScreen>
             .showSnackBar(const SnackBar(content: Text('OTP sent')));
       },
       (e) {
+        debugPrint('ProfileScreen: OTP send failed, error=${e.message}');
         setState(() => _isProcessing = false);
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(e.message ?? 'Failed')));
@@ -74,6 +80,7 @@ class ProfileScreenState extends State<ProfileScreen>
 
   Future<void> _verifyOtp() async {
     setState(() => _isProcessing = true);
+    debugPrint('ProfileScreen: verifying OTP ${_otpController.text.trim()}');
     try {
       final cred = PhoneAuthProvider.credential(
         verificationId: _verificationId,
@@ -85,8 +92,10 @@ class ProfileScreenState extends State<ProfileScreen>
               ? 'agent'
               : 'user';
 
+      debugPrint('ProfileScreen: signing in with userType=$userType');
       await signInWithPhoneAuthCredential(cred, userType);
-    } catch (_) {
+    } catch (err) {
+      debugPrint('ProfileScreen: OTP verification failed, exception=$err');
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text('Verification failed')));
     } finally {
@@ -95,6 +104,7 @@ class ProfileScreenState extends State<ProfileScreen>
   }
 
   Future<void> _signOut() async {
+    debugPrint('ProfileScreen: signing out');
     await signOut();
     setState(() {
       _isOtpSent = false;
@@ -104,6 +114,7 @@ class ProfileScreenState extends State<ProfileScreen>
   }
 
   Widget _buildLoginComponent() {
+    debugPrint('ProfileScreen: building login component');
     return Center(
       child: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 32),
@@ -177,28 +188,31 @@ class ProfileScreenState extends State<ProfileScreen>
   }
 
   Widget _buildProfileComponent(AppUser appUser) {
-    // initialize TabController once
+    debugPrint(
+        'ProfileScreen: building profile for $appUser (userType=${appUser.userType})');
+    debugPrint('ProfileScreen: _tabController before init = $_tabController');
     _tabController ??= TabController(
       length: appUser.userType == 'admin' ? 3 : 2,
       vsync: this,
     );
+    debugPrint('ProfileScreen: _tabController after init = $_tabController');
 
     switch (appUser.userType) {
       case 'admin':
         return AdminProfile(
-          appUser: appUser, // <-- pass appUser here
+          appUser: appUser,
           tabController: _tabController!,
           onSignOut: _signOut,
         );
       case 'agent':
         return AgentProfile(
-          appUser: appUser, // <-- and here
+          appUser: appUser,
           tabController: _tabController!,
           onSignOut: _signOut,
         );
       default:
         return UserProfile(
-          appUser: appUser, // <-- and here
+          appUser: appUser,
           tabController: _tabController!,
           onSignOut: _signOut,
         );
@@ -207,20 +221,27 @@ class ProfileScreenState extends State<ProfileScreen>
 
   @override
   Widget build(BuildContext context) {
+    debugPrint('ProfileScreen: build() called');
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (ctx, authSnap) {
+        debugPrint(
+            'ProfileScreen: authStateChanges snapshot: state=${authSnap.connectionState}, data=${authSnap.data}');
         if (authSnap.connectionState == ConnectionState.waiting) {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
         }
         if (authSnap.data == null) {
+          debugPrint('ProfileScreen: no Firebase user found');
           return Scaffold(body: _buildLoginComponent());
         }
+        debugPrint('ProfileScreen: Firebase user UID = ${authSnap.data!.uid}');
         return StreamBuilder<AppUser?>(
           stream: UserService().getUserStream(authSnap.data!.uid),
           builder: (ctx, profileSnap) {
+            debugPrint(
+                'ProfileScreen: getUserStream snapshot: state=${profileSnap.connectionState}, data=${profileSnap.data}');
             if (profileSnap.connectionState == ConnectionState.waiting) {
               return const Scaffold(
                 body: Center(child: CircularProgressIndicator()),
@@ -228,6 +249,7 @@ class ProfileScreenState extends State<ProfileScreen>
             }
             final appUser = profileSnap.data;
             if (appUser == null) {
+              debugPrint('ProfileScreen: AppUser is null');
               return Scaffold(
                 body: Center(
                   child: Column(

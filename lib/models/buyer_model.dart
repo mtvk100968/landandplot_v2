@@ -7,7 +7,7 @@ class Buyer {
   DateTime? date;
   double? priceOffered;
 
-  /// 'pending', 'visited', 'negotiating', 'accepted', or 'rejected'
+  /// 'visitPending', 'negotiating', 'accepted', or 'rejected'
   String status;
 
   /// which timeline step this buyer is currently at (one of the short names)
@@ -30,7 +30,7 @@ class Buyer {
     required this.phone,
     this.date,
     this.priceOffered,
-    this.status = 'pending',
+    this.status = 'visitPending',
     this.currentStep = 'Interest',
     this.notes = const [],
     this.lastUpdated,
@@ -79,7 +79,7 @@ class Buyer {
     return Buyer(
       name: map['name'] ?? '',
       phone: map['phone'] ?? '',
-      status: map['status'] ?? 'pending',
+      status: map['status'] ?? 'visitPending',
       currentStep: map['currentStep'] ?? 'Interest',
       notes: List<String>.from(map['notes'] ?? []),
       priceOffered: (map['priceOffered'] as num?)?.toDouble(),

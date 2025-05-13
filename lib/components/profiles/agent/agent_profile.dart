@@ -19,10 +19,10 @@ class AgentProfile extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _AgentProfileState createState() => _AgentProfileState();
+  AgentProfileState createState() => AgentProfileState();
 }
 
-class _AgentProfileState extends State<AgentProfile> {
+class AgentProfileState extends State<AgentProfile> {
   late AppUser _agentUser;
   late Future<List<Property>> _findBuyerFuture;
   late Future<List<Property>> _inProgressFuture;
@@ -59,8 +59,27 @@ class _AgentProfileState extends State<AgentProfile> {
 
   void _loadProperties() {
     final svc = AgentService();
-    _findBuyerFuture = svc.getFindBuyerProperties(_agentUser.uid);
-    _inProgressFuture = svc.getSalesInProgressProperties(_agentUser.uid);
+    setState(() {
+      _findBuyerFuture = svc.getFindBuyerProperties(_agentUser.uid);
+      _inProgressFuture = svc.getSalesInProgressProperties(_agentUser.uid);
+    });
+  }
+
+  Widget _buildFindBuyerList(List<Property> list) {
+    final finding = list.where((p) => p.stage == 'findingBuyers').toList();
+    final inProgress = list.where((p) => p.stage == 'saleInProgress').toList();
+    final sorted = [...finding, ...inProgress];
+
+    return ListView.builder(
+      itemCount: sorted.length,
+      itemBuilder: (ctx, i) => AgentPropertyCard(
+        property: sorted[i],
+        currentAgentId: _agentUser.uid,
+        onBuyerUpdated: _loadProperties,
+        hideTimelineInFind:
+            true, // ← tell the card to never show the timeline here
+      ),
+    );
   }
 
   @override
@@ -101,7 +120,7 @@ class _AgentProfileState extends State<AgentProfile> {
                     child: TabBarView(
                       controller: widget.tabController,
                       children: [
-                        _buildPropertyList(s1.data!),
+                        _buildFindBuyerList(s1.data!),
                         _buildPropertyList(s2.data!),
                       ],
                     ),
@@ -179,6 +198,7 @@ class _AgentProfileState extends State<AgentProfile> {
       itemBuilder: (ctx, i) => AgentPropertyCard(
         property: list[i],
         currentAgentId: _agentUser.uid,
+        onBuyerUpdated: _loadProperties,
       ),
     );
   }

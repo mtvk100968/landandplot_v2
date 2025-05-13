@@ -52,8 +52,7 @@ class _SellerPropertyCardState extends State<SellerPropertyCard> {
             else
               Column(
                 children: widget.property.buyers
-                    .where(
-                        (b) => b.status == 'pending' || b.status == 'visited')
+                    .where((b) => b.status == 'visitPending')
                     .map((b) => Padding(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 16.0, vertical: 4.0),

@@ -2,14 +2,12 @@
 
 import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import '../models/buyer_model.dart';
 import 'property_service.dart';
 
-class ProofUploadService {
+class ProofUploadService2 {
   final FirebaseStorage _storage = FirebaseStorage.instance;
   final PropertyService _propertyService = PropertyService();
-  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   /// Uploads files and returns their URLs
   Future<List<String>> uploadProofFiles({
@@ -41,10 +39,6 @@ class ProofUploadService {
     required String stepShortName,
     required List<String> fileUrls,
   }) async {
-    // Retrieve current user ID
-    final currentUserId = _auth.currentUser?.uid;
-    print('Updating proof in Firestore by user: $currentUserId');
-
     // 1) merge into the matching list on the buyer
     switch (stepShortName) {
       case 'Interest':
@@ -73,6 +67,6 @@ class ProofUploadService {
     }
 
     // 2) persist the updated buyer back into Firestore
-    await _propertyService.updateBuyer(propertyId, buyer, buyer, currentUserId);
+    await _propertyService.updateBuyerByBuyer(propertyId, buyer, buyer);
   }
 }

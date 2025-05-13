@@ -8,15 +8,18 @@ import 'package:file_picker/file_picker.dart';
 import '../../../../models/buyer_model.dart';
 import '../../../../services/proof_upload_service.dart';
 import '../../../../services/property_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class TimelineView extends StatefulWidget {
   final String propertyId;
   final Buyer buyer; // now pass a Buyer instead of a String
+  final String agentId; // ← NEW
 
   const TimelineView({
     Key? key,
     required this.propertyId,
     required this.buyer,
+    required this.agentId, // ← NEW
   }) : super(key: key);
 
   @override
@@ -199,10 +202,10 @@ class _TimelineViewState extends State<TimelineView> {
 
                                 // 4) persist oldBuyer → newBuyer
                                 await _propService.updateBuyer(
-                                  widget.propertyId,
-                                  oldBuyer,
-                                  widget.buyer,
-                                );
+                                    widget.propertyId,
+                                    oldBuyer,
+                                    widget.buyer,
+                                    widget.agentId);
 
                                 Navigator.pop(ctx);
                               },

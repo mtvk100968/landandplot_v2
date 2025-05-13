@@ -7,10 +7,14 @@ import 'mini-components/interested_visited_tabs.dart';
 class AgentPropertyCard extends StatefulWidget {
   final Property property;
   final String currentAgentId;
+  final VoidCallback onBuyerUpdated;
+  final bool hideTimelineInFind;
   const AgentPropertyCard({
     Key? key,
     required this.property,
     required this.currentAgentId,
+    required this.onBuyerUpdated,
+    this.hideTimelineInFind = false,
   }) : super(key: key);
 
   @override
@@ -73,45 +77,56 @@ class _AgentPropertyCardState extends State<AgentPropertyCard> {
   @override
   Widget build(BuildContext context) {
     final prop = widget.property;
+    final inFindTab = prop.stage == 'findingBuyers';
+    // decide whether to show the timeline or the Interested/Visited UI
+    final showTimeline =
+        !widget.hideTimelineInFind && isSale && acceptedBuyer != null;
 
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 2,
-      child: Column(
-        children: [
-          ListTile(
-            title: Text('${prop.propertyOwner} / ${prop.mobileNumber}'),
-            subtitle: Text(prop.propertyType),
-            trailing: IconButton(
-              icon: Icon(isExpanded ? Icons.expand_less : Icons.expand_more),
-              onPressed: () => setState(() => isExpanded = !isExpanded),
-            ),
-          ),
-          if (isExpanded)
-            Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildPropertyDetails(prop),
-                  const SizedBox(height: 10),
-                  isSale && acceptedBuyer != null
-                      ? SizedBox(
-                          height: 300,
-                          child: TimelineView(
-                            propertyId: prop.id,
-                            buyer: acceptedBuyer!,
-                          ),
-                        )
-                      : SizedBox(
-                          height: 300,
-                          child: InterestedVisitedTabs(property: prop),
-                        ),
-                ],
+    return Opacity(
+      opacity: inFindTab ? 1.0 : 0.5,
+      child: Card(
+        margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        elevation: 2,
+        child: Column(
+          children: [
+            ListTile(
+              title: Text('${prop.propertyOwner} / ${prop.mobileNumber}'),
+              subtitle: Text(prop.propertyType),
+              trailing: IconButton(
+                icon: Icon(isExpanded ? Icons.expand_less : Icons.expand_more),
+                onPressed: () => setState(() => isExpanded = !isExpanded),
               ),
             ),
-        ],
+            if (isExpanded)
+              Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildPropertyDetails(prop),
+                    const SizedBox(height: 10),
+                    showTimeline
+                        ? SizedBox(
+                            height: 300,
+                            child: TimelineView(
+                              propertyId: prop.id,
+                              buyer: acceptedBuyer!,
+                              agentId: widget.currentAgentId,
+                            ),
+                          )
+                        : SizedBox(
+                            height: 300,
+                            child: InterestedVisitedTabs(
+                              property: prop,
+                              onBuyerUpdated: widget.onBuyerUpdated,
+                            ),
+                          ),
+                  ],
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

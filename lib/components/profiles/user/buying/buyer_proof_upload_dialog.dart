@@ -4,8 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import '../../../../models/buyer_model.dart';
-import '../../../../services/proof_upload_service.dart';
-import '../../../../services/property_service.dart';
+import '../../../../services/proof_upload_service2.dart';
 
 class BuyerProofUploadDialog extends StatefulWidget {
   final String propertyId;
@@ -23,8 +22,7 @@ class BuyerProofUploadDialog extends StatefulWidget {
 
 class _BuyerProofUploadDialogState extends State<BuyerProofUploadDialog> {
   List<PlatformFile> _selectedFiles = [];
-  final _proofService = ProofUploadService();
-  final _propService = PropertyService();
+  final _proofService = ProofUploadService2();
   bool _uploading = false;
 
   Future<void> _pickFiles() async {
@@ -38,14 +36,14 @@ class _BuyerProofUploadDialogState extends State<BuyerProofUploadDialog> {
     setState(() => _uploading = true);
     final files = _selectedFiles.map((f) => File(f.path!)).toList();
 
-    // Upload to same path as seller proofs
+    // Upload files and get URLs
     final urls = await _proofService.uploadProofFiles(
       propertyId: widget.propertyId,
       stepShortName: widget.buyer.currentStep,
       files: files,
     );
 
-    // Merge into buyer model
+    // Merge URLs into the buyer model
     switch (widget.buyer.currentStep) {
       case 'Interest':
         widget.buyer.interestDocs.addAll(urls);
@@ -85,13 +83,7 @@ class _BuyerProofUploadDialogState extends State<BuyerProofUploadDialog> {
       widget.buyer.currentStep = steps[idx + 1];
     }
 
-    // Persist the updated buyer back to Firestore
-    await _propService.updateBuyer(
-      widget.propertyId,
-      widget.buyer,
-      widget.buyer,
-    );
-
+    // Pop and return the mutated Buyer
     Navigator.of(context).pop(widget.buyer);
   }
 

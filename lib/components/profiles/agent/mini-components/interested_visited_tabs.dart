@@ -2,11 +2,16 @@ import 'package:flutter/material.dart';
 import '../../../../models/property_model.dart';
 import '../../../../models/buyer_model.dart';
 import 'package:dotted_border/dotted_border.dart';
+import '../../../../services/property_service.dart';
 
 class InterestedVisitedTabs extends StatefulWidget {
   final Property property;
-  const InterestedVisitedTabs({Key? key, required this.property})
-      : super(key: key);
+  final VoidCallback onBuyerUpdated;
+  const InterestedVisitedTabs({
+    Key? key,
+    required this.property,
+    required this.onBuyerUpdated,
+  }) : super(key: key);
 
   @override
   _InterestedVisitedTabsState createState() => _InterestedVisitedTabsState();
@@ -28,10 +33,11 @@ class _InterestedVisitedTabsState extends State<InterestedVisitedTabs>
     super.dispose();
   }
 
+// 1. isPaperworkComplete
   bool isPaperworkComplete(Buyer buyer) {
     return buyer.priceOffered != null &&
         buyer.notes.isNotEmpty &&
-        buyer.status != 'pending';
+        buyer.status != 'visitPending';
   }
 
   bool isSameDay(DateTime a, DateTime b) {
@@ -46,6 +52,12 @@ class _InterestedVisitedTabsState extends State<InterestedVisitedTabs>
       lastDate: DateTime(2030),
     );
     if (newDate != null) {
+      // persist only the date field for this buyer
+      await PropertyService().updateBuyerStatus(
+        propertyId: widget.property.id,
+        buyerPhone: buyer.phone,
+        visitDate: newDate,
+      );
       setState(() {
         buyer.date = newDate;
       });
@@ -53,28 +65,37 @@ class _InterestedVisitedTabsState extends State<InterestedVisitedTabs>
   }
 
   // Clear selected date.
-  void _clearDate(Buyer buyer) {
+  Future<void> _clearDate(Buyer buyer) async {
+    await PropertyService().updateBuyerStatus(
+      propertyId: widget.property.id,
+      buyerPhone: buyer.phone,
+      visitDate: null,
+    );
     setState(() {
       buyer.date = null;
     });
   }
 
   /// Called when it’s time to fill the “visit paperwork.”
+// 2. _completePaperwork
   void _completePaperwork(Buyer buyer) {
     final priceController =
         TextEditingController(text: buyer.priceOffered?.toString() ?? '');
     final noteController = TextEditingController();
-    String currentStatus = buyer.status != 'pending' ? buyer.status : 'visited';
+    String currentStatus =
+        buyer.status != 'visitPending' ? buyer.status : 'negotiating';
+
     showModalBottomSheet(
       context: context,
-      isScrollControlled: true, // to allow keyboard opening without clipping
+      isScrollControlled: true,
       builder: (ctx) {
         return Padding(
           padding: EdgeInsets.only(
-              bottom: MediaQuery.of(ctx).viewInsets.bottom,
-              left: 16,
-              right: 16,
-              top: 16),
+            bottom: MediaQuery.of(ctx).viewInsets.bottom,
+            left: 16,
+            right: 16,
+            top: 16,
+          ),
           child: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -92,15 +113,14 @@ class _InterestedVisitedTabsState extends State<InterestedVisitedTabs>
                 const SizedBox(height: 10),
                 DropdownButtonFormField<String>(
                   value: currentStatus,
-                  items: ['visited', 'accepted', 'rejected', 'negotiating']
-                      .map((status) {
+                  items: ['negotiating', 'accepted', 'rejected'].map((status) {
                     return DropdownMenuItem(
-                        value: status, child: Text(status.capitalize()));
+                      value: status,
+                      child: Text(status.capitalize()),
+                    );
                   }).toList(),
                   onChanged: (value) {
-                    if (value != null) {
-                      currentStatus = value;
-                    }
+                    if (value != null) currentStatus = value;
                   },
                   decoration: const InputDecoration(labelText: "Status"),
                 ),
@@ -111,7 +131,7 @@ class _InterestedVisitedTabsState extends State<InterestedVisitedTabs>
                 ),
                 const SizedBox(height: 20),
                 ElevatedButton(
-                  onPressed: () {
+                  onPressed: () async {
                     double? price = double.tryParse(priceController.text);
                     String note = noteController.text.trim();
                     if (price == null || note.isEmpty) {
@@ -120,13 +140,36 @@ class _InterestedVisitedTabsState extends State<InterestedVisitedTabs>
                               Text("Please enter a valid price and note.")));
                       return;
                     }
+                    if (currentStatus == 'accepted' &&
+                        widget.property.buyers
+                            .any((b) => b.status == 'accepted' && b != buyer)) {
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                          content: Text('Only one buyer can be Accepted.')));
+                      return;
+                    }
+
+                    // 1) Update local state
                     setState(() {
                       buyer.priceOffered = price;
                       buyer.status = currentStatus;
                       buyer.notes.add(note);
                       buyer.lastUpdated = DateTime.now();
                     });
+
+                    // 2) Persist to Firestore via updateBuyerStatus
+                    await PropertyService().updateBuyerStatus(
+                      propertyId: widget.property.id,
+                      buyerPhone: buyer.phone,
+                      status: buyer.status,
+                      visitDate: buyer.date,
+                      priceOffered: buyer.priceOffered,
+                      notes: buyer.notes,
+                    );
+
+                    // 3) Close the sheet
                     Navigator.pop(ctx);
+                    // ← this tells AgentProfile to re-fetch both tabs:
+                    widget.onBuyerUpdated();
                   },
                   child: const Text('Submit Details'),
                 ),
@@ -139,21 +182,24 @@ class _InterestedVisitedTabsState extends State<InterestedVisitedTabs>
   }
 
   /// For buyers already moved to visited, allow re-editing of details.
+// 3. _editVisitedDetails
   void _editVisitedDetails(Buyer buyer) {
     final priceController =
         TextEditingController(text: buyer.priceOffered?.toString() ?? '');
     final noteController = TextEditingController();
     String currentStatus = buyer.status;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       builder: (ctx) {
         return Padding(
           padding: EdgeInsets.only(
-              bottom: MediaQuery.of(ctx).viewInsets.bottom,
-              left: 16,
-              right: 16,
-              top: 16),
+            bottom: MediaQuery.of(ctx).viewInsets.bottom,
+            left: 16,
+            right: 16,
+            top: 16,
+          ),
           child: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -171,15 +217,14 @@ class _InterestedVisitedTabsState extends State<InterestedVisitedTabs>
                 const SizedBox(height: 10),
                 DropdownButtonFormField<String>(
                   value: currentStatus,
-                  items: ['visited', 'accepted', 'rejected', 'negotiating']
-                      .map((status) {
+                  items: ['negotiating', 'accepted', 'rejected'].map((status) {
                     return DropdownMenuItem(
-                        value: status, child: Text(status.capitalize()));
+                      value: status,
+                      child: Text(status.capitalize()),
+                    );
                   }).toList(),
                   onChanged: (value) {
-                    if (value != null) {
-                      currentStatus = value;
-                    }
+                    if (value != null) currentStatus = value;
                   },
                   decoration: const InputDecoration(labelText: "Status"),
                 ),
@@ -195,16 +240,26 @@ class _InterestedVisitedTabsState extends State<InterestedVisitedTabs>
                     double? price = double.tryParse(priceController.text);
                     String note = noteController.text.trim();
                     if (price == null) {
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                          content: Text("Please enter a valid price.")));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text("Please enter a valid price."),
+                        ),
+                      );
+                      return;
+                    }
+                    if (currentStatus == 'accepted' &&
+                        widget.property.buyers
+                            .any((b) => b.status == 'accepted' && b != buyer)) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content: Text('Only one buyer can be Accepted.')),
+                      );
                       return;
                     }
                     setState(() {
                       buyer.priceOffered = price;
                       buyer.status = currentStatus;
-                      if (note.isNotEmpty) {
-                        buyer.notes.add(note);
-                      }
+                      if (note.isNotEmpty) buyer.notes.add(note);
                       buyer.lastUpdated = DateTime.now();
                     });
                     Navigator.pop(ctx);
@@ -219,97 +274,107 @@ class _InterestedVisitedTabsState extends State<InterestedVisitedTabs>
     );
   }
 
+  // 4. _buildInterestedTab
   Widget _buildInterestedTab() {
-    // new: only those still pending
-    final List<Buyer> list =
-        widget.property.buyers.where((b) => b.status == 'pending').toList();
-
+    final buyers = widget.property.buyers;
     return Column(
       children: [
         Expanded(
           child: ListView.builder(
-            itemCount: list.length + 1, // extra for "Add Buyer" card
-            itemBuilder: (_, i) {
-              if (i < list.length) {
-                final buyer = list[i];
+            itemCount: buyers.length + 1,
+            itemBuilder: (ctx, i) {
+              if (i < buyers.length) {
+                final buyer = buyers[i];
+                final isPending = buyer.status == 'visitPending';
 
                 String dateText;
                 Color dateColor;
                 if (buyer.date == null) {
-                  dateText = "No date set";
+                  dateText = 'No date set';
                   dateColor = Colors.black;
                 } else {
-                  final formattedDate =
+                  final formatted =
                       buyer.date!.toLocal().toString().split(' ')[0];
-                  dateText = "Visiting: $formattedDate";
-                  final today = DateTime.now();
-                  final diffDays = buyer.date!
-                      .difference(DateTime(today.year, today.month, today.day))
+                  dateText = 'Visiting: $formatted';
+                  final now = DateTime.now();
+                  final diff = buyer.date!
+                      .difference(DateTime(now.year, now.month, now.day))
                       .inDays;
-                  if (diffDays > 0) {
+                  if (diff > 0)
                     dateColor = Colors.orange;
-                  } else if (diffDays == 0) {
+                  else if (diff == 0)
                     dateColor = Colors.green;
-                  } else {
+                  else
                     dateColor = Colors.red;
-                  }
                 }
 
-                return Card(
-                  margin: const EdgeInsets.all(8),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      ListTile(
-                        title: Text(buyer.name),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(buyer.phone),
-                            const SizedBox(height: 4),
-                            Text(dateText, style: TextStyle(color: dateColor)),
-                          ],
-                        ),
-                        trailing: buyer.date == null
-                            ? TextButton(
-                                onPressed: () => _editDate(buyer),
-                                child: const Text("Set Date"),
-                              )
-                            : TextButton(
-                                onPressed: () => _editDate(buyer),
-                                child: const Text("Change Date"),
-                              ),
-                        onTap: () => _completePaperwork(buyer),
-                      ),
-                      if (buyer.date != null &&
-                          (DateTime.now().isAfter(buyer.date!) ||
-                              isSameDay(DateTime.now(), buyer.date!)) &&
-                          !isPaperworkComplete(buyer))
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          color: Colors.red.withOpacity(0.1),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: const [
-                              Icon(Icons.error, color: Colors.red, size: 16),
-                              SizedBox(width: 4),
+                final statusColor = buyer.status == 'accepted'
+                    ? Colors.green
+                    : buyer.status == 'rejected'
+                        ? Colors.red
+                        : Colors.orange;
+
+                return Opacity(
+                  opacity: isPending ? 1.0 : 0.5,
+                  child: Card(
+                    margin: const EdgeInsets.all(8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        ListTile(
+                          title: Text(buyer.name),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(buyer.phone),
+                              const SizedBox(height: 4),
+                              Text(dateText,
+                                  style: TextStyle(color: dateColor)),
                               Text(
-                                "Late! Please complete visit details.",
-                                style: TextStyle(
-                                  color: Colors.red,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                                'Status: ${buyer.status.capitalize()}',
+                                style: TextStyle(color: statusColor),
                               ),
                             ],
                           ),
+                          trailing: isPending
+                              ? TextButton(
+                                  onPressed: () => _editDate(buyer),
+                                  child: Text(buyer.date == null
+                                      ? 'Set Date'
+                                      : 'Change Date'),
+                                )
+                              : null,
+                          onTap: isPending
+                              ? () => _completePaperwork(buyer)
+                              : null,
                         ),
-                    ],
+                        if (buyer.date != null &&
+                            (DateTime.now().isAfter(buyer.date!) ||
+                                isSameDay(DateTime.now(), buyer.date!)) &&
+                            !isPaperworkComplete(buyer))
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            color: Colors.red.withOpacity(0.1),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: const [
+                                Icon(Icons.error, color: Colors.red, size: 16),
+                                SizedBox(width: 4),
+                                Text(
+                                  'Late! Please complete visit details.',
+                                  style: TextStyle(
+                                      color: Colors.red,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
                 );
               }
-
-              // ➕ Add Interested Buyer dotted card
               return Padding(
                 padding: const EdgeInsets.all(12.0),
                 child: InkWell(
@@ -330,7 +395,7 @@ class _InterestedVisitedTabsState extends State<InterestedVisitedTabs>
                           Icon(Icons.add_circle_outline),
                           SizedBox(width: 8),
                           Text(
-                            "Add Interested Buyer",
+                            'Add Interested Buyer',
                             style: TextStyle(fontSize: 16),
                           ),
                         ],
@@ -341,19 +406,20 @@ class _InterestedVisitedTabsState extends State<InterestedVisitedTabs>
               );
             },
           ),
-        )
+        ),
       ],
     );
   }
 
+  // 5. _buildVisitedTab
   Widget _buildVisitedTab() {
-    // new: anything not pending
-    final List<Buyer> list =
-        widget.property.buyers.where((b) => b.status != 'pending').toList();
+    final list = widget.property.buyers
+        .where((b) => b.status != 'visitPending')
+        .toList();
 
     return ListView.builder(
       itemCount: list.length,
-      itemBuilder: (_, i) {
+      itemBuilder: (ctx, i) {
         final buyer = list[i];
         final formattedDate = buyer.date != null
             ? buyer.date!.toLocal().toString().split(' ')[0]
@@ -362,8 +428,9 @@ class _InterestedVisitedTabsState extends State<InterestedVisitedTabs>
             ? buyer.lastUpdated!.toLocal().toString().split('.')[0]
             : '';
         final priceText = buyer.priceOffered != null
-            ? "Price: ₹${buyer.priceOffered!.toStringAsFixed(0)}"
-            : "Price: -";
+            ? 'Price: ₹${buyer.priceOffered!.toStringAsFixed(0)}'
+            : 'Price: -';
+
         return Card(
           margin: const EdgeInsets.all(8),
           child: ListTile(
@@ -372,12 +439,14 @@ class _InterestedVisitedTabsState extends State<InterestedVisitedTabs>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(buyer.phone),
-                Text("Visited on: $formattedDate"),
+                Text('Visited on: $formattedDate'),
                 Text(priceText),
-                Text("Status: ${buyer.status.capitalize()}"),
+                Text('Status: ${buyer.status.capitalize()}'),
                 if (buyer.lastUpdated != null)
-                  Text("Last Updated: $lastUpdated",
-                      style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                  Text(
+                    'Last Updated: $lastUpdated',
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
                 if (buyer.notes.isNotEmpty)
                   Wrap(
                     spacing: 4,
@@ -447,7 +516,7 @@ class _InterestedVisitedTabsState extends State<InterestedVisitedTabs>
               child: const Text("Cancel"),
             ),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
                 final name = nameController.text.trim();
                 final phone = phoneController.text.trim();
 
@@ -464,13 +533,13 @@ class _InterestedVisitedTabsState extends State<InterestedVisitedTabs>
                   phone: phone,
                   date: null,
                   notes: [],
-                  status: 'pending',
+                  status: 'visitPending',
                 );
 
-                setState(() {
-                  widget.property.buyers.add(newBuyer);
-                });
-
+                // persist to Firestore
+                await PropertyService().addBuyer(widget.property.id, newBuyer);
+// now update local state
+                setState(() => widget.property.buyers.add(newBuyer));
                 Navigator.pop(ctx);
               },
               child: const Text("Add"),

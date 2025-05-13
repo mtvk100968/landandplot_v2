@@ -9,9 +9,12 @@ import './buyer_proof_upload_dialog.dart';
 class BuyerInProgressCard extends StatefulWidget {
   final Property property;
   final String userId;
-  const BuyerInProgressCard(
-      {Key? key, required this.property, required this.userId})
-      : super(key: key);
+
+  const BuyerInProgressCard({
+    Key? key,
+    required this.property,
+    required this.userId,
+  }) : super(key: key);
 
   @override
   _BuyerInProgressCardState createState() => _BuyerInProgressCardState();
@@ -25,9 +28,10 @@ class _BuyerInProgressCardState extends State<BuyerInProgressCard> {
   @override
   void initState() {
     super.initState();
-    // find this user's Buyer entry
-    _buyer = widget.property.buyers
-        .firstWhere((b) => b.phone == widget.userId || b.name == widget.userId);
+    // find this user's Buyer entry by phone or name
+    _buyer = widget.property.buyers.firstWhere(
+      (b) => b.phone == widget.userId || b.name == widget.userId,
+    );
   }
 
   @override
@@ -54,20 +58,27 @@ class _BuyerInProgressCardState extends State<BuyerInProgressCard> {
                   const SizedBox(height: 8),
                   ElevatedButton(
                     onPressed: () async {
-                      final updated = await showDialog<Buyer>(
+                      // 1) Clone the old state
+                      final oldBuyer = Buyer.fromMap(_buyer.toMap());
+
+                      // 2) Show dialog to pick & upload files
+                      final updatedBuyer = await showDialog<Buyer>(
                         context: context,
+                        barrierDismissible: false,
                         builder: (_) => BuyerProofUploadDialog(
                           propertyId: widget.property.id,
                           buyer: _buyer,
                         ),
                       );
-                      if (updated != null) {
-                        setState(() => _buyer = updated);
-                        await _propService.updateBuyer(
+
+                      // 3) If user submitted, persist and update UI
+                      if (updatedBuyer != null) {
+                        await _propService.updateBuyerByBuyer(
                           widget.property.id,
-                          _buyer,
-                          updated,
+                          oldBuyer, // before upload
+                          updatedBuyer, // after upload
                         );
+                        setState(() => _buyer = updatedBuyer);
                       }
                     },
                     child: const Text('Upload Proof'),

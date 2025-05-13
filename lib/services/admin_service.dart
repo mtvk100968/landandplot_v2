@@ -47,4 +47,30 @@ class AdminService {
       return [];
     }
   }
+
+  /// Assign a list of agents to one property, and update each user’s assignedPropertyIds
+  Future<void> assignAgentsToProperty(
+    String propertyId,
+    List<String> agentIds,
+  ) async {
+    final batch = FirebaseFirestore.instance.batch();
+    final propRef = _propertiesCollection.doc(propertyId);
+
+    // 1) Update the property’s assignedAgentIds
+    batch.update(propRef, {'assignedAgentIds': agentIds});
+
+    // 2) For each agent, add this propertyId to their assignedPropertyIds
+    for (var aid in agentIds) {
+      final userRef = _usersCollection.doc(aid);
+      batch.set(
+        userRef,
+        {
+          'assignedPropertyIds': FieldValue.arrayUnion([propertyId])
+        },
+        SetOptions(merge: true),
+      );
+    }
+
+    await batch.commit();
+  }
 }

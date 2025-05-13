@@ -562,7 +562,6 @@ class PropertyService {
     });
   }
 
-  /// update one buyer’s record (visit date, price, notes, status)
   Future<void> updateBuyerStatus({
     required String propertyId,
     required String buyerPhone,
@@ -576,30 +575,31 @@ class PropertyService {
     if (!doc.exists) return;
 
     final data = doc.data()!;
-    // cast the raw list into a List<Map<String,dynamic>>
-    final users = (data['interestedUsers'] as List<dynamic>?)
-            ?.map((e) => Map<String, dynamic>.from(e as Map))
-            .toList() ??
-        [];
+    final buyersList =
+        List<Map<String, dynamic>>.from(data['buyers'] as List<dynamic>? ?? []);
 
-    // map over a properly‐typed list
-    final updated = users.map((u) {
-      // work on a mutable copy
-      final copy = Map<String, dynamic>.from(u);
-      if (copy['phone'] == buyerPhone) {
-        if (status != null) copy['status'] = status;
-        if (visitDate != null) copy['date'] = Timestamp.fromDate(visitDate);
-        if (priceOffered != null) copy['priceOffered'] = priceOffered;
-        if (notes != null) copy['notes'] = notes;
-        copy['lastUpdated'] = Timestamp.now();
+    final updatedList = buyersList.map((b) {
+      if (b['phone'] == buyerPhone) {
+        if (status != null) b['status'] = status;
+        if (visitDate != null) b['date'] = Timestamp.fromDate(visitDate);
+        if (priceOffered != null) b['priceOffered'] = priceOffered;
+        if (notes != null) b['notes'] = notes;
+        b['lastUpdated'] = Timestamp.now();
       }
-      return copy;
+      return b;
     }).toList();
 
     await _firestore
         .collection(collectionPath)
         .doc(propertyId)
-        .update({'interestedUsers': updated});
+        .update({'buyers': updatedList});
+
+    if (status == 'accepted') {
+      await _firestore
+          .collection(collectionPath)
+          .doc(propertyId)
+          .update({'stage': 'saleInProgress'});
+    }
   }
 
   /// accept exactly one buyer, close find-buyer, open sales-in-progress
@@ -612,14 +612,15 @@ class PropertyService {
     final snap = await ref.get();
     if (!snap.exists) return;
     final data = snap.data()!;
-    // find and update the buyer in the single buyers list
-    final List<Map<String, dynamic>> all = List.from(data['buyers'] ?? []);
-    final idx = all.indexWhere((b) => b['phone'] == buyerPhone);
+
+    final allBuyers = List<Map<String, dynamic>>.from(data['buyers'] ?? []);
+    final idx = allBuyers.indexWhere((b) => b['phone'] == buyerPhone);
     if (idx == -1) return;
-    all[idx]['status'] = 'accepted';
-    // push the updated list plus agent/stage
+
+    allBuyers[idx]['status'] = 'accepted';
+
     await ref.update({
-      'buyers': all,
+      'buyers': allBuyers,
       'winningAgentId': agentId,
       'stage': 'saleInProgress',
     });
@@ -642,6 +643,7 @@ class PropertyService {
     String propertyId,
     Buyer oldBuyer,
     Buyer updatedBuyer,
+    String? agentId,
   ) async {
     final docRef = _firestore.collection('properties').doc(propertyId);
 
@@ -656,12 +658,32 @@ class PropertyService {
       'buyers': FieldValue.arrayUnion([newMap]),
     });
 
-// // 3) if they just got accepted, advance stage or set agent if you need
-// if (updatedBuyer.status == 'accepted') {
-//   await docRef.update({
-//     'winningAgentId': /* your agentId variable */,
-//     'stage': 'saleInProgress',
-//   });
-// }
+    // 3) if accepted, set stage to saleInProgress AND record winningAgentId
+    if (updatedBuyer.status == 'accepted') {
+      // use passed-in agentId or current user
+      final winningAgent = agentId ?? FirebaseAuth.instance.currentUser!.uid;
+      await docRef.update({
+        'stage': 'saleInProgress',
+        'winningAgentId': winningAgent,
+      });
+    }
+  }
+
+  Future<void> updateBuyerByBuyer(
+    String propertyId,
+    Buyer oldBuyer,
+    Buyer newBuyer,
+  ) async {
+    final docRef = _firestore.collection('properties').doc(propertyId);
+
+    // 1) Remove the old buyer map
+    await docRef.update({
+      'buyers': FieldValue.arrayRemove([oldBuyer.toMap()]),
+    });
+
+    // 2) Add the updated buyer map
+    await docRef.update({
+      'buyers': FieldValue.arrayUnion([newBuyer.toMap()]),
+    });
   }
 }
