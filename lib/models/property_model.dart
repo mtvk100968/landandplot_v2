@@ -193,4 +193,14 @@ class Property {
   factory Property.fromDocument(DocumentSnapshot<Map<String, dynamic>> doc) {
     return Property.fromMap(doc.id, doc.data()!);
   }
+
+  /// true if at least one agent is assigned
+  bool get isAssigned => assignedAgentIds.isNotEmpty;
+
+  /// true if no agents are yet assigned
+  bool get isUnassigned => assignedAgentIds.isEmpty;
+
+  /// simple name-based search (you can expand to other fields later)
+  bool matches(String query) =>
+      name.toLowerCase().contains(query.toLowerCase());
 }

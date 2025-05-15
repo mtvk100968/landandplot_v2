@@ -73,4 +73,41 @@ class AdminService {
 
     await batch.commit();
   }
+
+  /// Search properties by name + assignment state
+  Future<List<Property>> searchProperties({
+    String query = '',
+    bool assignedOnly = true,
+  }) async {
+    final all = await getProperties();
+    final q = query.toLowerCase();
+    return all.where((p) {
+      final matchesQuery = q.isEmpty || p.matches(q);
+      final matchesAssign = assignedOnly ? p.isAssigned : p.isUnassigned;
+      return matchesQuery && matchesAssign;
+    }).toList();
+  }
+
+  /// Search agents by query in a given field: "Name", "Phone" or "Areas"
+  Future<List<AppUser>> searchAgents({
+    String query = '',
+    String field = 'Name',
+  }) async {
+    final all = await getAgents();
+    final q = query.trim();
+    if (q.isEmpty) return all;
+    return all.where((a) => a.matches(q, field: field)).toList();
+  }
+
+  /// Search regular users by query in "Name" or "Phone"
+  Future<List<AppUser>> searchUsers({
+    String query = '',
+    String field = 'Name',
+  }) async {
+    final all = await getRegularUsers();
+    final q = query.trim();
+    if (q.isEmpty) return all;
+    // ignore 'Areas' here
+    return all.where((u) => u.matches(q, field: field)).toList();
+  }
 }

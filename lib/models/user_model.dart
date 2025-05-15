@@ -118,4 +118,20 @@ class AppUser {
       agentAreas: agentAreas ?? this.agentAreas,
     );
   }
+
+  /// search helper for agents/users
+  bool matches(String query, {required String field}) {
+    final q = query.toLowerCase();
+    switch (field) {
+      case 'Name':
+        return (name ?? '').toLowerCase().contains(q);
+      case 'Phone':
+        return (phoneNumber ?? '').contains(q);
+      case 'Areas':
+        // for agents only; users tab will simply not call with field='Areas'
+        return agentAreas.any((a) => a.toLowerCase().contains(q));
+      default:
+        return false;
+    }
+  }
 }
