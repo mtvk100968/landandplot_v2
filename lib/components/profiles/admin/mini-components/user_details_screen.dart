@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../models/user_model.dart';
+import './property_details_screen.dart';
 
 class UserDetailScreen extends StatelessWidget {
   final String userId;
@@ -26,6 +27,7 @@ class UserDetailScreen extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           final user = snap.data;
           if (user == null) return const Center(child: Text('User not found'));
+
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
@@ -40,22 +42,24 @@ class UserDetailScreen extends StatelessWidget {
               ListTile(
                   title: const Text('User Type'),
                   subtitle: Text(user.userType)),
-              // add more fields here if needed...
-              if (user.postedPropertyIds.isNotEmpty) ...[
-                Divider(),
-                Text('Posted Properties',
+
+              // --- Bought Properties
+              if (user.boughtPropertyIds.isNotEmpty) ...[
+                const Divider(),
+                const Text('Bought Properties',
                     style: TextStyle(fontWeight: FontWeight.bold)),
-                ...user.postedPropertyIds.map((pid) => Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4),
-                      child: GestureDetector(
-                        onTap: () {
-                          // TODO: navigate to property detail
-                        },
-                        child: Text(pid,
-                            style: TextStyle(
-                                color:
-                                    Theme.of(context).colorScheme.secondary)),
-                      ),
+                ...user.boughtPropertyIds.map((pid) => ListTile(
+                      title: Text(pid),
+                      trailing: const Icon(Icons.open_in_new),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                PropertyDetailScreen(propertyId: pid),
+                          ),
+                        );
+                      },
                     )),
               ],
             ],

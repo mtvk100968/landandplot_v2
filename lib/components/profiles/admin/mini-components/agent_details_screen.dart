@@ -30,6 +30,7 @@ class AgentDetailScreen extends StatelessWidget {
           final agent = snap.data;
           if (agent == null)
             return const Center(child: Text('Agent not found'));
+
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
@@ -41,12 +42,17 @@ class AgentDetailScreen extends StatelessWidget {
               ListTile(
                   title: const Text('Email'),
                   subtitle: Text(agent.email ?? '-')),
+              ListTile(
+                  title: const Text('User Type'),
+                  subtitle: Text(agent.userType)),
+
               if (agent.agentAreas.isNotEmpty) ...[
                 const Divider(),
                 const Text('Areas',
                     style: TextStyle(fontWeight: FontWeight.bold)),
                 ...agent.agentAreas.map((area) => ListTile(title: Text(area))),
               ],
+
               if (agent.postedPropertyIds.isNotEmpty) ...[
                 const Divider(),
                 const Text('Posted Properties',
@@ -54,14 +60,18 @@ class AgentDetailScreen extends StatelessWidget {
                 ...agent.postedPropertyIds.map((pid) => ListTile(
                       title: Text(pid),
                       trailing: const Icon(Icons.open_in_new),
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => PropertyDetailScreen(propertyId: pid),
-                        ),
-                      ),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                PropertyDetailScreen(propertyId: pid),
+                          ),
+                        );
+                      },
                     )),
               ],
+
               if (agent.assignedPropertyIds.isNotEmpty) ...[
                 const Divider(),
                 const Text('Assigned Properties',
@@ -69,12 +79,35 @@ class AgentDetailScreen extends StatelessWidget {
                 ...agent.assignedPropertyIds.map((pid) => ListTile(
                       title: Text(pid),
                       trailing: const Icon(Icons.open_in_new),
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => PropertyDetailScreen(propertyId: pid),
-                        ),
-                      ),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                PropertyDetailScreen(propertyId: pid),
+                          ),
+                        );
+                      },
+                    )),
+              ],
+
+              // --- Bought Properties
+              if (agent.boughtPropertyIds.isNotEmpty) ...[
+                const Divider(),
+                const Text('Bought Properties',
+                    style: TextStyle(fontWeight: FontWeight.bold)),
+                ...agent.boughtPropertyIds.map((pid) => ListTile(
+                      title: Text(pid),
+                      trailing: const Icon(Icons.open_in_new),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                PropertyDetailScreen(propertyId: pid),
+                          ),
+                        );
+                      },
                     )),
               ],
             ],
