@@ -1,6 +1,7 @@
 // lib/components/profiles/user/selling/seller_timeline_view.dart
 
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../models/buyer_model.dart';
 
 class SellerTimelineView extends StatelessWidget {
@@ -48,6 +49,15 @@ class SellerTimelineView extends StatelessWidget {
     }
   }
 
+  Future<void> _openUrl(String url) async {
+    final uri = Uri.tryParse(url);
+    if (uri != null && await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      // handle error or show a snackbar
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -71,16 +81,18 @@ class SellerTimelineView extends StatelessWidget {
                 const Text('No documents uploaded')
               else
                 Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: docs.map((url) {
                     return InkWell(
-                      onTap: () {
-                        // TODO: open url in browser or image viewer
-                      },
-                      child: Text(
-                        url,
-                        style: const TextStyle(
-                          decoration: TextDecoration.underline,
-                          color: Colors.blue,
+                      onTap: () => _openUrl(url),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 2.0),
+                        child: Text(
+                          url,
+                          style: const TextStyle(
+                            decoration: TextDecoration.underline,
+                            color: Colors.blue,
+                          ),
                         ),
                       ),
                     );

@@ -2,39 +2,129 @@
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../models/property_model.dart';
 import '../../../../models/buyer_model.dart';
+import '../../../../models/user_model.dart';
+import '../../../../services/admin_service.dart';
 import './user_details_screen.dart';
 import './agent_details_screen.dart';
 
-class PropertyDetailScreen extends StatelessWidget {
+class PropertyDetailScreen extends StatefulWidget {
   final String propertyId;
   const PropertyDetailScreen({Key? key, required this.propertyId})
       : super(key: key);
 
-  Future<Property?> _fetchProperty() async {
-    final doc = await FirebaseFirestore.instance
-        .collection('properties')
-        .doc(propertyId)
-        .get();
-    if (!doc.exists || doc.data() == null) return null;
-    return Property.fromMap(doc.id, doc.data()!);
+  @override
+  _PropertyDetailScreenState createState() => _PropertyDetailScreenState();
+}
+
+class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
+  final _svc = AdminService();
+  late Future<Property?> _propFut;
+  Map<String, Future<AppUser?>> _agentFutures = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _reload();
   }
 
-  Widget _buildDocsSection(String title, List<String> urls) {
+  void _reload() {
+    _propFut = _svc.getPropertyById(widget.propertyId).then((p) {
+      // cache one Future per agent UID
+      _agentFutures = {
+        for (var aid in p?.assignedAgentIds ?? []) aid: _svc.getAgentById(aid),
+      };
+      return p;
+    });
+    setState(() {});
+  }
+
+  Future<void> _openUrl(String url) async {
+    final uri = Uri.tryParse(url);
+    if (uri != null && await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  Future<void> _openAgentPicker(List<String> current) async {
+    final allAgents = await _svc.getAgents();
+    final avail = allAgents.where((a) => !current.contains(a.uid)).toList();
+    final selected = <String>{};
+
+    await showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx2, setD) {
+          return AlertDialog(
+            title: Text(current.isEmpty ? 'Assign Agents' : 'Add More Agents'),
+            content: SizedBox(
+              width: double.maxFinite,
+              child: ListView(
+                children: avail.map((a) {
+                  final isSel = selected.contains(a.uid);
+                  return CheckboxListTile(
+                    title: Text(a.name ?? a.uid),
+                    subtitle: Text(a.phoneNumber ?? ''),
+                    value: isSel,
+                    onChanged: (v) {
+                      setD(() {
+                        if (v == true)
+                          selected.add(a.uid);
+                        else
+                          selected.remove(a.uid);
+                      });
+                    },
+                  );
+                }).toList(),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx2),
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  final picks = selected.toList();
+                  if (current.isEmpty) {
+                    await _svc.assignAgentsToProperty(widget.propertyId, picks);
+                  } else {
+                    final merged = [...current, ...picks];
+                    await _svc.updateAgentsForProperty(
+                        widget.propertyId, merged);
+                  }
+                  Navigator.pop(ctx2);
+                  _reload();
+                },
+                child: const Text('Save'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildDocs(String title, List<String> urls) {
     if (urls.isEmpty) return const SizedBox();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Divider(),
         Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-        ...urls.map((u) => GestureDetector(
-              onTap: () {/* TODO: open URL */},
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Text(u,
-                    style:
-                        const TextStyle(decoration: TextDecoration.underline)),
+        ...urls.map((u) => Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: GestureDetector(
+                onTap: () => _openUrl(u),
+                child: Text(
+                  u,
+                  style: const TextStyle(
+                    decoration: TextDecoration.underline,
+                    color: Colors.blue,
+                  ),
+                ),
               ),
             )),
       ],
@@ -46,16 +136,20 @@ class PropertyDetailScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Property Details')),
       body: FutureBuilder<Property?>(
-        future: _fetchProperty(),
+        future: _propFut,
         builder: (ctx, snap) {
-          if (snap.connectionState != ConnectionState.done)
+          if (snap.connectionState != ConnectionState.done) {
             return const Center(child: CircularProgressIndicator());
+          }
           final p = snap.data;
-          if (p == null) return const Center(child: Text('Property not found'));
+          if (p == null) {
+            return const Center(child: Text('Property not found'));
+          }
 
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
+              // Core fields
               ListTile(title: const Text('ID'), subtitle: Text(p.id)),
               ListTile(
                 title: const Text('Owner'),
@@ -69,7 +163,8 @@ class PropertyDetailScreen extends StatelessWidget {
                   child: Text(
                     p.propertyOwner,
                     style: TextStyle(
-                        color: Theme.of(context).colorScheme.secondary),
+                      color: Theme.of(context).colorScheme.secondary,
+                    ),
                   ),
                 ),
               ),
@@ -109,49 +204,78 @@ class PropertyDetailScreen extends StatelessWidget {
               ListTile(title: const Text('Pincode'), subtitle: Text(p.pincode)),
               ListTile(title: const Text('Stage'), subtitle: Text(p.stage)),
 
+              // Winning Agent
               if (p.winningAgentId != null) ...[
                 const Divider(),
-                ListTile(
-                  title: const Text('Winning Agent'),
-                  subtitle: GestureDetector(
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            AgentDetailScreen(agentUid: p.winningAgentId!),
+                const Text('Winning Agent',
+                    style: TextStyle(fontWeight: FontWeight.bold)),
+                FutureBuilder<AppUser?>(
+                  future: _svc.getAgentById(p.winningAgentId!),
+                  builder: (c2, s2) {
+                    final ag = s2.connectionState == ConnectionState.done
+                        ? s2.data
+                        : null;
+                    final name = ag?.name ?? p.winningAgentId!;
+                    final phone = ag?.phoneNumber ?? '';
+                    return ListTile(
+                      title: Text(name),
+                      subtitle: Text(phone),
+                      onTap: () => Navigator.push(
+                        c2,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              AgentDetailScreen(agentUid: p.winningAgentId!),
+                        ),
                       ),
-                    ),
-                    child: Text(
-                      p.winningAgentId!,
-                      style: TextStyle(
-                          color: Theme.of(context).colorScheme.secondary),
-                    ),
-                  ),
+                    );
+                  },
                 ),
               ],
 
-              if (p.assignedAgentIds.isNotEmpty) ...[
-                const Divider(),
-                const Text('Assigned Agents',
-                    style: TextStyle(fontWeight: FontWeight.bold)),
-                ...p.assignedAgentIds.map((aid) => GestureDetector(
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => AgentDetailScreen(agentUid: aid),
+              // Assigned Agents
+              const Divider(),
+              const Text('Assigned Agents',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+              if (p.assignedAgentIds.isEmpty)
+                ElevatedButton(
+                  onPressed: () => _openAgentPicker([]),
+                  child: const Text('Assign Agents'),
+                )
+              else ...[
+                for (var aid in p.assignedAgentIds)
+                  FutureBuilder<AppUser?>(
+                    future: _agentFutures[aid],
+                    builder: (c2, s2) {
+                      if (s2.connectionState == ConnectionState.waiting) {
+                        return const ListTile(title: Text('Loading…'));
+                      }
+                      if (s2.hasError || s2.data == null) {
+                        return ListTile(
+                          title: const Text('[Unknown Agent]'),
+                          subtitle: Text(aid),
+                        );
+                      }
+                      final ag = s2.data!;
+                      return ListTile(
+                        title: Text(ag.name!),
+                        subtitle: Text(ag.phoneNumber ?? ''),
+                        onTap: () => Navigator.push(
+                          c2,
+                          MaterialPageRoute(
+                            builder: (_) => AgentDetailScreen(agentUid: aid),
+                          ),
                         ),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 4),
-                        child: Text(aid,
-                            style: TextStyle(
-                                color:
-                                    Theme.of(context).colorScheme.secondary)),
-                      ),
-                    )),
+                      );
+                    },
+                  ),
+                const SizedBox(height: 8),
+                ElevatedButton(
+                  onPressed: () => _openAgentPicker(p.assignedAgentIds),
+                  child: const Text('Add More Agents'),
+                ),
               ],
 
-              // --- Buyers
+              // Buyers
               if (p.buyers.isNotEmpty) ...[
                 const Divider(),
                 const Text('Buyers',
@@ -169,8 +293,6 @@ class PropertyDetailScreen extends StatelessWidget {
                             Text('Step: ${b.currentStep}'),
                             if (b.lastUpdated != null)
                               Text('Last updated: ${b.lastUpdated!.toLocal()}'),
-
-                            // Notes with toggle
                             if (b.notes.isNotEmpty)
                               ExpansionTile(
                                 title: Text('Notes (${b.notes.length})'),
@@ -178,21 +300,16 @@ class PropertyDetailScreen extends StatelessWidget {
                                     .map((n) => ListTile(title: Text(n)))
                                     .toList(),
                               ),
-
-                            // Documents by step
-                            _buildDocsSection(
-                                'Interest Documents', b.interestDocs),
-                            _buildDocsSection(
+                            _buildDocs('Interest Documents', b.interestDocs),
+                            _buildDocs(
                                 'Verification Documents', b.docVerifyDocs),
-                            _buildDocsSection(
+                            _buildDocs(
                                 'Legal Check Documents', b.legalCheckDocs),
-                            _buildDocsSection(
-                                'Agreement Documents', b.agreementDocs),
-                            _buildDocsSection(
+                            _buildDocs('Agreement Documents', b.agreementDocs),
+                            _buildDocs(
                                 'Registration Documents', b.registrationDocs),
-                            _buildDocsSection(
-                                'Mutation Documents', b.mutationDocs),
-                            _buildDocsSection(
+                            _buildDocs('Mutation Documents', b.mutationDocs),
+                            _buildDocs(
                                 'Possession Documents', b.possessionDocs),
                           ],
                         ),
@@ -201,7 +318,7 @@ class PropertyDetailScreen extends StatelessWidget {
               ],
 
               // Property-level docs
-              _buildDocsSection('Property Documents', p.documents),
+              _buildDocs('Property Documents', p.documents),
             ],
           );
         },
