@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../models/user_model.dart';
 import '../../../../services/admin_service.dart';
+import './user_details_screen.dart';
 
 class UsersTab extends StatefulWidget {
   const UsersTab({Key? key}) : super(key: key);
@@ -32,51 +33,66 @@ class _UsersTabState extends State<UsersTab> {
 
   @override
   Widget build(BuildContext ctx) {
-    return Column(children: [
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        child: Row(children: [
-          Expanded(
-            child: TextField(
-              controller: _searchCtrl,
-              decoration: const InputDecoration(
-                hintText: 'Search users…',
-                prefixIcon: Icon(Icons.search),
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _searchCtrl,
+                  decoration: const InputDecoration(
+                    hintText: 'Search users…',
+                    prefixIcon: Icon(Icons.search),
+                  ),
+                  onChanged: (_) => _reload(),
+                ),
               ),
-              onChanged: (_) => _reload(),
-            ),
-          ),
-          const SizedBox(width: 8),
-          DropdownButton<String>(
-            value: _field,
-            items: _fields
-                .map((f) => DropdownMenuItem(
-                      value: f,
-                      child: Text(f),
-                    ))
-                .toList(),
-            onChanged: (v) {
-              if (v == null) return;
-              _field = v;
-              _reload();
-            },
-          ),
-        ]),
-      ),
-      Expanded(
-        child: _loading
-            ? const Center(child: CircularProgressIndicator())
-            : ListView.builder(
-                itemCount: _list.length,
-                itemBuilder: (_, i) {
-                  final u = _list[i];
-                  return ListTile(
-                    title: Text(u.name ?? ''),
-                    subtitle: Text(u.phoneNumber ?? ''),
-                  );
+              const SizedBox(width: 8),
+              DropdownButton<String>(
+                value: _field,
+                items: _fields
+                    .map((f) => DropdownMenuItem(
+                          value: f,
+                          child: Text(f),
+                        ))
+                    .toList(),
+                onChanged: (v) {
+                  if (v == null) return;
+                  _field = v;
+                  _reload();
                 },
               ),
-      ),
-    ]);
+            ],
+          ),
+        ),
+        Expanded(
+          child: _loading
+              ? const Center(child: CircularProgressIndicator())
+              : ListView.builder(
+                  itemCount: _list.length,
+                  itemBuilder: (_, i) {
+                    final u = _list[i];
+                    return ListTile(
+                      title: Text(u.name ?? ''),
+                      subtitle: Text(u.phoneNumber ?? ''),
+                      trailing: const Icon(Icons.keyboard_arrow_right),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => UserDetailScreen(
+                              userId: u.uid, // ← pass the UID
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+        ),
+      ],
+    );
   }
 }
