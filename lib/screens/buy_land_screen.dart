@@ -325,97 +325,66 @@ class BuyLandScreenState extends State<BuyLandScreen> {
       child: Builder(
         builder: (childContext) {
           return Scaffold(
+            // in BuyLandScreenState.build, replace your appBar with:
             appBar: AppBar(
-
-              title: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Transform.translate(
-                    offset: const Offset(-24, 0), // pushes logo slightly left
-                    child: SizedBox(
-                      height: 250,
-                      child: Image.asset(
-                        'assets/images/splash.png',
-                        fit: BoxFit.contain,
-                      ),
-                    ),
-                  ),
-
-                  Transform.translate(
-                    offset: const Offset(2, 0), // pushes button slightly right
-                    child: ElevatedButton(
-                      onPressed: () {
-                        final navBarState = context.findAncestorStateOfType<BottomNavBarState>();
-                        if (navBarState != null) {
-                          navBarState.switchTab(2);
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF4C7040),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
+              title: const SizedBox(),
+              centerTitle: false,
+              titleSpacing: 0,
+              flexibleSpace: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Row(
+                    children: [
+                      // Give the logo 75% of the space:
+                      Expanded(
+                        flex: 4,
+                        child: FittedBox(
+                          fit: BoxFit.contain,
+                          child: Image.asset('assets/images/splash.png'),
                         ),
                       ),
-                      child: const Text(
-                        'Add Property',
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+
+                      // Add some white space between logo & button:
+                      const SizedBox(width: 16),
+
+                      // Give the button 25% of the space, right-aligned:
+                      Expanded(
+                        flex: 3,
+                        child: Align(
+                          alignment: Alignment.centerRight,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              final nav = context
+                                  .findAncestorStateOfType<BottomNavBarState>();
+                              if (nav != null) nav.switchTab(2);
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF4C7040),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 8,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                            ),
+                            child: const Text(
+                              'Add Property',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
-                ],
+                ),
               ),
-
-              // title: Row(
-              //   crossAxisAlignment: CrossAxisAlignment.center,
-              //   children: [
-              //     // Left-aligned logo
-              //     Padding(
-              //       padding: const EdgeInsets.only(left: 8.0),
-              //       child: SizedBox(
-              //         height: 250,
-              //         child: Image.asset(
-              //           'assets/images/landandplot_logo.png',
-              //           fit: BoxFit.fitHeight,
-              //         ),
-              //       ),
-              //     ),
-              //
-              //     // Optional space between logo and button
-              //     const Spacer(), // <-- pushes button to right
-              //
-              //     // Right-aligned button
-              //     Padding(
-              //       padding: const EdgeInsets.only(right: 8.0),
-              //       child: ElevatedButton(
-              //         onPressed: () {
-              //           final navBarState = context.findAncestorStateOfType<BottomNavBarState>();
-              //           if (navBarState != null) {
-              //             navBarState.switchTab(2);
-              //           }
-              //         },
-              //         style: ElevatedButton.styleFrom(
-              //           backgroundColor: const Color(0xFF4C7040),
-              //           foregroundColor: Colors.white,
-              //           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              //           shape: RoundedRectangleBorder(
-              //             borderRadius: BorderRadius.circular(20),
-              //           ),
-              //         ),
-              //         child: const Text(
-              //           'Add Property',
-              //           style: TextStyle(
-              //             fontSize: 12,
-              //             fontWeight: FontWeight.w800,
-              //           ),
-              //         ),
-              //       ),
-              //     ),
-              //   ],
-              // ),
-
             ),
+
             body: RefreshIndicator(
               onRefresh: _refreshProperties,
               child: Column(
@@ -436,7 +405,7 @@ class BuyLandScreenState extends State<BuyLandScreen> {
                         const SizedBox(width: 8),
                         // Filter Button
                         CircleAvatar(
-                          backgroundColor: Colors.green,
+                          backgroundColor: Color(0xFF4C7040),
                           child: IconButton(
                             icon: const Icon(Icons.tune, color: Colors.white),
                             onPressed: () async {
@@ -447,7 +416,7 @@ class BuyLandScreenState extends State<BuyLandScreen> {
                         const SizedBox(width: 8),
                         // Toggle Map/List view
                         CircleAvatar(
-                          backgroundColor: Colors.green,
+                          backgroundColor: const Color(0xFF4C7040),
                           child: IconButton(
                             icon: Icon(
                               showMap ? Icons.view_list : Icons.map,
