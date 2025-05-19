@@ -1,378 +1,104 @@
-// lib/components/filter_bottom_sheet.dart
+You already have all the Firestore‐backed methods you need—now it’s just a matter of wiring them into the UI components we built. Here’s a quick mapping of which service calls feed which widget, and how you stitch them together:
 
-import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+---
 
-enum PropertyType { Plot, FarmLand, AgriLand }
+## 1. BuyingTab
 
-class FilterBottomSheet extends StatefulWidget {
-  final Map<String, dynamic>? currentFilters;
+You want to show exactly one card per property, based on buyer–status. You already have:
 
-  const FilterBottomSheet({Key? key, this.currentFilters}) : super(key: key);
+* `UserService.getInTalksProperties(userId)` → returns properties where the user has expressed interest
+* `UserService.getBoughtProperties(userId)` → returns properties the user has completed buying
 
-  @override
-  _FilterBottomSheetState createState() => _FilterBottomSheetState();
+We combined and de-duped those in `_fetchAllBuyingProperties()`. In your `BuyingTab` you simply do:
+
+```dart
+// inside _loadProperties()
+_allPropsFuture = _fetchAllBuyingProperties();
+// …
+Future<List<Property>> _fetchAllBuyingProperties() async {
+  final inTalks = await UserService().getInTalksProperties(widget.userId);
+  final bought  = await UserService().getBoughtProperties(widget.userId);
+  // merge + de-dupe by p.id …
 }
+```
 
-class _FilterBottomSheetState extends State<FilterBottomSheet> {
-  // Property Type Filter - Only one can be selected
-  PropertyType? selectedPropertyType;
+You then inspect each `Property.buyers` list to find the `Buyer` with your `userId` (by phone), look at its `status`, and route it into one of your five sections:
 
-  // Units and Ranges
-  String pricePerUnitUnit = '';
-  String landAreaUnit = '';
-  double minPricePerUnit = 0.0;
-  double maxPricePerUnit = 0.0;
-  double minLandArea = 0.0;
-  double maxLandArea = 0.0;
+* **visitPending** → Interest
+* **(date reached)** → Visiting
+* **negotiating** → Negotiating
+* **accepted** → Purchased
+* **rejected** → Rejected
 
-  RangeValues selectedPriceRange = const RangeValues(0, 0);
-  RangeValues selectedLandAreaRange = const RangeValues(0, 0);
+---
 
-  bool isLoading = false;
+## 2. SellingTab
 
-  @override
-  void initState() {
-    super.initState();
-    _loadFilters();
-  }
+For your own posted properties you have:
 
-  Future<void> _loadFilters() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    setState(() {
-      // Load selected property type
-      List<String> propertyTypes =
-          prefs.getStringList('selectedPropertyTypes') ?? [];
+* `UserService.getSellerProperties(userId)` → all properties where `property.userId == userId`
 
-      if (propertyTypes.isNotEmpty) {
-        String typeString = propertyTypes.first;
-        switch (typeString) {
-          case 'Plot':
-            selectedPropertyType = PropertyType.Plot;
-            break;
-          case 'Farm Land':
-            selectedPropertyType = PropertyType.FarmLand;
-            break;
-          case 'Agri Land':
-            selectedPropertyType = PropertyType.AgriLand;
-            break;
-          default:
-            selectedPropertyType = null;
-        }
+You group them by `Property.stage`:
 
-        // Set units and ranges based on selected property type
-        if (selectedPropertyType == PropertyType.AgriLand) {
-          pricePerUnitUnit = 'per acre';
-          landAreaUnit = 'acre';
-          minPricePerUnit = 500000;
-          maxPricePerUnit = 50000000;
-          minLandArea = 1;
-          maxLandArea = 100;
-          selectedPriceRange = RangeValues(minPricePerUnit, maxPricePerUnit);
-          selectedLandAreaRange = RangeValues(minLandArea, maxLandArea);
-        } else if (selectedPropertyType == PropertyType.Plot ||
-            selectedPropertyType == PropertyType.FarmLand) {
-          pricePerUnitUnit = 'per sqyd';
-          landAreaUnit = 'sqyd';
-          minPricePerUnit = 5000;
-          maxPricePerUnit = 500000;
-          minLandArea = 100;
-          maxLandArea = 5000;
-          selectedPriceRange = RangeValues(minPricePerUnit, maxPricePerUnit);
-          selectedLandAreaRange = RangeValues(minLandArea, maxLandArea);
-        } else {
-          // If no valid property type is selected, reset filters
-          resetFilters();
-        }
-      } else {
-        // If no property type is selected, reset filters
-        resetFilters();
-      }
-    });
-  }
+* `findingAgents` / `findingBuyers` → “Finding Buyers”
+* `saleInProgress` → “Sale In Progress”
+* `sold` → “Sold”
 
-  Future<void> _saveFilters() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    List<String> propertyTypes = selectedPropertyType != null
-        ? [selectedPropertyType.toString().split('.').last.replaceAll('_', ' ')]
-        : [];
+```dart
+final all = await UserService().getSellerProperties(widget.userId);
+final finding = all.where((p) => p.stage.startsWith('finding')).toList();
+final progress = all.where((p) => p.stage == 'saleInProgress').toList();
+final sold     = all.where((p) => p.stage == 'sold').toList();
+```
 
-    await prefs.setStringList('selectedPropertyTypes', propertyTypes);
-    await prefs.setDouble('minPricePerUnit', selectedPriceRange.start);
-    await prefs.setDouble('maxPricePerUnit', selectedPriceRange.end);
-    await prefs.setDouble('minLandArea', selectedLandAreaRange.start);
-    await prefs.setDouble('maxLandArea', selectedLandAreaRange.end);
-    await prefs.setString('pricePerUnitUnit', pricePerUnitUnit);
-    await prefs.setString('landAreaUnit', landAreaUnit);
-  }
+---
 
-  void togglePropertyType(PropertyType type) {
-    setState(() {
-      if (selectedPropertyType == type) {
-        // If the same type is tapped again, deselect it
-        selectedPropertyType = null;
-        resetFilters();
-      } else {
-        // Select the new type
-        selectedPropertyType = type;
+## 3. AgentProfile (if you ever surface it here)
 
-        // Set units and ranges based on selected property type
-        if (selectedPropertyType == PropertyType.AgriLand) {
-          pricePerUnitUnit = 'per acre';
-          landAreaUnit = 'acre';
-          minPricePerUnit = 500000;
-          maxPricePerUnit = 50000000;
-          minLandArea = 1;
-          maxLandArea = 100;
-          selectedPriceRange = RangeValues(minPricePerUnit, maxPricePerUnit);
-          selectedLandAreaRange = RangeValues(minLandArea, maxLandArea);
-        } else if (selectedPropertyType == PropertyType.Plot ||
-            selectedPropertyType == PropertyType.FarmLand) {
-          pricePerUnitUnit = 'per sqyd';
-          landAreaUnit = 'sqyd';
-          minPricePerUnit = 5000;
-          maxPricePerUnit = 500000;
-          minLandArea = 100;
-          maxLandArea = 5000;
-          selectedPriceRange = RangeValues(minPricePerUnit, maxPricePerUnit);
-          selectedLandAreaRange = RangeValues(minLandArea, maxLandArea);
-        }
-      }
-    });
-  }
+You’ve got:
 
-  void resetFilters() {
-    setState(() {
-      selectedPropertyType = null;
-      pricePerUnitUnit = '';
-      landAreaUnit = '';
-      minPricePerUnit = 0.0;
-      maxPricePerUnit = 0.0;
-      minLandArea = 0.0;
-      maxLandArea = 0.0;
-      selectedPriceRange = const RangeValues(0, 0);
-      selectedLandAreaRange = const RangeValues(0, 0);
-    });
-  }
+* `AgentService.getPostedProperties(agentId)`
+* `AgentService.getAssignedProperties(agentId)`
+* `AgentService.getFindBuyerProperties(agentId)`
+* `AgentService.getSalesInProgressProperties(agentId)`
 
-  // Format price for display using K, L, C
-  String formatPrice(double value) {
-    if (value >= 10000000) {
-      return '${(value / 10000000).toStringAsFixed(1)}C'; // Crores
-    } else if (value >= 100000) {
-      return '${(value / 100000).toStringAsFixed(1)}L'; // Lakhs
-    } else if (value >= 1000) {
-      return '${(value / 1000).toStringAsFixed(1)}K'; // Thousands
-    } else {
-      return value.toStringAsFixed(0);
-    }
-  }
+Those feed your three tabs in the agent’s view exactly the same way you’re doing for the user:
 
-  void applyFilters() async {
-    setState(() {
-      isLoading = true;
-    });
+* Finding buyers
+* In progress sales
+* (Optionally) Sold
 
-    // Simulate a delay for applying filters
-    await Future.delayed(const Duration(seconds: 1));
+---
 
-    await _saveFilters();
+## 4. Detail‐Screen mutations
 
-    setState(() {
-      isLoading = false;
-    });
+All your update paths—setting visit dates, uploading proof, negotiating, accepting buyers—ultimately call one of:
 
-    // Show a SnackBar as visual feedback
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Filters Applied')),
-    );
+* `PropertyService.updateBuyerStatus(...)`
+* `PropertyService.updateBuyer(...)`
+* `PropertyService.addBuyer(...)`
+* `AgentService.assignAgent(...)`
 
-    // Collect selected property types as a list
-    List<String> selectedPropertyTypesList = selectedPropertyType != null
-        ? [selectedPropertyType.toString().split('.').last.replaceAll('_', ' ')]
-        : [];
+And on a successful write you trigger a UI refresh by re-calling your load method:
 
-    // Pass the selected filters back to BuyLandScreen
-    Navigator.pop(context, {
-      'selectedPropertyTypes': selectedPropertyTypesList,
-      'selectedPriceRange': selectedPriceRange,
-      'pricePerUnitUnit': pricePerUnitUnit,
-      'selectedLandAreaRange': selectedLandAreaRange,
-      'landAreaUnit': landAreaUnit,
-    });
-  }
+```dart
+await PropertyService().updateBuyerStatus(...);
+_loadProperties();  // triggers setState & reload FutureBuilder
+```
 
-  void showUnitsExplanation() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Units Explanation'),
-        content: const Text('C = Crores, L = Lakhs, K = Thousands'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
-  }
+---
 
-  Widget buildPropertyTypeRadio(
-      PropertyType type, IconData icon, String label) {
-    return RadioListTile<PropertyType>(
-      secondary: Icon(icon, semanticLabel: '$label icon'),
-      title: Text(label, style: const TextStyle(fontSize: 16)),
-      value: type,
-      groupValue: selectedPropertyType,
-      onChanged: (PropertyType? value) {
-        togglePropertyType(type);
-      },
-      controlAffinity: ListTileControlAffinity.leading,
-      subtitle: Text(
-        'Select if you are interested in $label properties',
-        style: const TextStyle(fontSize: 12),
-      ),
-    );
-  }
+### Putting it all together
 
-  @override
-  Widget build(BuildContext context) {
-    // Adaptive height based on screen size
-    double screenHeight = MediaQuery.of(context).size.height;
-    double containerHeight = screenHeight * 0.7;
-    if (screenHeight < 600) {
-      containerHeight = screenHeight * 0.9;
-    }
+1. **Imports** at top of each tab/detail:
 
-    return Theme(
-      data: Theme.of(context).copyWith(
-        colorScheme: ColorScheme.light(
-          primary: Colors.green,
-          onPrimary: Colors.white,
-          secondary: Colors.greenAccent,
-        ),
-      ),
-      child: Container(
-        height: containerHeight,
-        padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              // Header with title and info icon
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Filter Properties',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.info_outline),
-                    onPressed: showUnitsExplanation,
-                    tooltip: 'Units Explanation',
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              // Property Type Selection
-              const Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Select Property Type',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-              ),
-              buildPropertyTypeRadio(
-                  PropertyType.Plot, Icons.landscape, 'Plot'),
-              buildPropertyTypeRadio(
-                  PropertyType.FarmLand, Icons.agriculture, 'Farm Land'),
-              buildPropertyTypeRadio(
-                  PropertyType.AgriLand, Icons.grass, 'Agri Land'),
-              const SizedBox(height: 16),
-              // Price Range Selection
-              if (pricePerUnitUnit.isNotEmpty)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Price per unit ($pricePerUnitUnit): ${formatPrice(selectedPriceRange.start)} - ${formatPrice(selectedPriceRange.end)}',
-                      style: const TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-                    RangeSlider(
-                      values: selectedPriceRange,
-                      min: minPricePerUnit,
-                      max: maxPricePerUnit,
-                      divisions: 10,
-                      labels: RangeLabels(
-                        formatPrice(selectedPriceRange.start),
-                        formatPrice(selectedPriceRange.end),
-                      ),
-                      onChanged: (RangeValues values) {
-                        setState(() {
-                          selectedPriceRange = values;
-                        });
-                      },
-                    ),
-                  ],
-                ),
-              const SizedBox(height: 16),
-              // Land Area Range Selection
-              if (landAreaUnit.isNotEmpty)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Land area ($landAreaUnit): ${selectedLandAreaRange.start.toStringAsFixed(1)} - ${selectedLandAreaRange.end.toStringAsFixed(1)}',
-                      style: const TextStyle(
-                          fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-                    RangeSlider(
-                      values: selectedLandAreaRange,
-                      min: minLandArea,
-                      max: maxLandArea,
-                      divisions: 10,
-                      labels: RangeLabels(
-                        selectedLandAreaRange.start.toStringAsFixed(1),
-                        selectedLandAreaRange.end.toStringAsFixed(1),
-                      ),
-                      onChanged: (RangeValues values) {
-                        setState(() {
-                          selectedLandAreaRange = values;
-                        });
-                      },
-                    ),
-                  ],
-                ),
-              const SizedBox(height: 24),
-              // Action Buttons: Reset and Apply
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  TextButton(
-                    onPressed: resetFilters,
-                    child: const Text('Reset Filters'),
-                  ),
-                  ElevatedButton(
-                    onPressed: isLoading ? null : applyFilters,
-                    child: isLoading
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Text('Apply Filters'),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
+   ```dart
+   import '../../services/user_service.dart';
+   import '../../services/property_service.dart';
+   import '../../services/agent_service.dart';  // if needed
+   ```
+2. **Fetch** in `initState()` or via pull-to-refresh.
+3. **Build** your lists by grouping the returned `List<Property>`.
+4. **On user action** (date pick, upload, negotiate, accept), call the matching service method then re-invoke your loader.
+
+With that wiring, your UI and your Firestore services will be fully connected. Let me know which part you’d like to implement next!
