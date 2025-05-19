@@ -5,6 +5,7 @@ import '../../../../models/property_model.dart';
 import '../../../../models/buyer_model.dart';
 import '../../../../services/property_service.dart';
 import './buyer_proof_upload_dialog.dart';
+import './buying_detail_screen.dart';
 
 class BuyerInProgressCard extends StatefulWidget {
   final Property property;
@@ -38,56 +39,30 @@ class _BuyerInProgressCardState extends State<BuyerInProgressCard> {
   Widget build(BuildContext context) {
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      child: Column(
-        children: [
-          ListTile(
-            title: Text(widget.property.propertyOwner),
-            subtitle: Text('${widget.property.propertyType} • In Progress'),
-            trailing: IconButton(
-              icon: Icon(_expanded ? Icons.expand_less : Icons.expand_more),
-              onPressed: () => setState(() => _expanded = !_expanded),
-            ),
-          ),
-          if (_expanded) ...[
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Current Step: ${_buyer.currentStep}'),
-                  const SizedBox(height: 8),
-                  ElevatedButton(
-                    onPressed: () async {
-                      // 1) Clone the old state
-                      final oldBuyer = Buyer.fromMap(_buyer.toMap());
-
-                      // 2) Show dialog to pick & upload files
-                      final updatedBuyer = await showDialog<Buyer>(
-                        context: context,
-                        barrierDismissible: false,
-                        builder: (_) => BuyerProofUploadDialog(
-                          propertyId: widget.property.id,
-                          buyer: _buyer,
-                        ),
-                      );
-
-                      // 3) If user submitted, persist and update UI
-                      if (updatedBuyer != null) {
-                        await _propService.updateBuyerByBuyer(
-                          widget.property.id,
-                          oldBuyer, // before upload
-                          updatedBuyer, // after upload
-                        );
-                        setState(() => _buyer = updatedBuyer);
-                      }
-                    },
-                    child: const Text('Upload Proof'),
-                  ),
-                ],
+      child: InkWell(
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => BuyingDetailScreen(
+                property: widget.property,
+                buyer: _buyer,
               ),
             ),
+          );
+        },
+        child: Column(
+          children: [
+            ListTile(
+              title: Text(widget.property.propertyOwner),
+              subtitle: Text('${widget.property.propertyType} • In Progress'),
+              trailing: IconButton(
+                icon: Icon(_expanded ? Icons.expand_less : Icons.expand_more),
+                onPressed: () => setState(() => _expanded = !_expanded),
+              ),
+            ),
+            // if (_expanded) … // your existing expanded UI
           ],
-        ],
+        ),
       ),
     );
   }

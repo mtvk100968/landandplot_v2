@@ -235,9 +235,7 @@ class ProfileScreenState extends State<ProfileScreen>
         );
       default:
         return UserProfile(
-          appUser: appUser,
-          tabController: _tabController!,
-          onSignOut: _signOut,
+          initialUser: appUser,
         );
     }
   }
