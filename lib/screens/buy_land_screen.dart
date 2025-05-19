@@ -326,44 +326,95 @@ class BuyLandScreenState extends State<BuyLandScreen> {
         builder: (childContext) {
           return Scaffold(
             appBar: AppBar(
+
               title: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'LANDANDPLOT',
-                    style: TextStyle(
-                      color: Colors.green,
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      final navBarState =
-                          context.findAncestorStateOfType<BottomNavBarState>();
-                      if (navBarState != null) {
-                        navBarState.switchTab(2);
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 8),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
+                  Transform.translate(
+                    offset: const Offset(-24, 0), // pushes logo slightly left
+                    child: SizedBox(
+                      height: 250,
+                      child: Image.asset(
+                        'assets/images/splash.png',
+                        fit: BoxFit.contain,
                       ),
                     ),
-                    child: const Text(
-                      'Add Property',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w800,
+                  ),
+
+                  Transform.translate(
+                    offset: const Offset(2, 0), // pushes button slightly right
+                    child: ElevatedButton(
+                      onPressed: () {
+                        final navBarState = context.findAncestorStateOfType<BottomNavBarState>();
+                        if (navBarState != null) {
+                          navBarState.switchTab(2);
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF4C7040),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                      ),
+                      child: const Text(
+                        'Add Property',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
                       ),
                     ),
                   ),
                 ],
               ),
+
+              // title: Row(
+              //   crossAxisAlignment: CrossAxisAlignment.center,
+              //   children: [
+              //     // Left-aligned logo
+              //     Padding(
+              //       padding: const EdgeInsets.only(left: 8.0),
+              //       child: SizedBox(
+              //         height: 250,
+              //         child: Image.asset(
+              //           'assets/images/landandplot_logo.png',
+              //           fit: BoxFit.fitHeight,
+              //         ),
+              //       ),
+              //     ),
+              //
+              //     // Optional space between logo and button
+              //     const Spacer(), // <-- pushes button to right
+              //
+              //     // Right-aligned button
+              //     Padding(
+              //       padding: const EdgeInsets.only(right: 8.0),
+              //       child: ElevatedButton(
+              //         onPressed: () {
+              //           final navBarState = context.findAncestorStateOfType<BottomNavBarState>();
+              //           if (navBarState != null) {
+              //             navBarState.switchTab(2);
+              //           }
+              //         },
+              //         style: ElevatedButton.styleFrom(
+              //           backgroundColor: const Color(0xFF4C7040),
+              //           foregroundColor: Colors.white,
+              //           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              //           shape: RoundedRectangleBorder(
+              //             borderRadius: BorderRadius.circular(20),
+              //           ),
+              //         ),
+              //         child: const Text(
+              //           'Add Property',
+              //           style: TextStyle(
+              //             fontSize: 12,
+              //             fontWeight: FontWeight.w800,
+              //           ),
+              //         ),
+              //       ),
+              //     ),
+              //   ],
+              // ),
+
             ),
             body: RefreshIndicator(
               onRefresh: _refreshProperties,
