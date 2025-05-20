@@ -207,6 +207,15 @@ class _TimelineViewState extends State<TimelineView> {
                                     widget.buyer,
                                     widget.agentId);
 
+                                // 5) If this was the final “Possession” step, mark the sale as complete:
+                                if (stepShortName == 'Possession') {
+                                  await PropertyService().updateBuyerStatus(
+                                    propertyId: widget.propertyId,
+                                    buyerPhone: widget.buyer.phone,
+                                    status: 'bought',
+                                  );
+                                }
+
                                 Navigator.pop(ctx);
                               },
                         style: ElevatedButton.styleFrom(

@@ -1,10 +1,8 @@
-// lib/components/profiles/user/selling/selling_tab.dart
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../../../models/property_model.dart';
 import '../../../../services/user_service.dart';
-import 'seller_property_card.dart';
+import './seller_property_card.dart';
 
 class SellingTab extends StatefulWidget {
   final String userId;
@@ -50,8 +48,6 @@ class _SellingTabState extends State<SellingTab> {
           if (snap.connectionState != ConnectionState.done) {
             return const Center(child: CircularProgressIndicator());
           }
-
-          // Error state
           if (snap.hasError) {
             return ListView(
               physics: const AlwaysScrollableScrollPhysics(),
@@ -75,7 +71,6 @@ class _SellingTabState extends State<SellingTab> {
           }
 
           final props = snap.data ?? [];
-          // Empty state
           if (props.isEmpty) {
             return ListView(
               physics: const AlwaysScrollableScrollPhysics(),
@@ -93,19 +88,23 @@ class _SellingTabState extends State<SellingTab> {
             );
           }
 
-          // Categorize by stage
+          // 1) Finding buyers
           final finding = props
               .where((p) =>
                   p.stage == 'findingAgents' || p.stage == 'findingBuyers')
               .toList();
+
+          // 2) Sale in progress
           final inProgress =
               props.where((p) => p.stage == 'saleInProgress').toList();
+
+          // 3) Sold (final)
           final sold = props.where((p) => p.stage == 'sold').toList();
 
           return ListView(
             physics: const AlwaysScrollableScrollPhysics(),
             children: [
-              // Last-updated timestamp
+              // timestamp
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8.0),
                 child: Text(
@@ -119,10 +118,12 @@ class _SellingTabState extends State<SellingTab> {
                 const SectionHeader('Finding Buyers'),
                 for (var p in finding) SellerPropertyCard(property: p),
               ],
+
               if (inProgress.isNotEmpty) ...[
                 const SectionHeader('Sale In Progress'),
                 for (var p in inProgress) SellerPropertyCard(property: p),
               ],
+
               if (sold.isNotEmpty) ...[
                 const SectionHeader('Sold'),
                 for (var p in sold) SellerPropertyCard(property: p),
@@ -135,7 +136,6 @@ class _SellingTabState extends State<SellingTab> {
   }
 }
 
-/// Simple section header widget
 class SectionHeader extends StatelessWidget {
   final String title;
   const SectionHeader(this.title, {Key? key}) : super(key: key);

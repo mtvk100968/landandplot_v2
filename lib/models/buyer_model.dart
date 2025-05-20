@@ -7,7 +7,7 @@ class Buyer {
   DateTime? date;
   double? priceOffered;
 
-  /// 'visitPending', 'negotiating', 'accepted', or 'rejected'
+  /// 'visitPending', 'negotiating', 'accepted', 'bought', or 'rejected'
   String status;
 
   /// which timeline step this buyer is currently at (one of the short names)

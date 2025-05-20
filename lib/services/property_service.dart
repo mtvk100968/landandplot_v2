@@ -562,6 +562,8 @@ class PropertyService {
     });
   }
 
+  /// Updates a single buyer’s status, date, price, notes—and flips the overall
+  /// property stage to `saleInProgress` when accepted or `sold` when bought.
   Future<void> updateBuyerStatus({
     required String propertyId,
     required String buyerPhone,
@@ -570,36 +572,38 @@ class PropertyService {
     double? priceOffered,
     List<String>? notes,
   }) async {
-    final doc =
-        await _firestore.collection(collectionPath).doc(propertyId).get();
-    if (!doc.exists) return;
+    final docRef = _firestore.collection(collectionPath).doc(propertyId);
+    final snapshot = await docRef.get();
+    if (!snapshot.exists) return;
 
-    final data = doc.data()!;
-    final buyersList =
-        List<Map<String, dynamic>>.from(data['buyers'] as List<dynamic>? ?? []);
+    final data = snapshot.data()!;
+    final buyersList = List<Map<String, dynamic>>.from(
+      data['buyers'] as List<dynamic>? ?? [],
+    );
 
-    final updatedList = buyersList.map((b) {
+    // 1) Update the matching buyer entry
+    for (var b in buyersList) {
       if (b['phone'] == buyerPhone) {
         if (status != null) b['status'] = status;
         if (visitDate != null) b['date'] = Timestamp.fromDate(visitDate);
         if (priceOffered != null) b['priceOffered'] = priceOffered;
         if (notes != null) b['notes'] = notes;
         b['lastUpdated'] = Timestamp.now();
+        break;
       }
-      return b;
-    }).toList();
-
-    await _firestore
-        .collection(collectionPath)
-        .doc(propertyId)
-        .update({'buyers': updatedList});
-
-    if (status == 'accepted') {
-      await _firestore
-          .collection(collectionPath)
-          .doc(propertyId)
-          .update({'stage': 'saleInProgress'});
     }
+
+    // 2) Prepare the batch update: always replace buyers list,
+    //    plus change `stage` if status==accepted/bought
+    final updates = <String, dynamic>{'buyers': buyersList};
+    if (status == 'accepted') {
+      updates['stage'] = 'saleInProgress';
+    } else if (status == 'bought') {
+      updates['stage'] = 'sold';
+    }
+
+    // 3) Commit it
+    await docRef.update(updates);
   }
 
   /// accept exactly one buyer, close find-buyer, open sales-in-progress

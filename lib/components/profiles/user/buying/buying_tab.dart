@@ -125,6 +125,10 @@ class _BuyingTabState extends State<BuyingTab> {
                 negotiating.add(p);
                 break;
               case 'accepted':
+                // sale in progress
+                visiting.add(p);
+                break;
+              case 'bought':
                 purchased.add(p);
                 break;
               case 'rejected':

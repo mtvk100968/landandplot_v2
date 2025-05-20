@@ -91,14 +91,17 @@ class _SellingDetailScreenState extends State<SellingDetailScreen> {
               Padding(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Text('Manage Interested & Visited',
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.bold)),
+                child: Text(
+                  'Manage Interested & Visited',
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.bold),
+                ),
               ),
-              // InterestedVisitedTabs(
-              //   property: property,
-              //   onBuyerUpdated: () => setState(() {}),
-              // ),
+              // This is your user-only tabs:
+              InterestedVisitedTabs(
+                property: property,
+                onBuyerUpdated: () => setState(() {}),
+              ),
             ],
 
             const Divider(),

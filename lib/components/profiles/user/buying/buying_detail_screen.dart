@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 import '../../../../models/property_model.dart';
 import '../../../../models/buyer_model.dart';
 import '../../../../services/property_service.dart';
-import './buyer_proof_upload_dialog.dart';
 import '../selling/selling_timeline_view.dart';
 
 class BuyingDetailScreen extends StatefulWidget {
@@ -46,26 +45,6 @@ class _BuyingDetailScreenState extends State<BuyingDetailScreen> {
         visitDate: newDate,
       );
       setState(() => _buyer.date = newDate);
-    }
-  }
-
-  Future<void> _uploadProof() async {
-    final updated = await showDialog<Buyer>(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => BuyerProofUploadDialog(
-        propertyId: widget.property.id,
-        buyer: _buyer,
-      ),
-    );
-    if (updated != null) {
-      // persist the change
-      await _propService.updateBuyerByBuyer(
-        widget.property.id,
-        widget.buyer, // old
-        updated, // new
-      );
-      setState(() => _buyer = updated);
     }
   }
 
@@ -211,29 +190,6 @@ class _BuyingDetailScreenState extends State<BuyingDetailScreen> {
                     ]);
               }
 
-              // 2) Document steps
-              const docSteps = [
-                'DocVerify',
-                'LegalCheck',
-                'Agreement',
-                'Registration',
-                'Mutation',
-                'Possession'
-              ];
-              if (docSteps.contains(buyer.currentStep)) {
-                return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Next: Upload Proof (${buyer.currentStep})',
-                          style: const TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 8),
-                      ElevatedButton(
-                          onPressed: _uploadProof,
-                          child: const Text('Upload Proof')),
-                    ]);
-              }
-
               // 3) Negotiation
               if (buyer.status == 'negotiating') {
                 return Column(
@@ -252,13 +208,37 @@ class _BuyingDetailScreenState extends State<BuyingDetailScreen> {
                     ]);
               }
 
-              // 4) Accepted / Rejected
+              // 4) Sale In Progress (accepted buyer) → show timeline
               if (buyer.status == 'accepted') {
-                return const Padding(
-                  padding: EdgeInsets.all(8),
-                  child: Text('🎉 Purchase Completed',
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Sale Timeline',
+                          style: TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold)),
+                      SizedBox(
+                        height: 300,
+                        // reuse the same timeline view the agent sees, but read-only
+                        child: SellerTimelineView(buyer: buyer),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              // 5) Fully Purchased
+              if (buyer.status == 'bought') {
+                return Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Center(
+                    child: Text(
+                      '🏡 You’ve completed the purchase!',
                       style:
-                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                  ),
                 );
               }
               if (buyer.status == 'rejected') {

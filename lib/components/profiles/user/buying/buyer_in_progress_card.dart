@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import '../../../../models/property_model.dart';
 import '../../../../models/buyer_model.dart';
 import '../../../../services/property_service.dart';
-import './buyer_proof_upload_dialog.dart';
 import './buying_detail_screen.dart';
 
 class BuyerInProgressCard extends StatefulWidget {
