@@ -43,7 +43,7 @@ class BuyLandScreenState extends State<BuyLandScreen> {
 
   // Variables for location search
   Map<String, dynamic>? selectedPlace;
-  double searchRadius = 10; // in kilometers
+  double searchRadius = 50; // in kilometers
 
   // Administrative area filters
   String? selectedCity;
@@ -114,23 +114,19 @@ class BuyLandScreenState extends State<BuyLandScreen> {
     // When using geo-based search, we relax the pincode filter by passing null.
     List<Property> properties = await propertyService.getPropertiesWithFilters(
       propertyTypes: selectedPropertyTypes,
-      minPricePerUnit:
-          (selectedPriceRange.start > 0) ? selectedPriceRange.start : null,
-      maxPricePerUnit:
-          (selectedPriceRange.end > 0) ? selectedPriceRange.end : null,
-      minLandArea: (selectedLandAreaRange.start > 0)
-          ? selectedLandAreaRange.start
-          : null,
-      maxLandArea:
-          (selectedLandAreaRange.end > 0) ? selectedLandAreaRange.end : null,
+      minPricePerUnit: selectedPriceRange.start > 0 ? selectedPriceRange.start : null,
+      maxPricePerUnit: selectedPriceRange.end > 0 ? selectedPriceRange.end : null,
+      minLandArea: selectedLandAreaRange.start > 0 ? selectedLandAreaRange.start : null,
+      maxLandArea: selectedLandAreaRange.end > 0 ? selectedLandAreaRange.end : null,
       minLat: minLat,
       maxLat: maxLat,
       minLon: minLon,
       maxLon: maxLon,
-      city: selectedCity,
-      district: selectedDistrict,
-      // Relax the pincode filter if a place is selected (i.e. using geo search).
-      pincode: (selectedPlace != null) ? null : selectedPincode,
+      city:    geoSearchType == GeoSearchType.point ? null : selectedCity,
+      district: geoSearchType == GeoSearchType.point
+          ? null
+          : selectedDistrict,
+      pincode: geoSearchType == GeoSearchType.point ? null : selectedPincode,
     );
 
     // For polygon searches, further filter properties using point-in-polygon test.
@@ -434,6 +430,7 @@ class BuyLandScreenState extends State<BuyLandScreen> {
                   ),
                   const SizedBox(height: 2),
                   // Property Listings
+
                   Expanded(
                     child: FutureBuilder<List<Property>>(
                       future: _propertyFuture,
@@ -442,91 +439,80 @@ class BuyLandScreenState extends State<BuyLandScreen> {
                             ConnectionState.waiting) {
                           return const Center(
                               child: CircularProgressIndicator());
-                        } else if (propertySnapshot.hasError) {
-                          print(
-                              'Error in FutureBuilder: ${propertySnapshot.error}');
+                        }
+                        if (propertySnapshot.hasError) {
                           return const Center(
                               child: Text('Error loading properties'));
-                        } else if (!propertySnapshot.hasData ||
-                            propertySnapshot.data!.isEmpty) {
-                          return const Center(
-                              child: Text('No properties found'));
-                        } else {
-                          final properties = propertySnapshot.data!;
-                          print(
-                              'Number of properties fetched: ${properties.length}');
-                          return StreamBuilder<User?>(
-                            stream: FirebaseAuth.instance.authStateChanges(),
-                            builder: (context, authSnapshot) {
-                              if (authSnapshot.connectionState ==
-                                  ConnectionState.waiting) {
-                                return const Center(
-                                    child: CircularProgressIndicator());
-                              }
-                              final user = authSnapshot.data;
-                              if (user != null) {
-                                return StreamBuilder<AppUser?>(
-                                  stream: UserService().getUserStream(user.uid),
-                                  builder: (context, userSnapshot) {
-                                    if (userSnapshot.connectionState ==
-                                        ConnectionState.waiting) {
-                                      return const Center(
-                                          child: CircularProgressIndicator());
-                                    }
-                                    if (userSnapshot.hasError) {
-                                      return Center(
-                                          child: Text(
-                                              'Error: ${userSnapshot.error}'));
-                                    }
-                                    final currentUser = userSnapshot.data;
-                                    if (currentUser == null) {
-                                      return const Center(
-                                          child:
-                                              Text('No user data available.'));
-                                    }
-                                    return showMap
-                                        ? PropertyMapView(
-                                            properties: properties)
-                                        : PropertyListView(
-                                            properties: properties,
-                                            favoritedPropertyIds: currentUser
-                                                .favoritedPropertyIds,
+                        }
+
+                        final props = propertySnapshot.data ?? [];
+
+                        // Build once
+                        final mapView = PropertyMapView(
+                          properties: props,
+                          center: selectedPlace != null
+                              ? LatLng(
+                                  selectedPlace!['geometry']['location']['lat'],
+                                  selectedPlace!['geometry']['location']['lng'],
+                                )
+                              : null,
+                        );
+
+                        final listView = StreamBuilder<User?>(
+                          stream: FirebaseAuth.instance.authStateChanges(),
+                          builder: (authCtx, authSnap) {
+                            final favIds = authSnap.hasData
+                                ? (authSnap.data != null
+                                    ? StreamBuilder<AppUser?>(
+                                        stream: UserService()
+                                            .getUserStream(authSnap.data!.uid),
+                                        builder: (uCtx, uSnap) {
+                                          final ids = uSnap
+                                                  .data?.favoritedPropertyIds ??
+                                              [];
+                                          return PropertyListView(
+                                            properties: props,
+                                            favoritedPropertyIds: ids,
+                                            selectedCity: selectedCity,
                                             onFavoriteToggle: _onFavoriteToggle,
-                                            onTapProperty: (property) {
-                                              Navigator.push(
-                                                childContext,
-                                                MaterialPageRoute(
+                                            onTapProperty: (p) =>
+                                                Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
                                                   builder: (_) =>
                                                       PropertyDetailsScreen(
-                                                          property: property),
-                                                ),
-                                              );
-                                            },
-                                          );
-                                  },
-                                );
-                              } else {
-                                return showMap
-                                    ? PropertyMapView(properties: properties)
-                                    : PropertyListView(
-                                        properties: properties,
-                                        favoritedPropertyIds: [],
-                                        onFavoriteToggle: _onFavoriteToggle,
-                                        onTapProperty: (property) {
-                                          Navigator.push(
-                                            childContext,
-                                            MaterialPageRoute(
-                                              builder: (_) =>
-                                                  PropertyDetailsScreen(
-                                                      property: property),
+                                                          property: p)),
                                             ),
                                           );
                                         },
-                                      );
-                              }
-                            },
-                          );
+                                      )
+                                    : const SizedBox())
+                                : const SizedBox();
+
+                            return authSnap.hasData
+                                ? favIds as Widget
+                                : PropertyListView(
+                                    properties: props,
+                                    favoritedPropertyIds: [],
+                                    selectedCity: selectedCity,
+                                    onFavoriteToggle: _onFavoriteToggle,
+                                    onTapProperty: (p) => Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (_) => PropertyDetailsScreen(
+                                              property: p)),
+                                    ),
+                                  );
+                          },
+                        );
+
+                        // Empty-state
+                        if (props.isEmpty) {
+                          return showMap ? mapView : listView;
                         }
+
+                        // Normal
+                        return showMap ? mapView : listView;
                       },
                     ),
                   ),

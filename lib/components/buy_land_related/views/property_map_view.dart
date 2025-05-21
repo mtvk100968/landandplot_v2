@@ -1,4 +1,5 @@
 // lib/views/property_map_view.dart
+import 'dart:math' as math;
 
 import 'dart:async';
 import 'package:geolocator/geolocator.dart';
@@ -12,11 +13,10 @@ import '../../../screens/property_details_screen.dart';
 
 class PropertyMapView extends StatefulWidget {
   final List<Property> properties;
+  final LatLng? center; // Optional parameter to specify initial center
 
-  const PropertyMapView({
-    super.key,
-    required this.properties,
-  });
+  const PropertyMapView({Key? key, required this.properties, this.center})
+      : super(key: key);
 
   @override
   PropertyMapViewState createState() => PropertyMapViewState();
@@ -25,14 +25,16 @@ class PropertyMapView extends StatefulWidget {
 class PropertyMapViewState extends State<PropertyMapView> {
   late GoogleMapController mapController;
 
-  Set<Marker> _markers = {}; // Standard markers
+  Set<Marker> _markers = {};
+  late bool _markersInitialized = false;
 
-  // default to Hyderabad if location not allowed
-  LatLng _initialCenter = const LatLng(17.3850, 78.4867);
+  // // default to Hyderabad if location not allowed
+  // LatLng _initialCenter = const LatLng(17.3850, 78.4867);
 
   // Create a ClusterManagerId
-  final ClusterManagerId _clusterManagerId =
-      const ClusterManagerId('propertyClusterManager');
+  final ClusterManagerId _clusterManagerId = const ClusterManagerId(
+    'propertyClusterManager',
+  );
 
   // Create a ClusterManager
   late ClusterManager _clusterManager;
@@ -47,84 +49,70 @@ class PropertyMapViewState extends State<PropertyMapView> {
       onClusterTap: _onClusterTap,
     );
 
-    // Wait for the first frame before adding markers
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _addCustomMarkers();
-    });
   }
 
   Future<void> _addCustomMarkers() async {
+    if (_markersInitialized) {
+      print("⏭️ Markers already initialized. Skipping...");
+      return;
+    }
+
+    final seenIds = <String>{};
+    final uniqueProps = widget.properties.where((p) => seenIds.add(p.id)).toList();
+
     Set<Marker> markers = {};
     print("Number of properties: ${widget.properties.length}");
+    print("Number of unique properties: ${uniqueProps.length}");
 
-    for (Property property in widget.properties) {
-      // Format the price
-      final String priceText = property.totalPrice != null
-          ? formatPrice(property.totalPrice!)
-          : 'N/A';
+    if (uniqueProps.isEmpty) {
+      print("⚠️ No properties found!");
+      return;
+    }
 
-      // Create custom marker with the formatted price
-      final BitmapDescriptor customIcon =
-          await CustomMarker.createMarker(priceText);
+    for (Property property in uniqueProps) {
+      print(
+        "📍 Processing property: ${property.id}, (${property.latitude}, ${property.longitude})",
+      );
 
-      // Create marker for each property
+      if (property.latitude == 0 || property.longitude == 0) {
+        print("⚠️ Skipping property with invalid coordinates: ${property.id}");
+        continue;
+      }
+
+      final String priceText = formatPrice(property.totalPrice);
+      final BitmapDescriptor customIcon = await CustomMarker.createMarker(priceText);
+
       markers.add(
         Marker(
           markerId: MarkerId(property.id),
           position: LatLng(property.latitude, property.longitude),
           icon: customIcon,
           onTap: () => _showPropertyCard(property),
-          // Associate this marker with the ClusterManager
-          clusterManagerId: _clusterManagerId,
         ),
       );
     }
 
-    // Update state to display the markers
-    setState(() {
-      _markers = markers;
-    });
-  }
-
-  Future<Position> _determinePosition() async {
-    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      throw Exception('Location services disabled');
+    if (mounted) {
+      setState(() {
+        _markers = markers;
+        _markersInitialized = true;
+        print("✅ Markers added: ${_markers.length}");
+      });
     }
-
-    LocationPermission permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        throw Exception('Location permissions denied');
-      }
-    }
-    if (permission == LocationPermission.deniedForever) {
-      throw Exception('Location permissions permanently denied');
-    }
-
-    return await Geolocator.getCurrentPosition();
   }
 
   void _onClusterTap(Cluster cluster) async {
-    // Retrieve the current camera position
-    final LatLng currentCenter = await mapController.getLatLng(
-      ScreenCoordinate(
-        x: (MediaQuery.of(context).size.width / 2).round(),
-        y: (MediaQuery.of(context).size.height / 2).round(),
-      ),
-    );
+    // Get current zoom level
+    double currentZoomLevel = await mapController.getZoomLevel();
+    double newZoomLevel = currentZoomLevel + 2;
 
-    // Define the new zoom level
-    final double newZoomLevel = 12.0; // Adjust this value as needed
+    // Prevent excessive zooming
+    if (newZoomLevel > 18.0) newZoomLevel = 18.0;
 
-    // Animate the camera to the cluster's position with the new zoom level
+    // Animate camera to zoom into the cluster
     mapController.animateCamera(
       CameraUpdate.newCameraPosition(
-        CameraPosition(
-          target: cluster.position,
-          zoom: newZoomLevel,
-        ),
+        CameraPosition(target: cluster.position, zoom: newZoomLevel),
       ),
     );
   }
@@ -154,48 +142,97 @@ class PropertyMapViewState extends State<PropertyMapView> {
   }
 
   void _onMapCreated(GoogleMapController controller) {
-    mapController = controller;
+    print("✅ Google Map created");
+    setState(() {
+      mapController = controller;
+    });
 
-    // Ensure markers are added after the map is created
-    _addCustomMarkers();
-
-    // attempt to center on user, else Hyderabad
-    _determinePosition().then((pos) {
-      mapController.animateCamera(
-        CameraUpdate.newCameraPosition(
-          CameraPosition(
-            target: LatLng(pos.latitude, pos.longitude),
-            zoom: 12,
-          ),
-        ),
-      );
-    }).catchError((_) {
-      mapController.animateCamera(
-        CameraUpdate.newCameraPosition(
-          CameraPosition(target: _initialCenter, zoom: 10),
-        ),
-      );
+    // Future.delayed(const Duration(milliseconds: 500), () {
+    print("🔹 Adding markers after map creation");
+    // Add markers first
+    _addCustomMarkers().then((_) {
+      // Move camera **after** markers are added
+      _moveToInitialLocation();
     });
   }
+
+  void _moveToInitialLocation() {
+    if (widget.center != null) {
+      print("🔍 Moving to user-selected location: ${widget.center}");
+      mapController.animateCamera(
+        CameraUpdate.newLatLngZoom(widget.center!, 9), // ✅ Zoom level closer
+      );
+    } else if (_markers.isNotEmpty) {
+      // If markers exist, calculate the bounds dynamically
+      LatLngBounds bounds = _getBoundsForMarkers(_markers);
+      mapController.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
+    } else {
+      print("🌍 Defaulting to India map.");
+      mapController.animateCamera(
+        CameraUpdate.newLatLngZoom(
+          const LatLng(20.5937, 78.9629),
+          9,
+        ), // India default
+      );
+    }
+  }
+
+  LatLngBounds _getBoundsForMarkers(Set<Marker> markers) {
+    // India's general latitude and longitude bounds
+    const double minIndiaLat = 6.0;
+    const double maxIndiaLat = 38.0;
+    const double minIndiaLng = 68.0;
+    const double maxIndiaLng = 97.0;
+
+    double? minLat, maxLat, minLng, maxLng;
+
+    for (Marker marker in markers) {
+      final lat = marker.position.latitude;
+      final lng = marker.position.longitude;
+
+      // Skip markers outside India
+      if (lat < minIndiaLat || lat > maxIndiaLat || lng < minIndiaLng || lng > maxIndiaLng) {
+        print("🛑 Skipping out-of-bound marker at ($lat, $lng)");
+        continue;
+      }
+
+      minLat = (minLat == null) ? lat : math.min(minLat, lat);
+      maxLat = (maxLat == null) ? lat : math.max(maxLat, lat);
+      minLng = (minLng == null) ? lng : math.min(minLng, lng);
+      maxLng = (maxLng == null) ? lng : math.max(maxLng, lng);
+    }
+
+    // Fallback if all were out of India
+    if (minLat == null || maxLat == null || minLng == null || maxLng == null) {
+      return LatLngBounds(
+        southwest: const LatLng(20.5937 - 0.5, 78.9629 - 0.5),
+        northeast: const LatLng(20.5937 + 0.5, 78.9629 + 0.5),
+      );
+    }
+
+    return LatLngBounds(
+      southwest: LatLng(minLat - 0.05, minLng - 0.05),
+      northeast: LatLng(maxLat + 0.05, maxLng + 0.05),
+    );
+  }
+
 
   @override
   Widget build(BuildContext context) {
     return Material(
-      child: Container(
-        color: Colors.white,
-        child: SizedBox.expand(
-          child: GoogleMap(
-            mapType: MapType.normal,
-            initialCameraPosition: const CameraPosition(
-              target: LatLng(20.5937, 78.9629), // Center of India
-              zoom: 5,
-            ),
-            onMapCreated: _onMapCreated,
-            markers: _markers,
-            myLocationEnabled: true,
-            myLocationButtonEnabled: true, // Enable default location button
-            clusterManagers: {_clusterManager}, // Ensure this works correctly
+      child: SizedBox.expand(
+        child: GoogleMap(
+          mapType: MapType.normal,
+          initialCameraPosition: const CameraPosition(
+            target: LatLng(20.5937, 78.9629),
+            zoom: 8,
           ),
+          onMapCreated: _onMapCreated,
+          markers: _markers, // ✅ Show only markers
+          myLocationEnabled: true,
+          myLocationButtonEnabled: true,
+          compassEnabled: true, // ✅ Enables the Compass
+          zoomControlsEnabled: true, // ✅ Shows Zoom Buttons),
         ),
       ),
     );

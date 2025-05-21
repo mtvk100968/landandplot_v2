@@ -2,6 +2,9 @@
 
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+
 import '../../services/places_service.dart';
 
 /// A [LocationSearchBar] that lets the user type multiple places.
@@ -9,10 +12,8 @@ import '../../services/places_service.dart';
 class LocationSearchBar extends StatefulWidget {
   final Function(Map<String, dynamic> place) onPlaceSelected;
 
-  const LocationSearchBar({
-    Key? key,
-    required this.onPlaceSelected,
-  }) : super(key: key);
+  const LocationSearchBar({Key? key, required this.onPlaceSelected})
+      : super(key: key);
 
   @override
   _LocationSearchBarState createState() => _LocationSearchBarState();
@@ -180,10 +181,59 @@ class _LocationSearchBarState extends State<LocationSearchBar> {
   }
 
   /// Removes a chip at the given index.
-  void _removeChip(int index) {
+  void _removeChip(int index) async {
     setState(() {
       _chipPlaces.removeAt(index);
     });
+
+    print("Updated _chipPlaces list: $_chipPlaces"); // Debugging log
+
+    if (_chipPlaces.isNotEmpty) {
+      // Set to the last remaining chip
+      print("Setting location to last remaining chip: ${_chipPlaces.last}");
+      widget
+          .onPlaceSelected(_chipPlaces.last['fullDetails'] ?? _chipPlaces.last);
+    } else {
+      // Fetch current location when no locations are selected
+      print("No locations selected, resetting to current location");
+
+      LatLng? currentLocation = await getCurrentLocation();
+
+      if (currentLocation != null) {
+        widget.onPlaceSelected({
+          'description': 'Current Location',
+          'geometry': {
+            // ✅ Provide correct structure
+            'location': {
+              'lat': currentLocation.latitude,
+              'lng': currentLocation.longitude,
+            }
+          }
+        });
+      } else {
+        print("⚠️ Unable to get user location.");
+      }
+    }
+  }
+
+  Future<LatLng?> getCurrentLocation() async {
+    try {
+      LocationPermission permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        print("⚠️ Location permission denied.");
+        return null;
+      }
+
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      return LatLng(position.latitude, position.longitude);
+    } catch (e) {
+      print("❌ Error getting current location: $e");
+      return null;
+    }
   }
 
   @override

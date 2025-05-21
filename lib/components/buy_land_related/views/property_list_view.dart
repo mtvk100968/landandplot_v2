@@ -11,6 +11,7 @@ typedef PropertyTapCallback = void Function(Property property);
 class PropertyListView extends StatelessWidget {
   final List<Property> properties;
   final List<String> favoritedPropertyIds;
+  final String?        selectedCity;
   final FavoriteToggleCallback onFavoriteToggle;
   final PropertyTapCallback onTapProperty; // New callback for property taps
 
@@ -20,13 +21,17 @@ class PropertyListView extends StatelessWidget {
     required this.favoritedPropertyIds,
     required this.onFavoriteToggle,
     required this.onTapProperty, // Require the callback in constructor
+    this.selectedCity,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    print("🔍 PropertyListView properties count: ${properties.length}");
+
     if (properties.isEmpty) {
-      return const Center(
-        child: Text('No properties available.'),
+      final cityName = selectedCity ?? 'this area';
+      return Center(
+        child: Text('No properties found in $cityName.'),
       );
     }
 
@@ -35,6 +40,7 @@ class PropertyListView extends StatelessWidget {
       itemBuilder: (context, index) {
         final property = properties[index];
         final isFavorited = favoritedPropertyIds.contains(property.id);
+        print("Rendering Property: ${property.id}, Rent Price: ${property.totalPrice}");
 
         return PropertyCard(
           property: property,
