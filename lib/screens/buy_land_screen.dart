@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
+import '../models/filter_config.dart' as fc;
 import '../services/property_service.dart';
 import '../models/property_model.dart';
 import '../providers/property_provider.dart';
@@ -50,6 +51,9 @@ class BuyLandScreenState extends State<BuyLandScreen> {
   String? selectedDistrict;
   String? selectedPincode;
   String? selectedState;
+  fc.PropertyType? _selectedType;
+  int? _selectedBedrooms;
+  int? _selectedBathrooms;
 
   // Geo search type & supporting variable for 2D area searches
   GeoSearchType geoSearchType = GeoSearchType.point; // Default to point search
@@ -175,33 +179,43 @@ class BuyLandScreenState extends State<BuyLandScreen> {
 
   /// Opens the filter bottom sheet and applies filters.
   Future<void> openFilterBottomSheet() async {
+    // Decide which single type to seed:
+    final seedType = selectedPropertyTypes.isNotEmpty
+        ? fc.PropertyType.values.firstWhere(
+          (t) => t.toString().split('.').last == selectedPropertyTypes.first,
+      orElse: () => fc.PropertyType.values.first,
+    )
+        : null;
+
     final result = await showModalBottomSheet<Map<String, dynamic>>(
       context: context,
       isScrollControlled: true,
-      builder: (context) {
-        return FilterBottomSheet(
-          currentFilters: {
-            'selectedPropertyTypes': selectedPropertyTypes,
-            'selectedPriceRange': selectedPriceRange,
-            'pricePerUnitUnit': pricePerUnitUnit,
-            'selectedLandAreaRange': selectedLandAreaRange,
-            'landAreaUnit': landAreaUnit,
-          },
-        );
-      },
+      builder: (_) => FilterBottomSheet(
+        initialType: seedType,
+        initialPlace: selectedPlace,
+        initialMinPrice: selectedPriceRange.start,
+        initialMaxPrice: selectedPriceRange.end,
+        initialMinArea: selectedLandAreaRange.start,
+        initialMaxArea: selectedLandAreaRange.end,
+        initialBeds: _selectedBedrooms,
+        initialBaths: _selectedBathrooms,
+      ),
     );
 
     if (result != null) {
       setState(() {
-        selectedPropertyTypes = result['selectedPropertyTypes'] ?? [];
-        selectedPriceRange =
-            result['selectedPriceRange'] ?? const RangeValues(0, 0);
-        pricePerUnitUnit = result['pricePerUnitUnit'] ?? '';
-        selectedLandAreaRange =
-            result['selectedLandAreaRange'] ?? const RangeValues(0, 0);
-        landAreaUnit = result['landAreaUnit'] ?? '';
-        // Optionally, update geoSearchType here if your filters include it.
-        _propertyFuture = fetchPropertiesWithGeo(); // Update the property list
+        // Pull everything back out of the sheet's result:
+        _selectedType    = result['type']  as fc.PropertyType?;
+        selectedPropertyTypes = _selectedType != null
+            ? [ _selectedType.toString().split('.').last ]
+            : [];
+        selectedPlace    = result['place'] as Map<String, dynamic>?;
+        selectedPriceRange   = result['price'] as RangeValues;
+        selectedLandAreaRange = result['area']  as RangeValues;
+        _selectedBedrooms    = result['beds']  as int?;
+        _selectedBathrooms   = result['baths'] as int?;
+        // re‐run your query:
+        _propertyFuture = fetchPropertiesWithGeo();
       });
     }
   }

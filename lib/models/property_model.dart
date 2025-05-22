@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import './buyer_model.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 /// Real estate property, now with unified buyers list & sale-stage
 class Property {
@@ -194,11 +195,19 @@ class Property {
     return Property.fromMap(doc.id, doc.data()!);
   }
 
+  @override
+  LatLng get location => LatLng(latitude, longitude);
+
   /// true if at least one agent is assigned
   bool get isAssigned => assignedAgentIds.isNotEmpty;
 
   /// true if no agents are yet assigned
   bool get isUnassigned => assignedAgentIds.isEmpty;
+
+  /// cluster_manager also now wants a `geohash` for spatial indexing
+  /// you can return any consistent string per point (e.g. a lat_lng key).
+  @override
+  String get geohash => '${latitude.toStringAsFixed(6)}_${longitude.toStringAsFixed(6)}';
 
   /// simple name-based search (you can expand to other fields later)
   bool matches(String query) =>

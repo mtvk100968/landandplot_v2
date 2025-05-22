@@ -10,9 +10,12 @@ import '../../services/places_service.dart';
 /// A [LocationSearchBar] that lets the user type multiple places.
 /// Each selected place becomes a chip, and the user can remove chips.
 class LocationSearchBar extends StatefulWidget {
+  final Map<String,dynamic>? initialPlace;    // ← new
   final Function(Map<String, dynamic> place) onPlaceSelected;
 
-  const LocationSearchBar({Key? key, required this.onPlaceSelected})
+  const LocationSearchBar({Key? key,
+    this.initialPlace,
+    required this.onPlaceSelected})
       : super(key: key);
 
   @override
@@ -37,6 +40,7 @@ class _LocationSearchBarState extends State<LocationSearchBar> {
   // For measuring where to place the overlay
   final GlobalKey _textFieldKey = GlobalKey();
   double _textFieldHeight = 0;
+  Map<String, dynamic>? _currentPlace;
 
   @override
   void initState() {
@@ -44,7 +48,11 @@ class _LocationSearchBarState extends State<LocationSearchBar> {
     // Initialize PlacesService with your actual API key
     _placesService =
         PlacesService(apiKey: 'AIzaSyC9TbKldN2qRj91FxHl1KC3r7KjUlBXOSk');
-
+    if (widget.initialPlace != null) {
+      // pre‐fill your text field and stash the place
+      _controller.text = widget.initialPlace!['description'] ?? '';
+      _currentPlace = widget.initialPlace;
+    }
     // Measure the text field after first layout
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _measureTextField();
@@ -54,7 +62,7 @@ class _LocationSearchBarState extends State<LocationSearchBar> {
   /// Measures the text field so we know how far to offset the suggestion overlay.
   void _measureTextField() {
     final renderBox =
-        _textFieldKey.currentContext?.findRenderObject() as RenderBox?;
+    _textFieldKey.currentContext?.findRenderObject() as RenderBox?;
     if (renderBox != null && mounted) {
       setState(() {
         _textFieldHeight = renderBox.size.height;
@@ -142,18 +150,18 @@ class _LocationSearchBarState extends State<LocationSearchBar> {
               // Get detailed info from place_id
               final placeId = suggestion['place_id'];
               final placeDetails =
-                  await _placesService.getPlaceDetails(placeId);
+              await _placesService.getPlaceDetails(placeId);
 
               // Split the suggestion to get just the first chunk (e.g. store name, apartment name, etc.)
               final shortLabel =
-                  suggestion['description'].split(',').first.trim();
+              suggestion['description'].split(',').first.trim();
 
               // Construct a map to store in the chip
               final newChip = {
                 'description': shortLabel, // e.g. "Apartment XYZ"
                 'place_id': placeId, // useful for lat/long lookups
                 'fullDetails':
-                    placeDetails, // entire place details if needed later
+                placeDetails, // entire place details if needed later
               };
 
               // Add a chip for that place
@@ -259,7 +267,7 @@ class _LocationSearchBarState extends State<LocationSearchBar> {
                   child: Chip(
                     label: Text(_chipPlaces[i]['description']),
                     padding:
-                        const EdgeInsets.symmetric(vertical: 0, horizontal: 4),
+                    const EdgeInsets.symmetric(vertical: 0, horizontal: 4),
                     visualDensity: VisualDensity.compact,
                     materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     onDeleted: () => _removeChip(i), // ✅ Correct index passed
@@ -277,7 +285,7 @@ class _LocationSearchBarState extends State<LocationSearchBar> {
                     hintText: 'Search locations...',
                     isDense: true, // 👈 Makes the field compact
                     contentPadding:
-                        EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                    EdgeInsets.symmetric(vertical: 8, horizontal: 8),
                     border: InputBorder.none,
                   ),
                 ),

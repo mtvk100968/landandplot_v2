@@ -17,11 +17,11 @@ class PropertyService {
   /// Generates a custom property ID based on the district and mandal.
   /// Returns the generated property ID upon successful completion.
   Future<String> addProperty(
-    Property property,
-    List<File> images, {
-    List<File>? videos,
-    List<File>? documents,
-  }) async {
+      Property property,
+      List<File> images, {
+        List<File>? videos,
+        List<File>? documents,
+      }) async {
     try {
       // Step 1: Generate Custom Property ID
       if (property.district == null || property.mandal == null) {
@@ -29,11 +29,11 @@ class PropertyService {
       }
 
       String propertyId =
-          await _generatePropertyId(property.district!, property.mandal!);
+      await _generatePropertyId(property.district!, property.mandal!);
 
       // Step 2: Upload Media Files with Custom Naming
       List<String> imageUrls =
-          await _uploadMediaFiles(propertyId, images, 'property_images', 'img');
+      await _uploadMediaFiles(propertyId, images, 'property_images', 'img');
 
       List<String> videoUrls = [];
       if (videos != null && videos.isNotEmpty) {
@@ -119,7 +119,7 @@ class PropertyService {
   Future<Property?> getPropertyById(String propertyId) async {
     try {
       DocumentSnapshot<Map<String, dynamic>> doc =
-          await _firestore.collection(collectionPath).doc(propertyId).get();
+      await _firestore.collection(collectionPath).doc(propertyId).get();
       if (doc.exists) {
         return Property.fromMap(doc.id, doc.data()!);
       }
@@ -135,11 +135,11 @@ class PropertyService {
   /// Updates an existing property in Firestore.
   /// Optionally handles new image, video, or document uploads if provided.
   Future<void> updateProperty(
-    Property property, {
-    List<File>? newImages,
-    List<File>? newVideos,
-    List<File>? newDocuments,
-  }) async {
+      Property property, {
+        List<File>? newImages,
+        List<File>? newVideos,
+        List<File>? newDocuments,
+      }) async {
     try {
       List<String> updatedImageUrls = List.from(property.images);
       List<String> updatedVideoUrls = List.from(property.videos);
@@ -191,12 +191,12 @@ class PropertyService {
 
   /// Deletes a property from Firestore and removes its images, videos, and documents from Firebase Storage.
   Future<void> deleteProperty(
-    String propertyId,
-    List<String> imageUrls, {
-    List<String>? videoUrls,
-    List<String>? documentUrls,
-    String? userId,
-  }) async {
+      String propertyId,
+      List<String> imageUrls, {
+        List<String>? videoUrls,
+        List<String>? documentUrls,
+        String? userId,
+      }) async {
     try {
       // Step 1: Delete images from Firebase Storage
       if (imageUrls.isNotEmpty) {
@@ -278,8 +278,102 @@ class PropertyService {
     }
   }
 
-  /// Fetches properties based on various filters.
   /// Supports both area-based and point-based searches.
+  // Future<List<Property>> getPropertiesWithFilters({
+  //   List<String>? propertyTypes,
+  //   double? minPricePerUnit,
+  //   double? maxPricePerUnit,
+  //   double? minLandArea,
+  //   double? maxLandArea,
+  //   double? minLat,
+  //   double? maxLat,
+  //   double? minLon,
+  //   double? maxLon,
+  //   String? city,
+  //   String? district,
+  //   String? pincode,
+  //   String? searchQuery,
+  // }) async {
+  //   try {
+  //     print('getPropertiesWithFilters called with:');
+  //     print('propertyTypes: $propertyTypes');
+  //     print('minPricePerUnit: $minPricePerUnit');
+  //     print('maxPricePerUnit: $maxPricePerUnit');
+  //     print('minLandArea: $minLandArea');
+  //     print('maxLandArea: $maxLandArea');
+  //     print('minLat: $minLat');
+  //     print('maxLat: $maxLat');
+  //     print('minLon: $minLon');
+  //     print('maxLon: $maxLon');
+  //     print('city: $city');
+  //     print('district: $district');
+  //     print('pincode: $pincode');
+  //     print('searchQuery: $searchQuery');
+  //
+  //     Query<Map<String, dynamic>> query = _firestore.collection(collectionPath);
+  //
+  //     // filter by property type
+  //     if (propertyTypes != null && propertyTypes.isNotEmpty) {
+  //       query = query.where('propertyType', whereIn: propertyTypes);
+  //     }
+  //
+  //     // filter by city/district/pincode
+  //     if (city != null && city.isNotEmpty) {
+  //       query = query.where('city', isEqualTo: city);
+  //     }
+  //     if (district != null && district.isNotEmpty) {
+  //       query = query.where('district', isEqualTo: district);
+  //     }
+  //     if (pincode != null && pincode.isNotEmpty) {
+  //       query = query.where('pincode', isEqualTo: pincode);
+  //     }
+  //
+  //     // inside getPropertiesWithFilters…
+  //     if (minPricePerUnit != null) {
+  //       query = query.where('pricePerUnit', isGreaterThanOrEqualTo: minPricePerUnit);
+  //     }
+  //     if (maxPricePerUnit != null) {
+  //       query = query.where('pricePerUnit', isLessThanOrEqualTo: maxPricePerUnit);
+  //     }
+  //
+  //     // Apply location filtering as Firestore queries
+  //     if (minLat!=null && maxLat!=null) {
+  //       query = query
+  //           .where('latitude', isGreaterThanOrEqualTo: minLat)
+  //           .where('latitude', isLessThanOrEqualTo: maxLat);
+  //     }
+  //     if (minLon!=null && maxLon!=null) {
+  //       query = query
+  //           .where('longitude', isGreaterThanOrEqualTo: minLon)
+  //           .where('longitude', isLessThanOrEqualTo: maxLon);
+  //     }
+  //
+  //     // Apply search query for property name if provided
+  //     if (searchQuery != null && searchQuery.isNotEmpty) {
+  //       query = query
+  //           .where('name', isGreaterThanOrEqualTo: searchQuery)
+  //           .where('name', isLessThanOrEqualTo: searchQuery + '\uf8ff');
+  //     }
+  //
+  //     final snapshot = await query.get();
+  //     var properties = snapshot.docs.map((d) => Property.fromMap(d.id, d.data())).toList();
+  //
+  //     // Now do your landArea (and/or lat/lon) filtering in Dart:
+  //     properties = properties.where((p) {
+  //       final okArea = (minLandArea == null || p.landArea >= minLandArea)
+  //           && (maxLandArea == null || p.landArea <= maxLandArea);
+  //       // same for your lat/lon if needed...
+  //       return okArea;
+  //     }).toList();
+  //
+  //     return properties;
+  //   } catch (e, stacktrace) {
+  //     print('Error fetching properties with filters: $e');
+  //     print(stacktrace); // Print stack trace for debugging
+  //     throw Exception('Failed to fetch properties with filters');
+  //   }
+  // }
+
   Future<List<Property>> getPropertiesWithFilters({
     List<String>? propertyTypes,
     double? minPricePerUnit,
@@ -297,23 +391,24 @@ class PropertyService {
   }) async {
     try {
       print('getPropertiesWithFilters called with:');
-      print('propertyTypes: $propertyTypes');
-      print('minPricePerUnit: $minPricePerUnit');
-      print('maxPricePerUnit: $maxPricePerUnit');
-      print('minLandArea: $minLandArea');
-      print('maxLandArea: $maxLandArea');
-      print('minLat: $minLat');
-      print('maxLat: $maxLat');
-      print('minLon: $minLon');
-      print('maxLon: $maxLon');
-      print('city: $city');
-      print('district: $district');
-      print('pincode: $pincode');
-      print('searchQuery: $searchQuery');
+      print('  propertyTypes: $propertyTypes');
+      print('  minPricePerUnit: $minPricePerUnit');
+      print('  maxPricePerUnit: $maxPricePerUnit');
+      print('  minLandArea: $minLandArea');
+      print('  maxLandArea: $maxLandArea');
+      print('  minLat: $minLat');
+      print('  maxLat: $maxLat');
+      print('  minLon: $minLon');
+      print('  maxLon: $maxLon');
+      print('  city: $city');
+      print('  district: $district');
+      print('  pincode: $pincode');
+      print('  searchQuery: $searchQuery');
 
+      // Start building Firestore query
       Query<Map<String, dynamic>> query = _firestore.collection(collectionPath);
 
-      // Apply equality filters first
+      // 1️⃣ Simple equality filters
       if (propertyTypes != null && propertyTypes.isNotEmpty) {
         query = query.where('propertyType', whereIn: propertyTypes);
       }
@@ -326,72 +421,47 @@ class PropertyService {
       if (pincode != null && pincode.isNotEmpty) {
         query = query.where('pincode', isEqualTo: pincode);
       }
-
-      // Apply inequality filter on pricePerUnit
-      if (minPricePerUnit != null || maxPricePerUnit != null) {
-        if (minPricePerUnit != null && maxPricePerUnit != null) {
-          query = query.where('pricePerUnit',
-              isGreaterThanOrEqualTo: minPricePerUnit,
-              isLessThanOrEqualTo: maxPricePerUnit);
-        } else if (minPricePerUnit != null) {
-          query = query.where('pricePerUnit',
-              isGreaterThanOrEqualTo: minPricePerUnit);
-        } else if (maxPricePerUnit != null) {
-          query =
-              query.where('pricePerUnit', isLessThanOrEqualTo: maxPricePerUnit);
-        }
-      }
-
-      // Apply location filtering as Firestore queries
-      if (minLat != null && maxLat != null) {
-        query = query
-            .where('latitude', isGreaterThanOrEqualTo: minLat)
-            .where('latitude', isLessThanOrEqualTo: maxLat);
-      }
-      if (minLon != null && maxLon != null) {
-        query = query
-            .where('longitude', isGreaterThanOrEqualTo: minLon)
-            .where('longitude', isLessThanOrEqualTo: maxLon);
-      }
-
-      // Apply search query for property name if provided
       if (searchQuery != null && searchQuery.isNotEmpty) {
         query = query
             .where('name', isGreaterThanOrEqualTo: searchQuery)
-            .where('name', isLessThanOrEqualTo: searchQuery + '\uf8ff');
+            .where('name', isLessThanOrEqualTo: '$searchQuery\uf8ff');
       }
 
-      QuerySnapshot<Map<String, dynamic>> snapshot = await query.get();
-      print(
-          'Number of properties fetched from Firestore: ${snapshot.docs.length}');
+      // // 2️⃣ Only push the single range filter (price) into Firestore
+      // if (minPricePerUnit != null) {
+      //   query = query.where('pricePerUnit', isGreaterThanOrEqualTo: minPricePerUnit);
+      // }
+      // if (maxPricePerUnit != null) {
+      //   query = query.where('pricePerUnit', isLessThanOrEqualTo: maxPricePerUnit);
+      // }
 
-      // Map to Property objects
-      List<Property> properties = snapshot.docs
-          .map((doc) => Property.fromMap(doc.id, doc.data()))
+      // 3️⃣ Fetch once
+      final snapshot = await query.get();
+      var properties = snapshot.docs
+          .map((d) => Property.fromMap(d.id, d.data()))
           .toList();
 
-      // Apply additional filtering client-side for land area if needed
-      if (minLandArea != null || maxLandArea != null) {
-        properties = properties.where((property) {
-          bool matches = true;
-          if (minLandArea != null) {
-            matches = matches && property.landArea >= minLandArea;
-          }
-          if (maxLandArea != null) {
-            matches = matches && property.landArea <= maxLandArea;
-          }
-          return matches;
-        }).toList();
-        print('Properties after land area filter: ${properties.length}');
-      }
+      // 4️⃣ Client-side filtering for land area
+      // 🔹 3) In-Dart filter **all** ranges: price, land-area, lat/lon
+      properties = properties.where((p) {
+        final okPrice = (minPricePerUnit == null || p.pricePerUnit >= minPricePerUnit) &&
+            (maxPricePerUnit == null || p.pricePerUnit <= maxPricePerUnit);
+        final okArea  = (minLandArea == null   || p.landArea     >= minLandArea)  &&
+            (maxLandArea == null   || p.landArea     <= maxLandArea);
+        final okLat   = (minLat == null        || p.latitude     >= minLat)      &&
+            (maxLat == null        || p.latitude     <= maxLat);
+        final okLon   = (minLon == null        || p.longitude    >= minLon)      &&
+            (maxLon == null        || p.longitude    <= maxLon);
+        return okPrice && okArea && okLat && okLon;
+      }).toList();
 
       return properties;
-    } catch (e, stacktrace) {
-      print('Error fetching properties with filters: $e');
-      print(stacktrace); // Print stack trace for debugging
+    } catch (e, st) {
+      print('Error fetching properties with filters: $e\n$st');
       throw Exception('Failed to fetch properties with filters');
     }
   }
+
 
   /// **New Method: Add Proposed Price**
   Future<void> addProposedPrice(
@@ -426,7 +496,7 @@ class PropertyService {
       String propertyId) async {
     try {
       DocumentSnapshot<Map<String, dynamic>> doc =
-          await _firestore.collection(collectionPath).doc(propertyId).get();
+      await _firestore.collection(collectionPath).doc(propertyId).get();
 
       if (doc.exists && doc.data() != null) {
         final data = doc.data()!;
@@ -513,9 +583,9 @@ class PropertyService {
   Future<String> _generatePropertyId(String district, String mandal) async {
     // Extract first two letters of district and mandal, uppercase
     String districtCode =
-        district.length >= 2 ? district.substring(0, 2).toUpperCase() : 'XX';
+    district.length >= 2 ? district.substring(0, 2).toUpperCase() : 'XX';
     String mandalCode =
-        mandal.length >= 2 ? mandal.substring(0, 2).toUpperCase() : 'YY';
+    mandal.length >= 2 ? mandal.substring(0, 2).toUpperCase() : 'YY';
 
     String prefix = '$districtCode$mandalCode';
 
@@ -644,11 +714,11 @@ class PropertyService {
       _firestore.doc('properties/$propertyId').update({'stage': newStage});
 
   Future<void> updateBuyer(
-    String propertyId,
-    Buyer oldBuyer,
-    Buyer updatedBuyer,
-    String? agentId,
-  ) async {
+      String propertyId,
+      Buyer oldBuyer,
+      Buyer updatedBuyer,
+      String? agentId,
+      ) async {
     final docRef = _firestore.collection('properties').doc(propertyId);
 
 // 1) remove old entry from buyers list
@@ -674,10 +744,10 @@ class PropertyService {
   }
 
   Future<void> updateBuyerByBuyer(
-    String propertyId,
-    Buyer oldBuyer,
-    Buyer newBuyer,
-  ) async {
+      String propertyId,
+      Buyer oldBuyer,
+      Buyer newBuyer,
+      ) async {
     final docRef = _firestore.collection('properties').doc(propertyId);
 
     // 1) Remove the old buyer map
