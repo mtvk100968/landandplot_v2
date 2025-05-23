@@ -78,7 +78,14 @@ class BuyLandScreenState extends State<BuyLandScreen> {
   ///   fetches properties within that box, and then filters client-side using
   ///   a point-in-polygon test.
   /// • For point searches, it uses the selectedPlace with a search radius.
-  Future<List<Property>> fetchPropertiesWithGeo() async {
+  Future<List<Property>> fetchPropertiesWithGeo({
+    Map<String,dynamic>? place,
+    List<String>? types,
+    RangeValues? priceRange,
+    RangeValues? areaRange,
+    int? beds,
+    int? baths,
+  }) async {
     print('fetchPropertiesWithGeo called with filters:');
     print('  selectedPropertyTypes: $selectedPropertyTypes');
     print('  selectedPriceRange: $selectedPriceRange');
@@ -177,44 +184,112 @@ class BuyLandScreenState extends State<BuyLandScreen> {
     return x > pX;
   }
 
-  /// Opens the filter bottom sheet and applies filters.
+  // /// Opens the filter bottom sheet and applies filters.
+  // Future<void> openFilterBottomSheet() async {
+  //   // Decide which single type to seed:
+  //   final seedType = selectedPropertyTypes.isNotEmpty
+  //       ? fc.PropertyType.values.firstWhere(
+  //         (t) => t.toString().split('.').last == selectedPropertyTypes.first,
+  //     orElse: () => fc.PropertyType.values.first,
+  //   )
+  //       : null;
+  //
+  //   final result = await showModalBottomSheet<Map<String, dynamic>>(
+  //     context: context,
+  //     isScrollControlled: true,
+  //     builder: (_) => FilterBottomSheet(
+  //       initialType: seedType,
+  //       initialPlace: selectedPlace,
+  //       initialMinPrice: selectedPriceRange.start,
+  //       initialMaxPrice: selectedPriceRange.end,
+  //       initialMinArea: selectedLandAreaRange.start,
+  //       initialMaxArea: selectedLandAreaRange.end,
+  //       initialBeds: _selectedBedrooms,
+  //       initialBaths: _selectedBathrooms,
+  //     ),
+  //   );
+  //
+  //   if (result != null) {
+  //     setState(() {
+  //       // Pull everything back out of the sheet's result:
+  //       _selectedType    = result['type']  as fc.PropertyType?;
+  //       selectedPropertyTypes = _selectedType != null
+  //           ? [ _selectedType.toString().split('.').last ]
+  //           : [];
+  //       selectedPlace    = result['place'] as Map<String, dynamic>?;
+  //       selectedPriceRange   = result['price'] as RangeValues;
+  //       selectedLandAreaRange = result['area']  as RangeValues;
+  //       _selectedBedrooms    = result['beds']  as int?;
+  //       _selectedBathrooms   = result['baths'] as int?;
+  //       // re‐run your query:
+  //       _propertyFuture = fetchPropertiesWithGeo();
+  //     });
+  //   }
+  // }
+
+  /// Opens the filter bottom sheet and applies or resets filters.
   Future<void> openFilterBottomSheet() async {
-    // Decide which single type to seed:
+    // Seed the dropdown from your existing selection, if any:
     final seedType = selectedPropertyTypes.isNotEmpty
         ? fc.PropertyType.values.firstWhere(
-          (t) => t.toString().split('.').last == selectedPropertyTypes.first,
+          (t) =>
+      t.toString().split('.').last == selectedPropertyTypes.first,
       orElse: () => fc.PropertyType.values.first,
     )
         : null;
 
-    final result = await showModalBottomSheet<Map<String, dynamic>>(
+    final result = await showModalBottomSheet<Map<String, dynamic>?>(
       context: context,
       isScrollControlled: true,
-      builder: (_) => FilterBottomSheet(
-        initialType: seedType,
-        initialPlace: selectedPlace,
-        initialMinPrice: selectedPriceRange.start,
-        initialMaxPrice: selectedPriceRange.end,
-        initialMinArea: selectedLandAreaRange.start,
-        initialMaxArea: selectedLandAreaRange.end,
-        initialBeds: _selectedBedrooms,
-        initialBaths: _selectedBathrooms,
-      ),
+      backgroundColor: Colors.transparent,
+      builder: (_) {
+        return FractionallySizedBox(
+          heightFactor: 0.6, // ← occupies 60% of the screen height
+          child: Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+            ),
+            child: FilterBottomSheet(
+              initialType: seedType,
+              initialPlace: selectedPlace,
+              initialMinPrice: selectedPriceRange.start,
+              initialMaxPrice: selectedPriceRange.end,
+              initialMinArea: selectedLandAreaRange.start,
+              initialMaxArea: selectedLandAreaRange.end,
+              initialBeds: _selectedBedrooms,
+              initialBaths: _selectedBathrooms,
+            ),
+          ),
+        );
+      },
     );
 
-    if (result != null) {
+    if (result == null) {
+      // User tapped “X” or “Reset” → clear filters and reload everything
       setState(() {
-        // Pull everything back out of the sheet's result:
-        _selectedType    = result['type']  as fc.PropertyType?;
+        _selectedType = null;
+        selectedPropertyTypes = [];
+        selectedPlace = null;
+        selectedPriceRange = const RangeValues(0, 0);
+        selectedLandAreaRange = const RangeValues(0, 0);
+        _selectedBedrooms = null;
+        _selectedBathrooms = null;
+        _propertyFuture = fetchPropertiesWithGeo(); // unfiltered
+      });
+    } else {
+      // Apply the filters they picked:
+      setState(() {
+        _selectedType = result['type'] as fc.PropertyType?;
         selectedPropertyTypes = _selectedType != null
-            ? [ _selectedType.toString().split('.').last ]
+            ? [_selectedType.toString().split('.').last]
             : [];
-        selectedPlace    = result['place'] as Map<String, dynamic>?;
-        selectedPriceRange   = result['price'] as RangeValues;
-        selectedLandAreaRange = result['area']  as RangeValues;
-        _selectedBedrooms    = result['beds']  as int?;
-        _selectedBathrooms   = result['baths'] as int?;
-        // re‐run your query:
+        selectedPlace = result['place'] as Map<String, dynamic>?;
+        selectedPriceRange = result['price'] as RangeValues;
+        selectedLandAreaRange = result['area'] as RangeValues;
+        _selectedBedrooms = result['beds'] as int?;
+        _selectedBathrooms = result['baths'] as int?;
+        // re‐run your filtered query:
         _propertyFuture = fetchPropertiesWithGeo();
       });
     }

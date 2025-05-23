@@ -1,12 +1,12 @@
 // lib/models/filter_config.dart
 
 enum PropertyType {
-  Plot,
-  FarmLand,
   AgriLand,
+  FarmLand,
+  Plot,
   Apartment,
-  IndependentHouse,
   Villa,
+  IndependentHouse,
   CommercialSpace,
 }
 

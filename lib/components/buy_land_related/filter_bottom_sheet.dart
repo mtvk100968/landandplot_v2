@@ -99,136 +99,152 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
             _areaRange.end.clamp(config.areaMin, config.areaMax),
           );
 
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.60, // 👈 Adjust height as needed
-      width: double.infinity, // full width
-      color: Colors.white, // solid rectangle look
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-        left: 16,
-        right: 16,
-        top: 16,
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.zero,
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // ─── header ───────────────────────────────
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Row(
             children: [
-              // 1️⃣ Property Type Dropdown
-              DropdownButton<fc.PropertyType>(
-                hint: const Text('Select property type'),
-                isExpanded: true,
-                value: _type,
-                items: fc.PropertyType.values.map((t) {
-                  return DropdownMenuItem(
-                    value: t,
-                    child: Text(t.toString().split('.').last),
-                  );
-                }).toList(),
-                onChanged: (newType) {
-                  if (newType == null) return;
-                  setState(() {
-                    final c = fc.kFilterMap[newType]!;
-                    _type = newType;
-                    // reset ranges to full span of the newly selected type
-                    _priceRange = RangeValues(c.priceMin, c.priceMax);
-                    _areaRange = RangeValues(c.areaMin, c.areaMax);
-                    _beds = null;
-                    _baths = null;
-                  });
-                },
-              ),
-              const SizedBox(height: 8),
-
-              // 🔹 Location picker
-              SizedBox(
-                width: double.infinity,
-                child: LocationSearchBar(
-                  initialPlace: widget.initialPlace,
-                  onPlaceSelected: (p) => setState(() => _place = p),
-                ),
-              ),
-              const SizedBox(height: 8),
-
-              // 2️⃣ If a type is chosen, show its sliders and chips
-              if (config != null) ...[
-                const SizedBox(height: 16),
-
-                // Price Slider
-                Text('Price (${config.priceLabel})'),
-                RangeSlider(
-                  min: config.priceMin,
-                  max: config.priceMax,
-                  values: clampedPriceRange,
-                  onChanged: (r) => setState(() => _priceRange = r),
-                ),
-
-                const SizedBox(height: 8),
-
-                // Area Slider
-                Text('Area (${config.areaLabel})'),
-                RangeSlider(
-                  min: config.areaMin,
-                  max: config.areaMax,
-                  values: clampedAreaRange,
-                  onChanged: (r) => setState(() => _areaRange = r),
-                ),
-
-                // Beds/Baths (only if needed)
-                if (config.needsBedsBaths) ...[
-                  const SizedBox(height: 16),
-                  const Text('Bedrooms'),
-                  Wrap(
-                    spacing: 8,
-                    children: List.generate(5, (i) {
-                      final v = i + 1;
-                      return ChoiceChip(
-                        label: Text(v == 5 ? '4+' : '$v'),
-                        selected: _beds == v,
-                        onSelected: (_) => setState(() => _beds = v),
-                      );
-                    }),
-                  ),
-                  const SizedBox(height: 16),
-                  const Text('Bathrooms'),
-                  Wrap(
-                    spacing: 8,
-                    children: List.generate(5, (i) {
-                      final v = i + 1;
-                      return ChoiceChip(
-                        label: Text(v == 5 ? '4+' : '$v'),
-                        selected: _baths == v,
-                        onSelected: (_) => setState(() => _baths = v),
-                      );
-                    }),
-                  ),
-                ],
-              ],
-
-              const SizedBox(height: 24),
-              Center(
-                child: ElevatedButton(
-                  onPressed: () {
-                    // recompute config…
-                    final cfg = _type != null ? fc.kFilterMap[_type!] : null;
-                    Navigator.of(context).pop({
-                      'place': _place,
-                      'type': _type,
-                      'price': _priceRange,
-                      'area': _areaRange,
-                      'beds': _beds,
-                      'baths': _baths,
-                      'unit': cfg?.priceLabel,
-                    });
-                  },
-                  child: const Text('Apply Filters'),
-                ),
+              const Expanded(
+                  child: Text('Filters', style: TextStyle(fontSize: 20))),
+              IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: () => Navigator.of(context).pop(null),
               ),
             ],
           ),
         ),
-      ),
+        const Divider(height: 1),
+
+        // ─── body ─────────────────────────────────
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 1️⃣ Property Type Dropdown
+                DropdownButton<fc.PropertyType>(
+                  hint: const Text('Select property type'),
+                  isExpanded: true,
+                  value: _type,
+                  items: fc.PropertyType.values.map((t) {
+                    return DropdownMenuItem(
+                      value: t,
+                      child: Text(t.toString().split('.').last),
+                    );
+                  }).toList(),
+                  onChanged: (newType) {
+                    if (newType == null) return;
+                    setState(() {
+                      final c = fc.kFilterMap[newType]!;
+                      _type = newType;
+                      // reset ranges to full span of the newly selected type
+                      _priceRange = RangeValues(c.priceMin, c.priceMax);
+                      _areaRange = RangeValues(c.areaMin, c.areaMax);
+                      _beds = null;
+                      _baths = null;
+                    });
+                  },
+                ),
+                const SizedBox(height: 8),
+
+                // 🔹 Location picker
+                SizedBox(
+                  width: double.infinity,
+                  child: LocationSearchBar(
+                    initialPlace: widget.initialPlace,
+                    onPlaceSelected: (p) => setState(() => _place = p),
+                  ),
+                ),
+                const SizedBox(height: 8),
+
+                // 2️⃣ If a type is chosen, show its sliders and chips
+                if (config != null) ...[
+                  const SizedBox(height: 16),
+
+                  // Price Slider
+                  Text('Price (${config.priceLabel})'),
+                  RangeSlider(
+                    min: config.priceMin,
+                    max: config.priceMax,
+                    values: clampedPriceRange,
+                    onChanged: (r) => setState(() => _priceRange = r),
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  // Area Slider
+                  Text('Area (${config.areaLabel})'),
+                  RangeSlider(
+                    min: config.areaMin,
+                    max: config.areaMax,
+                    values: clampedAreaRange,
+                    onChanged: (r) => setState(() => _areaRange = r),
+                  ),
+
+                  // Beds/Baths (only if needed)
+                  if (config.needsBedsBaths) ...[
+                    const SizedBox(height: 16),
+                    const Text('Bedrooms'),
+                    Wrap(
+                      spacing: 8,
+                      children: List.generate(5, (i) {
+                        final v = i + 1;
+                        return ChoiceChip(
+                          label: Text(v == 5 ? '4+' : '$v'),
+                          selected: _beds == v,
+                          onSelected: (_) => setState(() => _beds = v),
+                        );
+                      }),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text('Bathrooms'),
+                    Wrap(
+                      spacing: 8,
+                      children: List.generate(5, (i) {
+                        final v = i + 1;
+                        return ChoiceChip(
+                          label: Text(v == 5 ? '4+' : '$v'),
+                          selected: _baths == v,
+                          onSelected: (_) => setState(() => _baths = v),
+                        );
+                      }),
+                    ),
+                  ],
+                ],
+              ],
+            ),
+          ),
+        ),
+
+        const Divider(height: 1),
+
+        // ─── footer ───────────────────────────────
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Row(
+            children: [
+              ElevatedButton.icon(
+                icon: const Icon(Icons.refresh),
+                label: const Text('Reset'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.grey[200],
+                  foregroundColor: Colors.black,
+                ),
+                onPressed: () => Navigator.of(context).pop(null),
+              ),
+              const Spacer(),
+              ElevatedButton(
+                child: const Text('Apply'),
+                onPressed: _apply,
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
