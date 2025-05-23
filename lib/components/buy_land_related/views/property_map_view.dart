@@ -7,6 +7,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:google_maps_flutter_platform_interface/google_maps_flutter_platform_interface.dart'
     as gpi;
 import '../../../../models/property_model.dart';
+import '../../map_related/cluster_marker.dart';
 import '../../map_related/marker.dart'; // your CustomMarker helper
 import '../../../utils/format.dart';
 import '../property_card2.dart';
@@ -25,14 +26,28 @@ class PropertyMapView extends StatefulWidget {
 
 class PropertyMapViewState extends State<PropertyMapView> {
   late GoogleMapController _mapController;
+  Map<String, List<Property>> _buckets = {};
   Set<Marker> _markers = {};
   late bool _markersInitialized = false;
   bool _clustersBuilt = false;
   LatLng? _initialPosition;
 
+  // Create a ClusterManagerId
+  final ClusterManagerId _clusterManagerId = const ClusterManagerId(
+    'propertyClusterManager',
+  );
+  late ClusterManager _clusterManager;
+
   @override
   void initState() {
     super.initState();
+
+    // Initialize ClusterManager
+    _clusterManager = ClusterManager(
+      clusterManagerId: _clusterManagerId,
+      onClusterTap: _onClusterTap,
+    );
+
     _setInitialLocation();
   }
 
@@ -43,7 +58,8 @@ class PropertyMapViewState extends State<PropertyMapView> {
     LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.deniedForever || permission == LocationPermission.denied) {
+      if (permission == LocationPermission.deniedForever ||
+          permission == LocationPermission.denied) {
         return;
       }
     }
@@ -71,89 +87,89 @@ class PropertyMapViewState extends State<PropertyMapView> {
   }
 
   Future<void> _buildClusters() async {
-    // if (_markersInitialized) return;
-
+    // 1) choose how many decimals to bucket by based on zoom level:
     final zoom = await _mapController.getZoomLevel();
-    final precision =
-        (18 - zoom).clamp(1, 6).round(); // smaller zoom → broader buckets
+    // at zoom < 8, round to 0 decimals (~100 km buckets)
+    // at zoom < 12, round to 1 decimal (~10 km buckets)
+    // zoom 0–7.999… → use toStringAsFixed(0) (buckets of about 100 km)
+    // zoom 8.0–11.999… → use toStringAsFixed(1) (buckets of about 10 km)
+    // otherwise 2 decimals (~1 km)
 
+    final precision = zoom < 8
+        ? 0 // 100 km buckets
+        : zoom < 12
+            ? 1 // 10 km buckets
+            : zoom < 15
+                ? 2 // 1 km buckets
+                : 3; // 100 m buckets
+
+    // 2) group into buckets
     final buckets = <String, List<Property>>{};
     for (final p in widget.properties) {
-      final key =
-          '${p.latitude.toStringAsFixed(precision)}:${p.longitude.toStringAsFixed(precision)}';
+      final key = '${p.latitude.toStringAsFixed(precision)}'
+          ':${p.longitude.toStringAsFixed(precision)}';
       buckets.putIfAbsent(key, () => []).add(p);
     }
 
-    // 2️⃣ Build markers
+    // 3) decide your threshold for “show a circle”
+    const int circleThreshold = 10; // now any bucket ≥3 gets a cluster
+
     final newMarkers = <Marker>{};
     for (final group in buckets.values) {
-      if (group.length == 1) {
-        // single property
-        final p = group.first;
-        final icon = await CustomMarker.createMarker(
-          formatPrice(p.totalPrice),
-        );
-        newMarkers.add(Marker(
-          markerId: MarkerId('cluster_${p.latitude}_$p.longitude'),
-          position: LatLng(p.latitude, p.longitude),
-          icon: icon,
-          onTap: () async {
-            final zoom = await _mapController.getZoomLevel();
-            _mapController.animateCamera(
-              CameraUpdate.newLatLngZoom(
-                LatLng(p.latitude, p.longitude),
-                (zoom + 2).clamp(0.0, 18.0),
-              ),
-            );
-          },
-        ));
-      } else {
-        // cluster
+      if (group.length >= circleThreshold) {
+        // draw ONE circle
         final avgLat =
             group.map((p) => p.latitude).reduce((a, b) => a + b) / group.length;
         final avgLng = group.map((p) => p.longitude).reduce((a, b) => a + b) /
             group.length;
-        final icon = await CustomMarker.createMarker(group.length.toString());
-        newMarkers.add(Marker(
+
+        // --- draw one cluster circle ---
+        final icon = await ClusterMarker.create(group.length);
+        newMarkers.add(
+          Marker(
             markerId: MarkerId('cluster_${avgLat}_$avgLng'),
             position: LatLng(avgLat, avgLng),
             icon: icon,
-            onTap: () async {
-              final zoom = await _mapController.getZoomLevel();
-              final newZoom = (zoom + 2).clamp(0.0, 18.0);
-
-              // Zoom in
-              await _mapController.animateCamera(
-                CameraUpdate.newLatLngZoom(LatLng(avgLat, avgLng), newZoom),
-              );
-
-              // Then show list of properties in the cluster
-              if (context.mounted) {
-                showModalBottomSheet(
-                  context: context,
-                  builder: (ctx) {
-                    return ListView(
-                      children: group.map((p) {
-                        return ListTile(
-                          subtitle: Text('${formatPrice(p.totalPrice)}'),
-                          onTap: () {
-                            Navigator.pop(context); // close the bottom sheet
-                            _showPropertyCard(p); // reuse existing function
-                          },
-                        );
-                      }).toList(),
-                    );
-                  },
-                );
-              }
-            }));
+            onTap: () => _openClusterBounds(group),
+          ),
+        );
+      } else {
+        // fewer than threshold → draw individual green rectangles
+        for (final p in group) {
+          final icon =
+              await CustomMarker.createMarker(formatPrice(p.totalPrice));
+          newMarkers.add(Marker(
+            markerId: MarkerId(p.id),
+            position: LatLng(p.latitude, p.longitude),
+            icon: icon,
+            onTap: () => _showPropertyCard(p),
+          ));
+        }
       }
     }
 
-    setState(() {
-      _markers = newMarkers;
-      _clustersBuilt = true;
-    });
+    setState(() => _markers = newMarkers);
+  }
+
+  void _openClusterBounds(List<Property> group) {
+    double minLat = group.first.latitude, maxLat = group.first.latitude;
+    double minLng = group.first.longitude, maxLng = group.first.longitude;
+
+    for (final p in group) {
+      minLat = math.min(minLat, p.latitude);
+      maxLat = math.max(maxLat, p.latitude);
+      minLng = math.min(minLng, p.longitude);
+      maxLng = math.max(maxLng, p.longitude);
+    }
+
+    final bounds = LatLngBounds(
+      southwest: LatLng(minLat, minLng),
+      northeast: LatLng(maxLat, maxLng),
+    );
+
+    _mapController.animateCamera(
+      CameraUpdate.newLatLngBounds(bounds, 60),
+    );
   }
 
   void _showPropertyCard(Property property) {
@@ -190,6 +206,27 @@ class PropertyMapViewState extends State<PropertyMapView> {
 
     // Now safely build clusters (mapController is ready)
     await _buildClusters();
+  }
+
+  /// Put this inside your PropertyMapViewState class:
+  /// When the user taps a cluster marker, show a sheet listing its items.
+  void _showClusterList(List<Property> group) {
+    showModalBottomSheet(
+      context: context,
+      builder: (_) => ListView(
+        padding: const EdgeInsets.all(16),
+        children: group.map((p) {
+          return ListTile(
+            title: Text(p.name),
+            subtitle: Text(formatPrice(p.totalPrice)),
+            onTap: () {
+              Navigator.pop(context);
+              _showPropertyCard(p);
+            },
+          );
+        }).toList(),
+      ),
+    );
   }
 
   void _moveToInitialLocation() {
@@ -266,7 +303,8 @@ class PropertyMapViewState extends State<PropertyMapView> {
         child: GoogleMap(
           mapType: MapType.normal,
           initialCameraPosition: CameraPosition(
-            target: _initialPosition ?? const LatLng(20.5937, 78.9629), // fallback
+            target:
+                _initialPosition ?? const LatLng(20.5937, 78.9629), // fallback
             zoom: 8,
           ),
           onMapCreated: _onMapCreated,
