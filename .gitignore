@@ -47,3 +47,4 @@ app.*.map.json
 /android/app/.cxx/
 /android/.kotlin/
 *.env
+scripts/serviceAccountKey.json
