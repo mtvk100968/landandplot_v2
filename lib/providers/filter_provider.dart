@@ -1,7 +1,28 @@
 // filter_provider.dart
 import 'package:flutter/material.dart';
 
-enum PropertyType { Plot, FarmLand, AgriLand }
+enum PropertyType {
+  plot('Plot'),
+  agriLand('Agri Land'),
+  farmLand('Farm Land'),
+  house('House'),
+  villa('Villa'),
+  apartment('Apartment'),
+  development('Development'),
+  commercialSpace('Commercial Space');
+
+  /// the exact label you store in the database
+  final String label;
+  const PropertyType(this.label);
+
+  /// helper to look up an enum from the DB‐string
+  static PropertyType fromLabel(String dbValue) {
+    return PropertyType.values.firstWhere(
+          (e) => e.label.toLowerCase() == dbValue.toLowerCase(),
+      orElse: () => PropertyType.plot,
+    );
+  }
+}
 
 class FilterProvider extends ChangeNotifier {
   // Property Type Filters
@@ -11,6 +32,13 @@ class FilterProvider extends ChangeNotifier {
   bool isPlotEnabled = true;
   bool isFarmLandEnabled = true;
   bool isAgriLandEnabled = true;
+
+  // House / Villa / Apartment / Development / Commercial
+  bool isHouseSelected = false;
+  bool isVillaSelected = false;
+  bool isApartmentSelected = false;
+  bool isDevelopmentSelected = false;
+  bool isCommercialSpaceSelected = false;
 
   // Units
   String pricePerUnitUnit = ''; // 'per sqyd' or 'per acre'
@@ -29,11 +57,21 @@ class FilterProvider extends ChangeNotifier {
   PropertyType? _propertyTypeFromString(String typeString) {
     switch (typeString) {
       case 'Plot':
-        return PropertyType.Plot;
+        return PropertyType.plot;
       case 'Farm Land':
-        return PropertyType.FarmLand;
+        return PropertyType.farmLand;
       case 'Agri Land':
-        return PropertyType.AgriLand;
+        return PropertyType.agriLand;
+      case 'House':
+        return PropertyType.house;
+      case 'Villa':
+        return PropertyType.villa;
+      case 'Apartment':
+        return PropertyType.apartment;
+      case 'Development':
+        return PropertyType.development;
+      case 'Commercial Space':
+        return PropertyType.commercialSpace;
       default:
         return null;
     }
@@ -42,12 +80,22 @@ class FilterProvider extends ChangeNotifier {
   // Internal method to convert PropertyType enum to string
   String _propertyTypeToString(PropertyType type) {
     switch (type) {
-      case PropertyType.Plot:
+      case PropertyType.plot:
         return 'Plot';
-      case PropertyType.FarmLand:
+      case PropertyType.farmLand:
         return 'Farm Land';
-      case PropertyType.AgriLand:
+      case PropertyType.agriLand:
         return 'Agri Land';
+      case PropertyType.apartment:
+        return 'Apartment';
+      case PropertyType.villa:
+        return 'Villa';
+      case PropertyType.house:
+        return 'House';
+      case PropertyType.development:
+        return 'Development';
+      case PropertyType.commercialSpace:
+        return 'Commercial Space';
       default:
         return '';
     }
@@ -58,7 +106,7 @@ class FilterProvider extends ChangeNotifier {
     PropertyType? typeEnum = _propertyTypeFromString(propertyType);
     if (typeEnum == null) return;
 
-    if (typeEnum == PropertyType.AgriLand) {
+    if (typeEnum == PropertyType.agriLand) {
       isAgriLandSelected = !isAgriLandSelected;
 
       if (isAgriLandSelected) {
@@ -82,9 +130,9 @@ class FilterProvider extends ChangeNotifier {
         resetFilters();
       }
     } else {
-      if (typeEnum == PropertyType.Plot && isPlotEnabled) {
+      if (typeEnum == PropertyType.plot && isPlotEnabled) {
         isPlotSelected = !isPlotSelected;
-      } else if (typeEnum == PropertyType.FarmLand && isFarmLandEnabled) {
+      } else if (typeEnum == PropertyType.farmLand && isFarmLandEnabled) {
         isFarmLandSelected = !isFarmLandSelected;
       }
 
@@ -119,7 +167,11 @@ class FilterProvider extends ChangeNotifier {
     isAgriLandEnabled = true;
     isPlotSelected = false;
     isFarmLandSelected = false;
-    isAgriLandSelected = false;
+    isApartmentSelected = false;
+    isHouseSelected = false;
+    isVillaSelected = false;
+    isDevelopmentSelected = false;
+    isCommercialSpaceSelected = false;
     pricePerUnitUnit = '';
     landAreaUnit = '';
     minPricePerUnit = 0;
@@ -162,6 +214,11 @@ class FilterProvider extends ChangeNotifier {
     if (isPlotSelected) types.add('Plot');
     if (isFarmLandSelected) types.add('Farm Land');
     if (isAgriLandSelected) types.add('Agri Land');
+    if (isApartmentSelected) types.add('Apartment');
+    if (isHouseSelected) types.add('House');
+    if (isVillaSelected) types.add('Villa');
+    if (isDevelopmentSelected) types.add('Development');
+    if (isCommercialSpaceSelected) types.add('Commercial Space');
     return types;
   }
 

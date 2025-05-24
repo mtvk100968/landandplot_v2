@@ -24,12 +24,12 @@ class PropertyService {
       }) async {
     try {
       // Step 1: Generate Custom Property ID
-      if (property.district == null || property.mandal == null) {
+      if (property.district == null || property.taluqMandal == null) {
         throw ArgumentError("District and Mandal are required fields.");
       }
 
       String propertyId =
-      await _generatePropertyId(property.district!, property.mandal!);
+      await _generatePropertyId(property.district!, property.taluqMandal!);
 
       // Step 2: Upload Media Files with Custom Naming
       List<String> imageUrls =
@@ -68,7 +68,7 @@ class PropertyService {
         latitude: property.latitude,
         longitude: property.longitude,
         pincode: property.pincode,
-        mandal: property.mandal,
+        taluqMandal: property.taluqMandal,
         district: property.district,
         village: property.village, // <--- Include Village
         state: property.state,
@@ -86,6 +86,8 @@ class PropertyService {
         userType: property.userType,
         ventureName: property.ventureName,
         createdAt: createdAt,
+        amenities: property.amenities,
+        agri_amenities: property.agri_amenities,
         stage: property.stage,
         fencing: property.fencing,
         gate: property.gate,

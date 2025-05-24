@@ -26,6 +26,17 @@ class _Step1BasicDetailsState extends State<Step1BasicDetails> {
 
   AppUser? currentUser;
 
+  final propertyTypes = [
+    'Plot',
+    'Farm Land',
+    'Agri Land',
+    'House',
+    'Villa',
+    'Apartment',
+    'Development',
+    'Commercial Space',
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -62,6 +73,38 @@ class _Step1BasicDetailsState extends State<Step1BasicDetails> {
     }
   }
 
+  /// Build a row of ChoiceChips for "Property Type"
+  Widget _buildPropertyTypeSelection() {
+    final propertyProvider = Provider.of<PropertyProvider>(context);
+    final propertyTypeOptions = [
+      'Plot',
+      'Farm Land',
+      'Agri Land',
+      'House',
+      'Villa',
+      'Apartment',
+      'Development',
+      'Commercial Space',
+    ];
+
+    return Wrap(
+      spacing: 8.0,
+      children: propertyTypeOptions.map((option) {
+        final isSelected = (propertyProvider.propertyType == option);
+        return ChoiceChip(
+          label: Text(option),
+          selected: isSelected,
+          onSelected: (selected) {
+            if (selected) {
+              propertyProvider.setPropertyType(option);
+            }
+          },
+        );
+      }).toList(),
+    );
+  }
+
+
   @override
   Widget build(BuildContext context) {
     final propertyProvider = Provider.of<PropertyProvider>(context);
@@ -73,17 +116,28 @@ class _Step1BasicDetailsState extends State<Step1BasicDetails> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             TextFormField(
-              decoration: InputDecoration(labelText: 'Your Phone Number'),
-              keyboardType: TextInputType.phone,
-              initialValue: propertyProvider.phoneNumber.isNotEmpty
-                  ? propertyProvider.phoneNumber
-                  : '+91',
-              validator: Validators.phoneValidator,
-              onChanged: (value) => propertyProvider.setPhoneNumber(value),
+              decoration: InputDecoration(
+                labelText: 'Your Phone Number',
+                prefixText: '+91 ',             // <-- show +91 as a non‐editable prefix
+              ),
+              keyboardType: TextInputType.number,
+              initialValue: propertyProvider.phoneNumber.startsWith('+91')
+                  ? propertyProvider.phoneNumber.substring(3)
+                  : '',
               inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'^\+?[0-9]*$')),
-                LengthLimitingTextInputFormatter(13),
+                FilteringTextInputFormatter.digitsOnly,         // only digits
+                LengthLimitingTextInputFormatter(10),           // max 10 of them
               ],
+              validator: (val) {
+                if (val == null || val.length != 10) {
+                  return 'Please enter exactly 10 digits';
+                }
+                return null;
+              },
+              onChanged: (val) {
+                // store your provider with the +91 prefix
+                propertyProvider.setPhoneNumber('+91' + val);
+              },
             ),
             SizedBox(height: 20),
             TextFormField(
@@ -107,23 +161,11 @@ class _Step1BasicDetailsState extends State<Step1BasicDetails> {
               ],
             ),
             SizedBox(height: 20),
-            DropdownButtonFormField<String>(
-              decoration: InputDecoration(labelText: 'Property Type'),
-              value: propertyProvider.propertyType,
-              items: ['Plot', 'Farm Land', 'Agri Land']
-                  .map((type) => DropdownMenuItem(
-                        value: type,
-                        child: Text(type[0].toUpperCase() +
-                            type.substring(1).replaceAll('_', ' ')),
-                      ))
-                  .toList(),
-              onChanged: (value) {
-                if (value != null) {
-                  propertyProvider.setPropertyType(value);
-                }
-              },
-              validator: Validators.requiredValidator,
-            ),
+            // 1) Property Type row
+            const Text("Property Type", style: TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            _buildPropertyTypeSelection(),
+            const SizedBox(height: 20),
           ],
         ),
       ),

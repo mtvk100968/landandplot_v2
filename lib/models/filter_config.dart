@@ -1,13 +1,25 @@
 // lib/models/filter_config.dart
 
 enum PropertyType {
-  AgriLand,
-  FarmLand,
-  Plot,
-  Apartment,
-  Villa,
-  IndependentHouse,
-  CommercialSpace,
+  plot('Plot'),
+  agriLand('Agri Land'),
+  farmLand('Farm Land'),
+  apartment('Apartment'),
+  villa('Villa'),
+  house('House'),
+  development('Development'),
+  commercialSpace('Commercial Space');
+  /// The exact label you store in your documents
+  final String label;
+  const PropertyType(this.label);
+
+  /// Look up an enum by the stored label
+  static PropertyType fromLabel(String dbValue) {
+  return PropertyType.values.firstWhere(
+  (e) => e.label.toLowerCase() == dbValue.toLowerCase(),
+  orElse: () => PropertyType.plot,
+  );
+  }
 }
 
 class FilterConfig {
@@ -41,7 +53,7 @@ class FilterConfig {
 
 /// Configuration for each property type
 const Map<PropertyType, FilterConfig> kFilterMap = {
-  PropertyType.Plot: FilterConfig(
+  PropertyType.plot: FilterConfig(
     priceLabel: '₹ per sqyd',
     areaLabel: 'sqyd',
     priceMin: 0,
@@ -49,7 +61,7 @@ const Map<PropertyType, FilterConfig> kFilterMap = {
     areaMin: 100,
     areaMax: 5000,
   ),
-  PropertyType.FarmLand: FilterConfig(
+  PropertyType.farmLand: FilterConfig(
     priceLabel: '₹ per sqyd',
     areaLabel: 'sqyd',
     priceMin: 0,
@@ -57,7 +69,7 @@ const Map<PropertyType, FilterConfig> kFilterMap = {
     areaMin: 100,
     areaMax: 5000,
   ),
-  PropertyType.AgriLand: FilterConfig(
+  PropertyType.agriLand: FilterConfig(
     priceLabel: '₹ per acre',
     areaLabel: 'acre',
     priceMin: 0,
@@ -65,7 +77,7 @@ const Map<PropertyType, FilterConfig> kFilterMap = {
     areaMin: 1,
     areaMax: 100,
   ),
-  PropertyType.Apartment: FilterConfig(
+  PropertyType.apartment: FilterConfig(
     priceLabel: '₹ per sqft',
     areaLabel: 'sqft',
     priceMin: 0,
@@ -74,7 +86,7 @@ const Map<PropertyType, FilterConfig> kFilterMap = {
     areaMax: 5000,
     needsBedsBaths: true,
   ),
-  PropertyType.IndependentHouse: FilterConfig(
+  PropertyType.house: FilterConfig(
     priceLabel: '₹ per sqft',
     areaLabel: 'sqft',
     priceMin: 0,
@@ -83,7 +95,7 @@ const Map<PropertyType, FilterConfig> kFilterMap = {
     areaMax: 8000,
     needsBedsBaths: true,
   ),
-  PropertyType.Villa: FilterConfig(
+  PropertyType.villa: FilterConfig(
     priceLabel: '₹ per sqft',
     areaLabel: 'sqft',
     priceMin: 0,
@@ -92,7 +104,16 @@ const Map<PropertyType, FilterConfig> kFilterMap = {
     areaMax: 10000,
     needsBedsBaths: true,
   ),
-  PropertyType.CommercialSpace: FilterConfig(
+  PropertyType.development: FilterConfig(
+    priceLabel: '₹ per sqft',
+    areaLabel: 'sqft',
+    priceMin: 0,
+    priceMax: 20000,
+    areaMin: 500,
+    areaMax: 10000,
+    needsBedsBaths: true,
+  ),
+  PropertyType.commercialSpace: FilterConfig(
     priceLabel: '₹ per sqft',
     areaLabel: 'sqft',
     priceMin: 0,

@@ -282,7 +282,7 @@ class BuyLandScreenState extends State<BuyLandScreen> {
       setState(() {
         _selectedType = result['type'] as fc.PropertyType?;
         selectedPropertyTypes = _selectedType != null
-            ? [_selectedType.toString().split('.').last]
+            ? [ _selectedType!.label ]    // ← use the exact DB label
             : [];
         selectedPlace = result['place'] as Map<String, dynamic>?;
         selectedPriceRange = result['price'] as RangeValues;

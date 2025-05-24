@@ -210,7 +210,7 @@ class _PropertyCardState2 extends State<PropertyCard2> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              widget.property.mandal ?? '',
+                              widget.property.taluqMandal ?? '',
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w400,

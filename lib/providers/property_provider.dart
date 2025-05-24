@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../models/property_model.dart';
 import 'dart:io';
 import '../data/districts_data.dart';
@@ -15,6 +17,8 @@ class PropertyProvider with ChangeNotifier {
     return Timestamp.fromDate(nowIst);
   }
 
+  final String _apiKey = dotenv.env['GOOGLE_MAPS_API_KEY'] ?? '';
+
   // Step 1: Basic Details
   String _phoneNumber = '';
   String _name = '';
@@ -30,15 +34,20 @@ class PropertyProvider with ChangeNotifier {
   double _totalPrice = 0.0;
   String _surveyNumber = '';
   List<String> _plotNumbers = [];
+  int _bedRooms = 0;
+  int _bathRooms = 0;
+  int _parkingSpots = 0;
 
   // Step 3: Address Details
+  String _houseNo = '';
   String? _district;
-  String? _mandal;
+  String _taluqMandal = '';
   String? _village; // <--- Added Village Field
   String _pincode = '';
   String _state = '';
   String _city = '';
   String? _address;
+  String? _mandal;
 
   // Step 4: Map Location
   double _latitude = 17.385044; // Default to Hyderabad latitude
@@ -60,9 +69,6 @@ class PropertyProvider with ChangeNotifier {
 
   bool _isGeocoding = false;
   bool get isGeocoding => _isGeocoding;
-
-  // API Key for Google Maps Geocoding API
-  final String _apiKey = "YOUR_API_KEY"; // Replace with your actual API key
 
   // **Added Field: Proposed Prices**
   List<Map<String, dynamic>> _proposedPrices = [];
@@ -121,7 +127,7 @@ class PropertyProvider with ChangeNotifier {
         final data = doc.data();
         if (data != null && data.containsKey('proposedPrices')) {
           _proposedPrices =
-              List<Map<String, dynamic>>.from(data['proposedPrices'] ?? []);
+          List<Map<String, dynamic>>.from(data['proposedPrices'] ?? []);
           notifyListeners();
         }
       }
@@ -169,6 +175,27 @@ class PropertyProvider with ChangeNotifier {
   String? get ventureName => _ventureName;
   void setVentureName(String value) {
     _ventureName = value;
+    notifyListeners();
+  }
+
+  // 1. BHK
+  int get bedRooms => _bedRooms;
+  void setBedRooms(int value) {
+    _bedRooms = value; // Extract number from "2 BHK"
+    notifyListeners();
+  }
+
+  // 2. BATH
+  int get bathRooms => _bathRooms;
+  void setBathRooms(int value) {
+    _bathRooms = value;
+    notifyListeners();
+  }
+
+  // 3. PKS
+  int get parkingSpots => _parkingSpots;
+  void setParkingSpots(int value) {
+    _parkingSpots = value; // Extract number from "2 PKS"
     notifyListeners();
   }
 
@@ -233,9 +260,48 @@ class PropertyProvider with ChangeNotifier {
     }
   }
 
+  String get houseNo => _houseNo;
+  void setHouseNo(String value) {
+    _houseNo = value;
+    notifyListeners();
+  }
+
   void removePlotNumber(String plotNumber) {
     _plotNumbers.remove(plotNumber);
     notifyListeners();
+  }
+
+  int parseBedrooms(String? bedroomsString) {
+    // e.g. "2 BHK" => 2
+    // If user never chose, return 0
+    if (bedroomsString == null || bedroomsString.isEmpty) return 0;
+
+    // If your strings are like "1 BHK", "2 BHK", "3 BHK"...
+    // split on space:
+    final parts = bedroomsString.split(' '); // ["2", "BHK"]
+    return int.tryParse(parts.first) ?? 0;
+  }
+
+  int parseBath(String? bathString) {
+    // e.g. "2 Bath" => 2, or "4+ Bath" => 4
+    if (bathString == null || bathString.isEmpty) return 0;
+
+    // If your strings are "1 Bath", "2 Bath", "3 Bath", "4+ Bath"
+    // you can handle "4+" specifically:
+    if (bathString.startsWith('4+')) {
+      return 4; // or 5, depending on how you want to store
+    }
+
+    final parts = bathString.split(' '); // ["2", "Bath"]
+    return int.tryParse(parts.first) ?? 0;
+  }
+
+  int parseParking(String? parkingString) {
+    // e.g. "2 PKS" => 2
+    if (parkingString == null || parkingString.isEmpty) return 0;
+
+    final parts = parkingString.split(' '); // ["2", "PKS"]
+    return int.tryParse(parts.first) ?? 0;
   }
 
   // Getters and Setters for Step 3
@@ -245,10 +311,9 @@ class PropertyProvider with ChangeNotifier {
       developer.log('District unchanged: $value');
       return;
     }
-
     developer.log('Setting new district: $value');
     _district = value;
-    _mandal = null; // Reset mandal when district changes
+    _mandal = null;
     notifyListeners();
   }
 
@@ -258,9 +323,14 @@ class PropertyProvider with ChangeNotifier {
       developer.log('Mandal unchanged: $value');
       return;
     }
-
     developer.log('Setting new mandal: $value');
     _mandal = value;
+    notifyListeners();
+  }
+
+  String get taluqMandal => _taluqMandal;
+  void setTaluqMandal(String value) {
+    _taluqMandal = value;
     notifyListeners();
   }
 
@@ -390,6 +460,22 @@ class PropertyProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  List<String> _selectedAmenities = [];
+  List<String> get selectedAmenities => _selectedAmenities;
+  void setSelectedAmenities(List<String> amenities) {
+    _selectedAmenities = amenities;
+    notifyListeners();
+  }
+
+  // ── NEW: agri‐land amenities ─────────────────────────────────────────
+  List<String> _agriAmenities = [];
+  List<String> get agriAmenities => _agriAmenities;
+
+  void setAgriAmenities(List<String> agri_amenities) {
+    _agriAmenities = agri_amenities;
+    notifyListeners();
+  }
+
   // Getter for districtList
   List<String> get districtList => districtData.keys.toList();
 
@@ -401,72 +487,94 @@ class PropertyProvider with ChangeNotifier {
     return [];
   }
 
-  /// Geocode the current pincode to obtain city, district, and state
+  //// Geocode the current pincode to obtain city, district, and state
   Future<void> geocodePincode(String pincode) async {
     _isGeocoding = true;
-    notifyListeners();
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      notifyListeners();
+    });
 
-    try {
-      final Uri uri = Uri.parse(
-          'https://maps.googleapis.com/maps/api/geocode/json?address=$pincode&components=country:IN&key=$_apiKey');
+    final key = dotenv.env['GOOGLE_MAPS_API_KEY']!;
 
-      final response = await http.get(uri);
+    // ── STEP 1: PIN → lat/lng ─────────────────────────────────────────
+    final geoUri = Uri.https('maps.googleapis.com', '/maps/api/geocode/json', {
+      'address': pincode,
+      'components': 'country:IN',
+      'key': key,
+    });
+    final geoResp  = await http.get(geoUri);
+    final geoJson  = jsonDecode(geoResp.body) as Map<String, dynamic>;
 
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        if (data['status'] == 'OK') {
-          String city = '';
-          String district = '';
-          String state = '';
-          String village = ''; // Initialize village
-
-          List<dynamic> results = data['results'];
-          if (results.isNotEmpty) {
-            List<dynamic> addressComponents = results[0]['address_components'];
-            for (var component in addressComponents) {
-              List<dynamic> types = component['types'];
-              if (types.contains('locality')) {
-                city = component['long_name'];
-              } else if (types.contains('administrative_area_level_2') ||
-                  types.contains('administrative_area_level_3')) {
-                district = component['long_name'];
-              } else if (types.contains('administrative_area_level_1')) {
-                state = component['long_name'];
-              } else if (types.contains('sublocality_level_1') ||
-                  types.contains('neighborhood')) {
-                village = component['long_name'];
-              }
-            }
-
-            // Update the provider fields
-            setCity(city);
-            setDistrict(district);
-            setStateField(state);
-            if (village.isNotEmpty) {
-              setVillage(village);
-            }
-
-            // Optionally, update latitude and longitude
-            if (results[0]['geometry'] != null &&
-                results[0]['geometry']['location'] != null) {
-              double lat = results[0]['geometry']['location']['lat'];
-              double lng = results[0]['geometry']['location']['lng'];
-              setLatitude(lat);
-              setLongitude(lng);
-            }
-          } else {
-            throw Exception('No results found for the provided pincode.');
-          }
-        } else {
-          throw Exception('Geocoding API error: ${data['status']}');
-        }
-      } else {
-        throw Exception('Failed to fetch location details.');
-      }
-    } finally {
+    if (geoJson['status'] != 'OK' || (geoJson['results'] as List).isEmpty) {
       _isGeocoding = false;
       notifyListeners();
+      throw Exception('Pincode lookup failed: ${geoJson['status']}');
     }
+
+    final firstResult = geoJson['results'][0] as Map<String, dynamic>;
+    final loc = firstResult['geometry']['location'] as Map<String, dynamic>;
+    final lat = loc['lat'] as double;
+    final lng = loc['lng'] as double;
+
+    // ── STEP 2: REVERSE-GEOCODE for DISTRICT ─────────────────────────
+    final revUri = Uri.https('maps.googleapis.com', '/maps/api/geocode/json', {
+      'latlng': '$lat,$lng',
+      // force only administrative_area_level_2 results
+      'result_type': 'administrative_area_level_2',
+      'key': key,
+    });
+    final revResp = await http.get(revUri);
+    final revJson = jsonDecode(revResp.body) as Map<String, dynamic>;
+
+    String district = '';
+    if (revJson['status'] == 'OK' && (revJson['results'] as List).isNotEmpty) {
+      final comps = (revJson['results'][0]['address_components'] as List)
+          .cast<Map<String, dynamic>>();
+      final d = comps.firstWhere(
+            (c) => (c['types'] as List).contains('administrative_area_level_2'),
+        orElse: () => <String, dynamic>{},
+      );
+      if (d.isNotEmpty) district = d['long_name'] as String;
+    }
+
+    // ── STEP 3: PULL CITY / STATE / TALUK / VILLAGE from the first hit ──
+    String city    = '';
+    String state   = '';
+    String taluk   = '';
+    String village = '';
+    for (final comp in firstResult['address_components']
+        .cast<Map<String, dynamic>>()) {
+      final types = (comp['types'] as List).cast<String>();
+      final name  = comp['long_name'] as String;
+      if (types.contains('postal_town') || types.contains('locality')) {
+        city = name;
+      }
+      if (types.contains('administrative_area_level_1')) {
+        state = name;
+      }
+      if (types.contains('administrative_area_level_3')) {
+        taluk = name;
+      }
+      if (types.contains('sublocality_level_1') ||
+          types.contains('neighborhood')) {
+        village = name;
+      }
+    }
+
+    // ── STEP 4: WRITE BACK INTO YOUR FORM PROVIDER ────────────────────
+    setLatitude(lat);
+    setLongitude(lng);
+
+    setCity(city);
+    setDistrict(district);
+    setTaluqMandal(taluk);
+    setStateField(state);
+    if (village.isNotEmpty) setVillage(village);
+
+    _isGeocoding = false;
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      notifyListeners();
+    });
   }
 
   /// Convert provider data to Property model
@@ -486,7 +594,7 @@ class PropertyProvider with ChangeNotifier {
       surveyNumber: _surveyNumber,
       plotNumbers: _propertyType == 'Plot' ? _plotNumbers : [],
       district: _district,
-      mandal: _mandal,
+      taluqMandal: taluqMandal,
       village: _village, // <--- Include Village
       city: _city,
       pincode: _pincode,
@@ -508,6 +616,8 @@ class PropertyProvider with ChangeNotifier {
       ventureName: _ventureName,
 
       createdAt: createdAt, // Set the current time in IST
+      amenities: _selectedAmenities,
+      agri_amenities: _agriAmenities,
     );
   }
 
@@ -525,7 +635,6 @@ class PropertyProvider with ChangeNotifier {
     _surveyNumber = '';
     _plotNumbers = [];
     _district = null;
-    _mandal = null;
     _village = null; // Reset Village
     _city = '';
     _pincode = '';
@@ -541,6 +650,9 @@ class PropertyProvider with ChangeNotifier {
     _documentFiles.clear();
     _address = '';
     _proposedPrices.clear(); // Reset Proposed Prices
+    _selectedAmenities.clear();
+    _agriAmenities.clear();
+    // ✅ Reset amenities
     notifyListeners();
   }
 }

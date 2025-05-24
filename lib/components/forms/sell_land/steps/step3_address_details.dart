@@ -9,8 +9,7 @@ import 'package:flutter/services.dart';
 class Step3AddressDetails extends StatefulWidget {
   final GlobalKey<FormState> formKey;
 
-  const Step3AddressDetails({Key? key, required this.formKey})
-      : super(key: key);
+  const Step3AddressDetails({Key? key, required this.formKey}) : super(key: key);
 
   @override
   _Step3AddressDetailsState createState() => _Step3AddressDetailsState();
@@ -18,242 +17,191 @@ class Step3AddressDetails extends StatefulWidget {
 
 class _Step3AddressDetailsState extends State<Step3AddressDetails> {
   late TextEditingController _pincodeController;
-  late TextEditingController _addressController; // New controller
+  late TextEditingController _houseNoController;
+  late TextEditingController _propertyNameController;
+  late TextEditingController _addressController;
+  late TextEditingController _taluqMandalController;
   late TextEditingController _districtController;
   late TextEditingController _cityController;
   late TextEditingController _stateController;
-  late TextEditingController _villageController; // <--- Added Controller
-  late TextEditingController _ventureNameController; // Existing Controller
+  late TextEditingController _villageController;
+
+  late final VoidCallback _listener;
+  late final PropertyProvider _propertyProvider;
+
+  late FocusNode _pincodeFocusNode;
 
   @override
   void initState() {
     super.initState();
-    final propertyProvider =
-        Provider.of<PropertyProvider>(context, listen: false);
-    _pincodeController = TextEditingController(text: propertyProvider.pincode);
-    _addressController =
-        TextEditingController(text: propertyProvider.address ?? '');
-    _districtController =
-        TextEditingController(text: propertyProvider.district ?? '');
-    _cityController = TextEditingController(text: propertyProvider.city);
-    _stateController = TextEditingController(text: propertyProvider.state);
-    _villageController = TextEditingController(
-        text: propertyProvider.village ?? ''); // Initialize Village Controller
 
-    // **Initialize Venture Name Controller**
-    _ventureNameController =
-        TextEditingController(text: propertyProvider.ventureName ?? '');
+    // grab your provider once
+    _propertyProvider = Provider.of<PropertyProvider>(context, listen: false);
 
-    // Listen to provider changes and update controllers
-    propertyProvider.addListener(_updateControllers);
+    // whenever the provider changes, sync our controllers
+    _listener = () => _updateControllers(_propertyProvider);
+    _propertyProvider.addListener(_listener);
+
+    // pin code focus → fire a lookup on blur
+    _pincodeFocusNode = FocusNode();
+    _pincodeFocusNode.addListener(() {
+      if (!_pincodeFocusNode.hasFocus && _pincodeController.text.trim().length == 6) {
+        _fetchLocationFromPincode();
+      }
+    });
+
+    // Initialize controllers from provider...
+    _pincodeController = TextEditingController(text: _propertyProvider.pincode);
+    _houseNoController = TextEditingController(text: _propertyProvider.houseNo);
+    _propertyNameController = TextEditingController(text: _propertyProvider.ventureName ?? '');
+    _addressController = TextEditingController(text: _propertyProvider.address ?? '');
+    _villageController = TextEditingController(text: _propertyProvider.village ?? '',);
+    _taluqMandalController = TextEditingController(text: _propertyProvider.mandal);
+    _cityController = TextEditingController(text: _propertyProvider.city);
+    _districtController = TextEditingController(text: _propertyProvider.district ?? '');
+    _stateController = TextEditingController(text: _propertyProvider.state);
   }
 
-  void _updateControllers() {
-    final propertyProvider =
-        Provider.of<PropertyProvider>(context, listen: false);
-
-    if (_pincodeController.text != propertyProvider.pincode) {
-      _pincodeController.text = propertyProvider.pincode;
+  void _updateControllers(PropertyProvider provider) {
+    if (!mounted) return;
+    if (_pincodeController.text != provider.pincode) {
+      _pincodeController.text = provider.pincode;
     }
-
-    if (_addressController.text != (propertyProvider.address ?? '')) {
-      // Update address
-      _addressController.text = propertyProvider.address ?? '';
+    if (_cityController.text != provider.city) {
+      _cityController.text = provider.city;
     }
-
-    if (_districtController.text != (propertyProvider.district ?? '')) {
-      _districtController.text = propertyProvider.district ?? '';
+    if (_districtController.text != (provider.district ?? '')) {
+      _districtController.text = provider.district ?? '';
     }
-
-    if (_cityController.text != propertyProvider.city) {
-      _cityController.text = propertyProvider.city;
+    if (_stateController.text != provider.state) {
+      _stateController.text = provider.state;
     }
-
-    if (_stateController.text != propertyProvider.state) {
-      _stateController.text = propertyProvider.state;
+    if (_villageController.text != (provider.village ?? '')) {
+      _villageController.text = provider.village ?? '';
     }
-
-    // **Update Village Controller**
-    if (_villageController.text != (propertyProvider.village ?? '')) {
-      _villageController.text = propertyProvider.village ?? '';
-    }
-
-    // **Update Venture Name Controller**
-    if (_ventureNameController.text != (propertyProvider.ventureName ?? '')) {
-      _ventureNameController.text = propertyProvider.ventureName ?? '';
-    }
-
-    // Force rebuild to update mandal dropdown
     setState(() {});
+  }
+
+  Future<void> _fetchLocationFromPincode() async {
+    final pin = _pincodeController.text.trim();
+    if (pin.length != 6) return;
+    try {
+      // this will call geocodePincode internally
+      await _propertyProvider.setPincode(pin);
+      // _updateControllers() will fire via the listener
+    } catch (e) {
+      debugPrint("PIN lookup failed: $e");
+    }
   }
 
   @override
   void dispose() {
-    final propertyProvider =
-        Provider.of<PropertyProvider>(context, listen: false);
-    propertyProvider.removeListener(_updateControllers);
+    _propertyProvider.removeListener(_listener);
+    _pincodeFocusNode.dispose();
     _pincodeController.dispose();
+    _houseNoController.dispose();
+    _propertyNameController.dispose();
     _addressController.dispose();
     _districtController.dispose();
     _cityController.dispose();
     _stateController.dispose();
-    _villageController.dispose(); // Dispose Village Controller
-    _ventureNameController.dispose(); // Dispose Venture Name Controller
+    _villageController.dispose();
+    _taluqMandalController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final propertyProvider = Provider.of<PropertyProvider>(context);
-    bool showVentureName = propertyProvider.propertyType == 'Plot' ||
-        propertyProvider.propertyType == 'Farm Land';
 
     return Form(
       key: widget.formKey,
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: SingleChildScrollView(
-          // Prevent overflow in smaller screens
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Pincode Field
+
+              // Pincode
               TextFormField(
                 controller: _pincodeController,
-                decoration: InputDecoration(
-                  labelText: 'Pincode',
-                ),
+                focusNode: _pincodeFocusNode, // ✅ Added this
+                decoration: const InputDecoration(labelText: 'Pincode'),
                 keyboardType: TextInputType.number,
                 validator: Validators.pincodeValidator,
-                onChanged: (value) {
-                  propertyProvider.setPincode(value);
-                },
+                onFieldSubmitted: (_) => _fetchLocationFromPincode(),
                 inputFormatters: [
                   FilteringTextInputFormatter.digitsOnly,
                   LengthLimitingTextInputFormatter(6),
                 ],
+                onChanged: (val) => propertyProvider.setPincode(val),
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
 
-              // Address Field (New)
+              // House No
               TextFormField(
-                controller: _addressController,
-                decoration: InputDecoration(
-                  labelText: 'Address',
-                  hintText: 'Enter your address',
-                ),
-                keyboardType: TextInputType.streetAddress,
-                validator:
-                    Validators.requiredValidator, // Ensure address is entered
-                onChanged: (value) {
-                  propertyProvider.setAddress(value);
-                },
-                maxLines: 2, // Allow multiple lines for address
+                controller: _houseNoController,
+                decoration: const InputDecoration(labelText: 'House No'),
+                validator: Validators.requiredValidator,
+                onChanged: (value) => propertyProvider.setHouseNo(value),
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
 
-              // Village Field (New)
+              // Property Name
+              // 2) Building/Project/Society Name
+              TextFormField(
+                controller: _propertyNameController,
+                decoration: const InputDecoration(
+                  labelText: 'Building / Project / Society (Name)',
+                ),
+                validator: Validators.requiredValidator,
+                onChanged: (value) => propertyProvider.setVentureName(value),
+              ),
+              const SizedBox(height: 20),
+
               TextFormField(
                 controller: _villageController,
-                decoration: InputDecoration(
-                  labelText: 'Village',
-                  hintText: 'Enter village name',
-                ),
-                keyboardType: TextInputType.text,
-                validator:
-                    Validators.requiredValidator, // Ensure village is entered
-                onChanged: (value) {
-                  propertyProvider.setVillage(value);
-                },
+                decoration: const InputDecoration(labelText: 'Village'),
+                validator: Validators.requiredValidator,
+                onChanged: (value) => propertyProvider.setVillage(value),
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
 
-              // **Venture Name Field (Conditional)**
-              if (showVentureName)
-                TextFormField(
-                  controller: _ventureNameController,
-                  decoration: InputDecoration(
-                    labelText: 'Venture Name',
-                    hintText: 'Enter venture name',
-                  ),
-                  keyboardType: TextInputType.text,
-                  validator: (value) {
-                    if (showVentureName &&
-                        (value == null || value.trim().isEmpty)) {
-                      return 'Venture Name is required for Plot or Farm Land.';
-                    }
-                    return null;
-                  },
-                  onChanged: (value) {
-                    propertyProvider.setVentureName(value);
-                  },
-                ),
-              if (showVentureName) SizedBox(height: 20),
+              // Taluq / Mandal
+              TextFormField(
+                controller: _taluqMandalController,
+                decoration: const InputDecoration(labelText: 'Taluq / Mandal'),
+                validator: Validators.requiredValidator,
+                onChanged: (value) => propertyProvider.setTaluqMandal(value),
+              ),
+              const SizedBox(height: 20),
 
-              // Show loading indicator if geocoding is in progress
-              if (propertyProvider.isGeocoding)
-                Center(child: CircularProgressIndicator()),
-              if (!propertyProvider.isGeocoding) ...[
-                // City Field (Read-only)
-                if (propertyProvider.pincode.length == 6)
-                  TextFormField(
-                    controller: _cityController,
-                    decoration: InputDecoration(
-                      labelText: 'City',
-                    ),
-                    readOnly: true,
-                  ),
-                SizedBox(height: 20),
+              // City (read-only)
+              TextFormField(
+                controller: _cityController,
+                decoration: const InputDecoration(labelText: 'City'),
+                readOnly: true,
+              ),
+              const SizedBox(height: 20),
 
-                // Mandal Dropdown
-                if (propertyProvider.district != null &&
-                    propertyProvider.district!.isNotEmpty)
-                  DropdownButtonFormField<String>(
-                    decoration: InputDecoration(labelText: 'Mandal'),
-                    value: propertyProvider.mandal != null &&
-                            propertyProvider.mandal!.isNotEmpty
-                        ? propertyProvider.mandal
-                        : null,
-                    items: propertyProvider.mandalList.map((mandal) {
-                      return DropdownMenuItem(
-                        value: mandal,
-                        child: Text(mandal),
-                      );
-                    }).toList(),
-                    onChanged: propertyProvider.district != null
-                        ? (value) {
-                            if (value != null) {
-                              propertyProvider.setMandal(value);
-                            }
-                          }
-                        : null, // Disable if no district selected
-                    validator: Validators.requiredValidator,
-                    hint: Text('Select Mandal'),
-                  ),
-                SizedBox(height: 20),
+              // District (read-only)
+              TextFormField(
+                controller: _districtController,
+                decoration: const InputDecoration(labelText: 'District'),
+                readOnly: true,
+              ),
+              const SizedBox(height: 20),
 
-                // District Field (Read-only)
-                if (propertyProvider.pincode.length == 6)
-                  TextFormField(
-                    controller: _districtController,
-                    decoration: InputDecoration(
-                      labelText: 'District',
-                    ),
-                    readOnly: true,
-                  ),
-                SizedBox(height: 20),
+              // State (read-only)
+              TextFormField(
+                controller: _stateController,
+                decoration: const InputDecoration(labelText: 'State'),
+                readOnly: true,
+              ),
+              const SizedBox(height: 20),
 
-                // State Field (Read-only)
-                if (propertyProvider.pincode.length == 6)
-                  TextFormField(
-                    controller: _stateController,
-                    decoration: InputDecoration(
-                      labelText: 'State',
-                    ),
-                    readOnly: true,
-                  ),
-                SizedBox(height: 20),
-              ],
+              // Next, Add Price Details button
             ],
           ),
         ),

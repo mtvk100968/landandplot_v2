@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 
 import 'firebase_options.dart';
@@ -21,23 +22,28 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // ✅ Add this line right before runApp to hold splash screen for 3 seconds
+  // 1️⃣ Load your .env file before anything else that might read it:
+  await dotenv.load(fileName: ".env");
+
+  // 2️⃣ (Optional) keep splash on screen a moment:
   await Future.delayed(Duration(seconds: 3));
 
+  // 3️⃣ Initialize Firebase + Messaging
   try {
     // 1. Initialize Firebase
     await Firebase.initializeApp(
-        options: DefaultFirebaseOptions.currentPlatform);
+        options: DefaultFirebaseOptions.currentPlatform
+    );
 
     // 2. Setup background message handling
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
-    // 3. Get FCM token (for debugging/logging or your backend)
+    // 4. Get FCM token (for debugging/logging or your backend)
     final messaging = FirebaseMessaging.instance;
     final fcmToken = await messaging.getToken();
     print("FCM Token: $fcmToken");
 
-    // 4. iOS permissions (no effect on Android)
+    // 5. iOS permissions (no effect on Android)
     final settings = await messaging.requestPermission(
       alert: true,
       badge: true,

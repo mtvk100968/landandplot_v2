@@ -50,7 +50,7 @@ class _AgentPropertyCardState extends State<AgentPropertyCard> {
       property.ventureName,
       property.address,
       property.village,
-      property.mandal,
+      property.taluqMandal,
       property.district,
       property.state,
     ].where((p) => p != null && p.trim().isNotEmpty).toList();
@@ -108,20 +108,20 @@ class _AgentPropertyCardState extends State<AgentPropertyCard> {
                     const SizedBox(height: 10),
                     showTimeline
                         ? SizedBox(
-                            height: 300,
-                            child: TimelineView(
-                              propertyId: prop.id,
-                              buyer: acceptedBuyer!,
-                              agentId: widget.currentAgentId,
-                            ),
-                          )
+                      height: 300,
+                      child: TimelineView(
+                        propertyId: prop.id,
+                        buyer: acceptedBuyer!,
+                        agentId: widget.currentAgentId,
+                      ),
+                    )
                         : SizedBox(
-                            height: 300,
-                            child: InterestedVisitedTabs(
-                              property: prop,
-                              onBuyerUpdated: widget.onBuyerUpdated,
-                            ),
-                          ),
+                      height: 300,
+                      child: InterestedVisitedTabs(
+                        property: prop,
+                        onBuyerUpdated: widget.onBuyerUpdated,
+                      ),
+                    ),
                   ],
                 ),
               ),

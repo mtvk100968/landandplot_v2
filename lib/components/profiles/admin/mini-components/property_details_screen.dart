@@ -115,18 +115,18 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
         const Divider(),
         Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
         ...urls.map((u) => Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: GestureDetector(
-                onTap: () => _openUrl(u),
-                child: Text(
-                  u,
-                  style: const TextStyle(
-                    decoration: TextDecoration.underline,
-                    color: Colors.blue,
-                  ),
-                ),
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: GestureDetector(
+            onTap: () => _openUrl(u),
+            child: Text(
+              u,
+              style: const TextStyle(
+                decoration: TextDecoration.underline,
+                color: Colors.blue,
               ),
-            )),
+            ),
+          ),
+        )),
       ],
     );
   }
@@ -195,7 +195,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                   title: const Text('District'),
                   subtitle: Text(p.district ?? '-')),
               ListTile(
-                  title: const Text('Mandal'), subtitle: Text(p.mandal ?? '-')),
+                  title: const Text('Mandal'), subtitle: Text(p.taluqMandal ?? '-')),
               ListTile(
                   title: const Text('Village'),
                   subtitle: Text(p.village ?? '-')),
@@ -281,40 +281,40 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                 const Text('Buyers',
                     style: TextStyle(fontWeight: FontWeight.bold)),
                 ...p.buyers.map((Buyer b) => Card(
-                      margin: const EdgeInsets.symmetric(vertical: 8),
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('${b.name} (${b.phone})',
-                                style: const TextStyle(
-                                    fontSize: 16, fontWeight: FontWeight.bold)),
-                            Text('Step: ${b.currentStep}'),
-                            if (b.lastUpdated != null)
-                              Text('Last updated: ${b.lastUpdated!.toLocal()}'),
-                            if (b.notes.isNotEmpty)
-                              ExpansionTile(
-                                title: Text('Notes (${b.notes.length})'),
-                                children: b.notes
-                                    .map((n) => ListTile(title: Text(n)))
-                                    .toList(),
-                              ),
-                            _buildDocs('Interest Documents', b.interestDocs),
-                            _buildDocs(
-                                'Verification Documents', b.docVerifyDocs),
-                            _buildDocs(
-                                'Legal Check Documents', b.legalCheckDocs),
-                            _buildDocs('Agreement Documents', b.agreementDocs),
-                            _buildDocs(
-                                'Registration Documents', b.registrationDocs),
-                            _buildDocs('Mutation Documents', b.mutationDocs),
-                            _buildDocs(
-                                'Possession Documents', b.possessionDocs),
-                          ],
-                        ),
-                      ),
-                    )),
+                  margin: const EdgeInsets.symmetric(vertical: 8),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('${b.name} (${b.phone})',
+                            style: const TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.bold)),
+                        Text('Step: ${b.currentStep}'),
+                        if (b.lastUpdated != null)
+                          Text('Last updated: ${b.lastUpdated!.toLocal()}'),
+                        if (b.notes.isNotEmpty)
+                          ExpansionTile(
+                            title: Text('Notes (${b.notes.length})'),
+                            children: b.notes
+                                .map((n) => ListTile(title: Text(n)))
+                                .toList(),
+                          ),
+                        _buildDocs('Interest Documents', b.interestDocs),
+                        _buildDocs(
+                            'Verification Documents', b.docVerifyDocs),
+                        _buildDocs(
+                            'Legal Check Documents', b.legalCheckDocs),
+                        _buildDocs('Agreement Documents', b.agreementDocs),
+                        _buildDocs(
+                            'Registration Documents', b.registrationDocs),
+                        _buildDocs('Mutation Documents', b.mutationDocs),
+                        _buildDocs(
+                            'Possession Documents', b.possessionDocs),
+                      ],
+                    ),
+                  ),
+                )),
               ],
 
               // Property-level docs

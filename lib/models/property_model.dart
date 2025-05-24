@@ -15,7 +15,8 @@ class Property {
   final String surveyNumber;
   final List<String> plotNumbers;
   final String? district;
-  final String? mandal;
+  // final String? mandal;
+  final String? taluqMandal;
   final String? village;
   final String? city;
   final String pincode;
@@ -40,6 +41,8 @@ class Property {
   final bool? pipeline;
   final bool? electricity;
   final bool? plantation;
+  final List<String> amenities;
+  final List<String> agri_amenities;
 
   /// All buyers in various statuses: 'visitPending', 'negotiating', 'accepted', 'rejected'
   final List<Buyer> buyers;
@@ -66,9 +69,10 @@ class Property {
     required this.plotNumbers,
     this.city,
     this.district,
-    this.mandal,
+    // this.mandal,
     this.village,
     this.state,
+    this.taluqMandal,
     required this.pincode,
     required this.latitude,
     required this.longitude,
@@ -84,6 +88,8 @@ class Property {
     required this.userType,
     this.ventureName,
     required this.createdAt,
+    required this.amenities,
+    required this.agri_amenities,
     this.fencing,
     this.gate,
     this.bore,
@@ -109,7 +115,7 @@ class Property {
       'surveyNumber': surveyNumber,
       'plotNumbers': plotNumbers,
       'district': district,
-      'mandal': mandal,
+      'taluqMandal': taluqMandal,
       'village': village,
       'city': city,
       'pincode': pincode,
@@ -128,6 +134,8 @@ class Property {
       'userType': userType,
       'ventureName': ventureName,
       'createdAt': createdAt,
+      'amenities': amenities,
+      'agri_amenities': agri_amenities,
       'fencing': fencing,
       'gate': gate,
       'bore': bore,
@@ -156,7 +164,7 @@ class Property {
       surveyNumber: m['surveyNumber'] ?? '',
       plotNumbers: List<String>.from(m['plotNumbers'] ?? []),
       district: m['district'],
-      mandal: m['mandal'],
+      taluqMandal: m['taluqMandal'],
       village: m['village'],
       city: m['city'],
       pincode: m['pincode'] ?? '',
@@ -175,6 +183,8 @@ class Property {
       userType: m['userType'] ?? '',
       ventureName: m['ventureName'],
       createdAt: m['createdAt'] as Timestamp,
+      amenities: List<String>.from(m['amenities'] ?? []),
+      agri_amenities: List<String>.from(m['agri_amenities'] ?? []),
       fencing: m['fencing'],
       gate: m['gate'],
       bore: m['bore'],
@@ -182,8 +192,8 @@ class Property {
       electricity: m['electricity'],
       plantation: m['plantation'],
       buyers: (m['buyers'] as List?)
-              ?.map((e) => Buyer.fromMap(e as Map<String, dynamic>))
-              .toList() ??
+          ?.map((e) => Buyer.fromMap(e as Map<String, dynamic>))
+          .toList() ??
           [],
       assignedAgentIds: List<String>.from(m['assignedAgentIds'] ?? []),
       winningAgentId: m['winningAgentId'] as String?,

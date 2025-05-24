@@ -26,7 +26,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
     final googleMapsUrl = Uri.parse(
         'https://www.google.com/maps/search/?api=1&query=$latitude,$longitude');
     final appleMapsUrl =
-        Uri.parse('https://maps.apple.com/?q=$latitude,$longitude');
+    Uri.parse('https://maps.apple.com/?q=$latitude,$longitude');
 
     if (await canLaunchUrl(googleMapsUrl)) {
       await launchUrl(googleMapsUrl, mode: LaunchMode.externalApplication);
@@ -236,7 +236,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                         Text(
                           [
                             widget.property.village ?? '',
-                            widget.property.mandal ?? '',
+                            widget.property.taluqMandal ?? '',
                             widget.property.district ?? '',
                             widget.property.pincode ?? '',
                           ].where((element) => element.isNotEmpty).join(', '),
@@ -341,7 +341,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                     backgroundColor: Colors.green, // Green background for Call
                     shape: RoundedRectangleBorder(
                       borderRadius:
-                          BorderRadius.circular(12), // Rounded corners
+                      BorderRadius.circular(12), // Rounded corners
                     ),
                     padding: const EdgeInsets.symmetric(
                         vertical: 12), // Reduced padding
@@ -354,7 +354,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       height:
-                          1.2, // Line height to ensure proper text alignment
+                      1.2, // Line height to ensure proper text alignment
                     ),
                     textAlign: TextAlign.center, // Align text properly
                   ),
@@ -376,7 +376,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                     backgroundColor: Colors.blue, // Blue background for Message
                     shape: RoundedRectangleBorder(
                       borderRadius:
-                          BorderRadius.circular(12), // Rounded corners
+                      BorderRadius.circular(12), // Rounded corners
                     ),
                     padding: const EdgeInsets.symmetric(
                         vertical: 12), // Reduced padding
@@ -389,7 +389,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       height:
-                          1.2, // Line height to ensure proper text alignment
+                      1.2, // Line height to ensure proper text alignment
                     ),
                     textAlign: TextAlign.center, // Align text properly
                   ),
@@ -440,7 +440,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
               Text(
                 title,
                 style:
-                    const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               content,

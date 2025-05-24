@@ -71,6 +71,14 @@ class Validators {
     return null;
   }
 
+  // Validator for plot numbers
+  static String? hvaNumberValidator(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'House/Villa/Apartment number is required';
+    }
+    return null;
+  }
+
   // Pincode Validator (6 digits for India)
   static String? pincodeValidator(String? value) {
     if (value == null || value.isEmpty) {

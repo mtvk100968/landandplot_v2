@@ -133,7 +133,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                   items: fc.PropertyType.values.map((t) {
                     return DropdownMenuItem(
                       value: t,
-                      child: Text(t.toString().split('.').last),
+                        child: Text(t.label),    // ← here!                    );
                     );
                   }).toList(),
                   onChanged: (newType) {
