@@ -248,18 +248,6 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
 
                   const SizedBox(height: 16),
 
-                  // Description Card
-                  // buildCard(
-                  //   title: 'Description',
-                  //   content: Text(
-                  //     widget.property.description ??
-                  //         'A beautiful and valuable piece of land',
-                  //     style: const TextStyle(fontSize: 16),
-                  //   ),
-                  // ),
-
-                  // const SizedBox(height: 16),
-
                   // Features Card
                   buildCard(
                     title: 'Features',

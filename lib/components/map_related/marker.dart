@@ -114,7 +114,7 @@ class CustomMarker {
   /// Dynamically calculates the width of the rectangle based on the price text length.
   static double _calculateWidthBasedOnText(String price) {
     // Base width for short prices
-    double baseWidth = 180;
+    double baseWidth = 150;
 
     // Additional width per character
     double additionalWidthPerChar = 1;

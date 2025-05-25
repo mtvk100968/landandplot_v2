@@ -184,49 +184,6 @@ class BuyLandScreenState extends State<BuyLandScreen> {
     return x > pX;
   }
 
-  // /// Opens the filter bottom sheet and applies filters.
-  // Future<void> openFilterBottomSheet() async {
-  //   // Decide which single type to seed:
-  //   final seedType = selectedPropertyTypes.isNotEmpty
-  //       ? fc.PropertyType.values.firstWhere(
-  //         (t) => t.toString().split('.').last == selectedPropertyTypes.first,
-  //     orElse: () => fc.PropertyType.values.first,
-  //   )
-  //       : null;
-  //
-  //   final result = await showModalBottomSheet<Map<String, dynamic>>(
-  //     context: context,
-  //     isScrollControlled: true,
-  //     builder: (_) => FilterBottomSheet(
-  //       initialType: seedType,
-  //       initialPlace: selectedPlace,
-  //       initialMinPrice: selectedPriceRange.start,
-  //       initialMaxPrice: selectedPriceRange.end,
-  //       initialMinArea: selectedLandAreaRange.start,
-  //       initialMaxArea: selectedLandAreaRange.end,
-  //       initialBeds: _selectedBedrooms,
-  //       initialBaths: _selectedBathrooms,
-  //     ),
-  //   );
-  //
-  //   if (result != null) {
-  //     setState(() {
-  //       // Pull everything back out of the sheet's result:
-  //       _selectedType    = result['type']  as fc.PropertyType?;
-  //       selectedPropertyTypes = _selectedType != null
-  //           ? [ _selectedType.toString().split('.').last ]
-  //           : [];
-  //       selectedPlace    = result['place'] as Map<String, dynamic>?;
-  //       selectedPriceRange   = result['price'] as RangeValues;
-  //       selectedLandAreaRange = result['area']  as RangeValues;
-  //       _selectedBedrooms    = result['beds']  as int?;
-  //       _selectedBathrooms   = result['baths'] as int?;
-  //       // re‐run your query:
-  //       _propertyFuture = fetchPropertiesWithGeo();
-  //     });
-  //   }
-  // }
-
   /// Opens the filter bottom sheet and applies or resets filters.
   Future<void> openFilterBottomSheet() async {
     // Seed the dropdown from your existing selection, if any:

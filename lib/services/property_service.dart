@@ -280,102 +280,6 @@ class PropertyService {
     }
   }
 
-  /// Supports both area-based and point-based searches.
-  // Future<List<Property>> getPropertiesWithFilters({
-  //   List<String>? propertyTypes,
-  //   double? minPricePerUnit,
-  //   double? maxPricePerUnit,
-  //   double? minLandArea,
-  //   double? maxLandArea,
-  //   double? minLat,
-  //   double? maxLat,
-  //   double? minLon,
-  //   double? maxLon,
-  //   String? city,
-  //   String? district,
-  //   String? pincode,
-  //   String? searchQuery,
-  // }) async {
-  //   try {
-  //     print('getPropertiesWithFilters called with:');
-  //     print('propertyTypes: $propertyTypes');
-  //     print('minPricePerUnit: $minPricePerUnit');
-  //     print('maxPricePerUnit: $maxPricePerUnit');
-  //     print('minLandArea: $minLandArea');
-  //     print('maxLandArea: $maxLandArea');
-  //     print('minLat: $minLat');
-  //     print('maxLat: $maxLat');
-  //     print('minLon: $minLon');
-  //     print('maxLon: $maxLon');
-  //     print('city: $city');
-  //     print('district: $district');
-  //     print('pincode: $pincode');
-  //     print('searchQuery: $searchQuery');
-  //
-  //     Query<Map<String, dynamic>> query = _firestore.collection(collectionPath);
-  //
-  //     // filter by property type
-  //     if (propertyTypes != null && propertyTypes.isNotEmpty) {
-  //       query = query.where('propertyType', whereIn: propertyTypes);
-  //     }
-  //
-  //     // filter by city/district/pincode
-  //     if (city != null && city.isNotEmpty) {
-  //       query = query.where('city', isEqualTo: city);
-  //     }
-  //     if (district != null && district.isNotEmpty) {
-  //       query = query.where('district', isEqualTo: district);
-  //     }
-  //     if (pincode != null && pincode.isNotEmpty) {
-  //       query = query.where('pincode', isEqualTo: pincode);
-  //     }
-  //
-  //     // inside getPropertiesWithFilters…
-  //     if (minPricePerUnit != null) {
-  //       query = query.where('pricePerUnit', isGreaterThanOrEqualTo: minPricePerUnit);
-  //     }
-  //     if (maxPricePerUnit != null) {
-  //       query = query.where('pricePerUnit', isLessThanOrEqualTo: maxPricePerUnit);
-  //     }
-  //
-  //     // Apply location filtering as Firestore queries
-  //     if (minLat!=null && maxLat!=null) {
-  //       query = query
-  //           .where('latitude', isGreaterThanOrEqualTo: minLat)
-  //           .where('latitude', isLessThanOrEqualTo: maxLat);
-  //     }
-  //     if (minLon!=null && maxLon!=null) {
-  //       query = query
-  //           .where('longitude', isGreaterThanOrEqualTo: minLon)
-  //           .where('longitude', isLessThanOrEqualTo: maxLon);
-  //     }
-  //
-  //     // Apply search query for property name if provided
-  //     if (searchQuery != null && searchQuery.isNotEmpty) {
-  //       query = query
-  //           .where('name', isGreaterThanOrEqualTo: searchQuery)
-  //           .where('name', isLessThanOrEqualTo: searchQuery + '\uf8ff');
-  //     }
-  //
-  //     final snapshot = await query.get();
-  //     var properties = snapshot.docs.map((d) => Property.fromMap(d.id, d.data())).toList();
-  //
-  //     // Now do your landArea (and/or lat/lon) filtering in Dart:
-  //     properties = properties.where((p) {
-  //       final okArea = (minLandArea == null || p.landArea >= minLandArea)
-  //           && (maxLandArea == null || p.landArea <= maxLandArea);
-  //       // same for your lat/lon if needed...
-  //       return okArea;
-  //     }).toList();
-  //
-  //     return properties;
-  //   } catch (e, stacktrace) {
-  //     print('Error fetching properties with filters: $e');
-  //     print(stacktrace); // Print stack trace for debugging
-  //     throw Exception('Failed to fetch properties with filters');
-  //   }
-  // }
-
   Future<List<Property>> getPropertiesWithFilters({
     List<String>? propertyTypes,
     double? minPricePerUnit,
@@ -428,14 +332,6 @@ class PropertyService {
             .where('name', isGreaterThanOrEqualTo: searchQuery)
             .where('name', isLessThanOrEqualTo: '$searchQuery\uf8ff');
       }
-
-      // // 2️⃣ Only push the single range filter (price) into Firestore
-      // if (minPricePerUnit != null) {
-      //   query = query.where('pricePerUnit', isGreaterThanOrEqualTo: minPricePerUnit);
-      // }
-      // if (maxPricePerUnit != null) {
-      //   query = query.where('pricePerUnit', isLessThanOrEqualTo: maxPricePerUnit);
-      // }
 
       // 3️⃣ Fetch once
       final snapshot = await query.get();
