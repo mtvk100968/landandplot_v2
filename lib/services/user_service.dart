@@ -1,8 +1,11 @@
 // lib/services/user_service.dart
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import '../models/user_model.dart';
 import '../models/property_model.dart';
+import 'dart:io';
+import 'package:firebase_storage/firebase_storage.dart';
 
 class UserService {
   // Reference to the 'users' collection
@@ -12,6 +15,8 @@ class UserService {
   // Reference to the 'properties' collection
   final CollectionReference<Map<String, dynamic>> _propertiesCollection =
       FirebaseFirestore.instance.collection('properties');
+
+  final FirebaseStorage _storage = FirebaseStorage.instance;
 
   /// Fetch a user by their UID
   Future<AppUser?> getUserById(String userId) async {
@@ -130,10 +135,20 @@ class UserService {
     }
   }
 
-  /// Fetch properties this user is selling (i.e., posted by them)
+  /// Fetch all properties this user has posted
   Future<List<Property>> getSellerProperties(String userId) async {
     final snap =
         await _propertiesCollection.where('userId', isEqualTo: userId).get();
+    return snap.docs.map((doc) => Property.fromDocument(doc)).toList();
+  }
+
+  /// Fetch only the properties this user has posted in a given stage
+  Future<List<Property>> getSellerPropertiesByStage(
+      String userId, String stage) async {
+    final snap = await _propertiesCollection
+        .where('userId', isEqualTo: userId)
+        .where('stage', isEqualTo: stage)
+        .get();
     return snap.docs.map((doc) => Property.fromDocument(doc)).toList();
   }
 
@@ -169,6 +184,7 @@ class UserService {
     return all;
   }
 
+  /// Fetch a user by their phone number
   Future<AppUser?> getUserByPhoneNumber(String phoneNumber) async {
     final snap = await _usersCollection
         .where('phoneNumber', isEqualTo: phoneNumber)
@@ -177,5 +193,15 @@ class UserService {
       return AppUser.fromDocument(snap.docs.first.data());
     }
     return null;
+  }
+
+  /// Uploads a profile image and returns its download URL.
+  Future<String> uploadProfileImage({
+    required String uid,
+    required File file,
+  }) async {
+    final ref = _storage.ref().child('users/$uid/profile.jpg');
+    await ref.putFile(file);
+    return ref.getDownloadURL();
   }
 }

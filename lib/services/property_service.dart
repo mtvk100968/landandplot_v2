@@ -17,11 +17,11 @@ class PropertyService {
   /// Generates a custom property ID based on the district and mandal.
   /// Returns the generated property ID upon successful completion.
   Future<String> addProperty(
-      Property property,
-      List<File> images, {
-        List<File>? videos,
-        List<File>? documents,
-      }) async {
+    Property property,
+    List<File> images, {
+    List<File>? videos,
+    List<File>? documents,
+  }) async {
     try {
       // Step 1: Generate Custom Property ID
       if (property.district == null || property.taluqMandal == null) {
@@ -29,11 +29,11 @@ class PropertyService {
       }
 
       String propertyId =
-      await _generatePropertyId(property.district!, property.taluqMandal!);
+          await _generatePropertyId(property.district!, property.taluqMandal!);
 
       // Step 2: Upload Media Files with Custom Naming
       List<String> imageUrls =
-      await _uploadMediaFiles(propertyId, images, 'property_images', 'img');
+          await _uploadMediaFiles(propertyId, images, 'property_images', 'img');
 
       List<String> videoUrls = [];
       if (videos != null && videos.isNotEmpty) {
@@ -121,7 +121,7 @@ class PropertyService {
   Future<Property?> getPropertyById(String propertyId) async {
     try {
       DocumentSnapshot<Map<String, dynamic>> doc =
-      await _firestore.collection(collectionPath).doc(propertyId).get();
+          await _firestore.collection(collectionPath).doc(propertyId).get();
       if (doc.exists) {
         return Property.fromMap(doc.id, doc.data()!);
       }
@@ -137,11 +137,11 @@ class PropertyService {
   /// Updates an existing property in Firestore.
   /// Optionally handles new image, video, or document uploads if provided.
   Future<void> updateProperty(
-      Property property, {
-        List<File>? newImages,
-        List<File>? newVideos,
-        List<File>? newDocuments,
-      }) async {
+    Property property, {
+    List<File>? newImages,
+    List<File>? newVideos,
+    List<File>? newDocuments,
+  }) async {
     try {
       List<String> updatedImageUrls = List.from(property.images);
       List<String> updatedVideoUrls = List.from(property.videos);
@@ -193,12 +193,12 @@ class PropertyService {
 
   /// Deletes a property from Firestore and removes its images, videos, and documents from Firebase Storage.
   Future<void> deleteProperty(
-      String propertyId,
-      List<String> imageUrls, {
-        List<String>? videoUrls,
-        List<String>? documentUrls,
-        String? userId,
-      }) async {
+    String propertyId,
+    List<String> imageUrls, {
+    List<String>? videoUrls,
+    List<String>? documentUrls,
+    String? userId,
+  }) async {
     try {
       // Step 1: Delete images from Firebase Storage
       if (imageUrls.isNotEmpty) {
@@ -335,21 +335,21 @@ class PropertyService {
 
       // 3️⃣ Fetch once
       final snapshot = await query.get();
-      var properties = snapshot.docs
-          .map((d) => Property.fromMap(d.id, d.data()))
-          .toList();
+      var properties =
+          snapshot.docs.map((d) => Property.fromMap(d.id, d.data())).toList();
 
       // 4️⃣ Client-side filtering for land area
       // 🔹 3) In-Dart filter **all** ranges: price, land-area, lat/lon
       properties = properties.where((p) {
-        final okPrice = (minPricePerUnit == null || p.pricePerUnit >= minPricePerUnit) &&
-            (maxPricePerUnit == null || p.pricePerUnit <= maxPricePerUnit);
-        final okArea  = (minLandArea == null   || p.landArea     >= minLandArea)  &&
-            (maxLandArea == null   || p.landArea     <= maxLandArea);
-        final okLat   = (minLat == null        || p.latitude     >= minLat)      &&
-            (maxLat == null        || p.latitude     <= maxLat);
-        final okLon   = (minLon == null        || p.longitude    >= minLon)      &&
-            (maxLon == null        || p.longitude    <= maxLon);
+        final okPrice =
+            (minPricePerUnit == null || p.pricePerUnit >= minPricePerUnit) &&
+                (maxPricePerUnit == null || p.pricePerUnit <= maxPricePerUnit);
+        final okArea = (minLandArea == null || p.landArea >= minLandArea) &&
+            (maxLandArea == null || p.landArea <= maxLandArea);
+        final okLat = (minLat == null || p.latitude >= minLat) &&
+            (maxLat == null || p.latitude <= maxLat);
+        final okLon = (minLon == null || p.longitude >= minLon) &&
+            (maxLon == null || p.longitude <= maxLon);
         return okPrice && okArea && okLat && okLon;
       }).toList();
 
@@ -359,7 +359,6 @@ class PropertyService {
       throw Exception('Failed to fetch properties with filters');
     }
   }
-
 
   /// **New Method: Add Proposed Price**
   Future<void> addProposedPrice(
@@ -394,7 +393,7 @@ class PropertyService {
       String propertyId) async {
     try {
       DocumentSnapshot<Map<String, dynamic>> doc =
-      await _firestore.collection(collectionPath).doc(propertyId).get();
+          await _firestore.collection(collectionPath).doc(propertyId).get();
 
       if (doc.exists && doc.data() != null) {
         final data = doc.data()!;
@@ -481,9 +480,9 @@ class PropertyService {
   Future<String> _generatePropertyId(String district, String mandal) async {
     // Extract first two letters of district and mandal, uppercase
     String districtCode =
-    district.length >= 2 ? district.substring(0, 2).toUpperCase() : 'XX';
+        district.length >= 2 ? district.substring(0, 2).toUpperCase() : 'XX';
     String mandalCode =
-    mandal.length >= 2 ? mandal.substring(0, 2).toUpperCase() : 'YY';
+        mandal.length >= 2 ? mandal.substring(0, 2).toUpperCase() : 'YY';
 
     String prefix = '$districtCode$mandalCode';
 
@@ -612,11 +611,11 @@ class PropertyService {
       _firestore.doc('properties/$propertyId').update({'stage': newStage});
 
   Future<void> updateBuyer(
-      String propertyId,
-      Buyer oldBuyer,
-      Buyer updatedBuyer,
-      String? agentId,
-      ) async {
+    String propertyId,
+    Buyer oldBuyer,
+    Buyer updatedBuyer,
+    String? agentId,
+  ) async {
     final docRef = _firestore.collection('properties').doc(propertyId);
 
 // 1) remove old entry from buyers list
@@ -642,10 +641,10 @@ class PropertyService {
   }
 
   Future<void> updateBuyerByBuyer(
-      String propertyId,
-      Buyer oldBuyer,
-      Buyer newBuyer,
-      ) async {
+    String propertyId,
+    Buyer oldBuyer,
+    Buyer newBuyer,
+  ) async {
     final docRef = _firestore.collection('properties').doc(propertyId);
 
     // 1) Remove the old buyer map

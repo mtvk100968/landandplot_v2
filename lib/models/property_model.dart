@@ -192,8 +192,8 @@ class Property {
       electricity: m['electricity'],
       plantation: m['plantation'],
       buyers: (m['buyers'] as List?)
-          ?.map((e) => Buyer.fromMap(e as Map<String, dynamic>))
-          .toList() ??
+              ?.map((e) => Buyer.fromMap(e as Map<String, dynamic>))
+              .toList() ??
           [],
       assignedAgentIds: List<String>.from(m['assignedAgentIds'] ?? []),
       winningAgentId: m['winningAgentId'] as String?,
@@ -217,9 +217,24 @@ class Property {
   /// cluster_manager also now wants a `geohash` for spatial indexing
   /// you can return any consistent string per point (e.g. a lat_lng key).
   @override
-  String get geohash => '${latitude.toStringAsFixed(6)}_${longitude.toStringAsFixed(6)}';
+  String get geohash =>
+      '${latitude.toStringAsFixed(6)}_${longitude.toStringAsFixed(6)}';
 
   /// simple name-based search (you can expand to other fields later)
   bool matches(String query) =>
       name.toLowerCase().contains(query.toLowerCase());
+
+  String get fullAddress {
+    if (address != null && address!.isNotEmpty) {
+      return address!;
+    }
+    final parts = [
+      village,
+      taluqMandal,
+      city,
+      state,
+      pincode,
+    ];
+    return parts.where((p) => p != null && p.isNotEmpty).join(', ');
+  }
 }

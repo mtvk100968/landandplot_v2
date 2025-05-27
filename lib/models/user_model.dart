@@ -3,6 +3,7 @@ class AppUser {
   final String? name;
   final String? email;
   final String? phoneNumber;
+  final String? photoUrl;
   // NEW: userType (admin, agent, or user)
   //an agent can do all the things a user can do - buying and selling, and also be the agent for other's properties - either by posting them or assigning by LANDANDPLOT
   final String userType;
@@ -24,6 +25,7 @@ class AppUser {
     this.name,
     this.email,
     this.phoneNumber,
+    this.photoUrl,
     // default to 'user' if none is provided
     this.userType = 'user',
     List<String>? postedPropertyIds,
@@ -47,7 +49,9 @@ class AppUser {
       'email': email,
       'phoneNumber': phoneNumber,
       'userType': userType,
+      if (photoUrl != null) 'photoUrl': photoUrl,
     };
+
     if (postedPropertyIds.isNotEmpty) {
       data['postedPropertyIds'] = postedPropertyIds;
     }
@@ -78,6 +82,7 @@ class AppUser {
       name: doc['name'],
       email: doc['email'],
       phoneNumber: doc['phoneNumber'],
+      photoUrl: doc['photoUrl'],
       userType: doc['userType'] ?? 'user',
       postedPropertyIds: List<String>.from(doc['postedPropertyIds'] ?? []),
       favoritedPropertyIds:
@@ -96,6 +101,7 @@ class AppUser {
     String? email,
     String? phoneNumber,
     String? userType,
+    String? photoUrl,
     List<String>? postedPropertyIds,
     List<String>? favoritedPropertyIds,
     List<String>? boughtPropertyIds,
@@ -108,6 +114,7 @@ class AppUser {
       name: name ?? this.name,
       email: email ?? this.email,
       phoneNumber: phoneNumber ?? this.phoneNumber,
+      photoUrl: photoUrl ?? this.photoUrl,
       userType: userType ?? this.userType,
       postedPropertyIds: postedPropertyIds ?? this.postedPropertyIds,
       favoritedPropertyIds: favoritedPropertyIds ?? this.favoritedPropertyIds,
