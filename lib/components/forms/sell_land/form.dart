@@ -3,10 +3,10 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:landandplot/components/forms/sell_land/steps/step7_landtype_amenities_details.dart';
+// import 'package:landandplot/components/forms/sell_land/steps/step7_landtype_amenities_details.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/property_provider.dart';
 import '../../../services/property_service.dart';
-import 'package:flutter/services.dart';
 
 // Steps
 import './steps/step1_basic_details.dart';
@@ -64,6 +64,7 @@ class _SellLandFormState extends State<SellLandForm> {
         Padding(
           padding: const EdgeInsets.all(16),
           child: Step7LandtypeAmenitiesDetails(
+            formKey: _formKeys[6],
             selectedAmenities: propertyProvider.agriAmenities,
             onAmenitiesChanged: propertyProvider.setAgriAmenities,
           ),

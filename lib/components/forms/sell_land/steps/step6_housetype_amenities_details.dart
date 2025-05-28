@@ -18,9 +18,10 @@ class Step6HousetypeAmenitiesDetails extends StatefulWidget {
 
 class _Step6HousetypeAmenitiesDetailsState extends State<Step6HousetypeAmenitiesDetails> {
   final List<String> allAmenities = [
-    'Lift',
+    'elevator_access',
     'Power Backup',
-    'Parking',
+    'covered_or_garage_parking',
+    'Guest Parking',
     '24x7 Water Supply',
     'Gym',
     'Swimming Pool',
@@ -30,6 +31,10 @@ class _Step6HousetypeAmenitiesDetailsState extends State<Step6HousetypeAmenities
     'Children Play Area',
     'Garden',
     'Wi-Fi',
+    'shopping_center',
+    'gas_pipeline',
+    'controlled_access_entry',
+    'recycling_and_compost_facilities',
   ];
 
   late List<String> selected;

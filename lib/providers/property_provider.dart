@@ -49,6 +49,16 @@ class PropertyProvider with ChangeNotifier {
   String? _address;
   String? _mandal;
 
+  // Amenities checkboxes for land/farm/agri types
+  // ✅ Valid declarations at the top of the class
+  bool _fencing = false;
+  bool _gate = false;
+  bool _bore = false;
+  bool _pipeline = false;
+  bool _electricity = false;
+  bool _plantation = false;
+  bool _farmHouseConstructed = false;
+
   // Step 4: Map Location
   double _latitude = 17.385044; // Default to Hyderabad latitude
   double _longitude = 78.486671; // Default to Hyderabad longitude
@@ -135,6 +145,49 @@ class PropertyProvider with ChangeNotifier {
       developer.log("Error fetching proposed prices: $e");
       throw Exception("Failed to fetch proposed prices.");
     }
+  }
+
+  // Getters and Setters
+  bool get fencing => _fencing;
+  void setFencing(bool value) {
+    _fencing = value;
+    notifyListeners();
+  }
+
+  bool get gate => _gate;
+  void setGate(bool value) {
+    _gate = value;
+    notifyListeners();
+  }
+
+  bool get bore => _bore;
+  void setBore(bool value) {
+    _bore = value;
+    notifyListeners();
+  }
+
+  bool get pipeline => _pipeline;
+  void setPipeline(bool value) {
+    _pipeline = value;
+    notifyListeners();
+  }
+
+  bool get electricity => _electricity;
+  void setElectricity(bool value) {
+    _electricity = value;
+    notifyListeners();
+  }
+
+  bool get plantation => _plantation;
+  void setPlantation(bool value) {
+    _plantation = value;
+    notifyListeners();
+  }
+
+  bool get farmHouseConstructed => _farmHouseConstructed;
+  void setFarmHouseConstructed(bool val) {
+    _farmHouseConstructed = val;
+    notifyListeners();
   }
 
   // Getters and Setters for Step 1
@@ -615,9 +668,15 @@ class PropertyProvider with ChangeNotifier {
       userType: _userType,
       ventureName: _ventureName,
 
-      createdAt: createdAt, // Set the current time in IST
+      createdAt: Timestamp.now(), // or DateTime.now()
       amenities: _selectedAmenities,
       agri_amenities: _agriAmenities,
+      fencing: fencing,
+      gate: gate,
+      bore: bore,
+      pipeline: pipeline,
+      electricity: electricity,
+      plantation: plantation,
     );
   }
 
