@@ -35,6 +35,7 @@ class Property {
   final String userType;
   final String? ventureName;
   final Timestamp createdAt;
+  final String? ownerBuilderShare;
   final bool? fencing;
   final bool? gate;
   final bool? bore;
@@ -90,6 +91,7 @@ class Property {
     required this.createdAt,
     required this.amenities,
     required this.agri_amenities,
+    this.ownerBuilderShare,
     this.fencing,
     this.gate,
     this.bore,
@@ -134,6 +136,7 @@ class Property {
       'userType': userType,
       'ventureName': ventureName,
       'createdAt': createdAt,
+      'ownerBuilderShare': ownerBuilderShare,
       'amenities': amenities,
       'agri_amenities': agri_amenities,
       'fencing': fencing,
@@ -192,8 +195,8 @@ class Property {
       electricity: m['electricity'],
       plantation: m['plantation'],
       buyers: (m['buyers'] as List?)
-              ?.map((e) => Buyer.fromMap(e as Map<String, dynamic>))
-              .toList() ??
+          ?.map((e) => Buyer.fromMap(e as Map<String, dynamic>))
+          .toList() ??
           [],
       assignedAgentIds: List<String>.from(m['assignedAgentIds'] ?? []),
       winningAgentId: m['winningAgentId'] as String?,

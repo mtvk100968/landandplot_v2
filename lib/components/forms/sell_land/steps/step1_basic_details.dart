@@ -30,13 +30,13 @@ class _Step1BasicDetailsState extends State<Step1BasicDetails> {
 
   final propertyTypes = [
     'Plot',
-    'Farm Land',
     'Agri Land',
+    'Farm Land',
+    'Apartment',
     'House',
     'Villa',
-    'Apartment',
-    'Development',
     'Commercial Space',
+    'Development',
   ];
 
   @override

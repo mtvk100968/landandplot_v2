@@ -51,7 +51,6 @@ class _Step2PropertyDetailsState extends State<Step2PropertyDetails> {
   }
 
   void _updateFields() {
-
     // 4) Only call setState if we’re still mounted
     setState(() {
       _totalPriceController.text = _provider.totalPrice > 0
@@ -84,8 +83,10 @@ class _Step2PropertyDetailsState extends State<Step2PropertyDetails> {
     return Wrap(
       spacing: 8.0,
       children: bhkOptions.map((option) {
-        int bhkValue = int.parse(option.split(' ')[0]); // ✅ Extract integer value
-        bool isSelected = propertyProvider.bedRooms == bhkValue; // ✅ Compare int values
+        int bhkValue =
+            int.parse(option.split(' ')[0]); // ✅ Extract integer value
+        bool isSelected =
+            propertyProvider.bedRooms == bhkValue; // ✅ Compare int values
 
         return ChoiceChip(
           label: Text(option),
@@ -107,19 +108,25 @@ class _Step2PropertyDetailsState extends State<Step2PropertyDetails> {
     return Wrap(
       spacing: 8.0,
       children: bathOptions.map((option) {
-        int currentBathRooms = propertyProvider.bathRooms ?? 0;  // ✅ Ensure it's an int
+        int currentBathRooms =
+            propertyProvider.bathRooms ?? 0; // ✅ Ensure it's an int
 
         bool isSelected = option == "5+ Bath"
-            ? currentBathRooms >= 5  // ✅ Handle 4+ case correctly
-            : currentBathRooms == int.parse(option.split(' ')[0]); // ✅ Convert from String to int
+            ? currentBathRooms >= 5 // ✅ Handle 4+ case correctly
+            : currentBathRooms ==
+                int.parse(option.split(' ')[0]); // ✅ Convert from String to int
 
         return ChoiceChip(
           label: Text(option),
           selected: isSelected,
           onSelected: (selected) {
             if (selected) {
-              int newValue = option == "5+ Bath" ? 4 : int.parse(option.split(' ')[0]); // ✅ Convert from String to int
-              propertyProvider.setBathRooms(newValue);  // ✅ Now passing an int correctly
+              int newValue = option == "5+ Bath"
+                  ? 4
+                  : int.parse(
+                      option.split(' ')[0]); // ✅ Convert from String to int
+              propertyProvider
+                  .setBathRooms(newValue); // ✅ Now passing an int correctly
             }
           },
         );
@@ -135,15 +142,18 @@ class _Step2PropertyDetailsState extends State<Step2PropertyDetails> {
     return Wrap(
       spacing: 8.0,
       children: pksOptions.map((option) {
-        int pksValue = int.parse(option.split(' ')[0]); // ✅ Extract integer value
-        bool isSelected = propertyProvider.parkingSpots == pksValue; // ✅ Compare int values
+        int pksValue =
+            int.parse(option.split(' ')[0]); // ✅ Extract integer value
+        bool isSelected =
+            propertyProvider.parkingSpots == pksValue; // ✅ Compare int values
 
         return ChoiceChip(
           label: Text(option),
           selected: isSelected,
           onSelected: (selected) {
             if (selected) {
-              propertyProvider.setParkingSpots(pksValue); // ✅ Pass int correctly
+              propertyProvider
+                  .setParkingSpots(pksValue); // ✅ Pass int correctly
             }
           },
         );
@@ -154,7 +164,13 @@ class _Step2PropertyDetailsState extends State<Step2PropertyDetails> {
   @override
   Widget build(BuildContext context) {
     final propertyProvider = Provider.of<PropertyProvider>(context);
-    final isAgri = propertyProvider.propertyType.toLowerCase() == 'agri land';
+    // final isAgri = propertyProvider.propertyType.toLowerCase() == 'agri land';
+    final type = propertyProvider.propertyType.toLowerCase();
+
+    final isDevelopment = ['development', 'development_plot', 'development_land'].contains(type);
+    final isDevelopmentLand = type == 'development_land';
+    final isDevelopmentPlot = type == 'development_plot';
+    final isAgri = type == 'agri land';
 
     return SafeArea(
       child: SingleChildScrollView(
@@ -171,151 +187,245 @@ class _Step2PropertyDetailsState extends State<Step2PropertyDetails> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Area Field
+                if (isDevelopment) ...[
+                  DropdownButtonFormField<String>(
+                    value: ['development_plot', 'development_land'].contains(propertyProvider.propertyType)
+                        ? propertyProvider.propertyType
+                        : null,
+                    decoration: const InputDecoration(
+                      labelText: 'Select Development Type',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: const [
+                      DropdownMenuItem(
+                          value: 'development_plot',
+                          child: Text('Development Plot')),
+                      DropdownMenuItem(
+                          value: 'development_land',
+                          child: Text('Development Land')),
+                    ],
+                    onChanged: (value) {
+                      if (value != null) {
+                        propertyProvider.setPropertyType(value);
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 20),
+                ],
                 TextFormField(
                   controller: _areaController,
                   decoration: InputDecoration(
-                    labelText: isAgri ? 'Area (in acres)' : 'Area (in sqyds)',
+                    labelText: isDevelopmentLand || isAgri
+                        ? 'Area (in acres)'
+                        : 'Area (in sqyds)',
                   ),
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
                   validator: Validators.areaValidator,
                   onChanged: (value) {
                     String formattedValue = _formatToIndianSystem(value);
                     _areaController.value = TextEditingValue(
                       text: formattedValue,
                       selection: TextSelection.collapsed(
-                        offset: formattedValue.length,
-                      ),
+                          offset: formattedValue.length),
                     );
                     double? parsedValue =
-                    double.tryParse(value.replaceAll(',', ''));
+                        double.tryParse(value.replaceAll(',', ''));
                     propertyProvider.setArea(parsedValue ?? 0.0);
                   },
                 ),
                 const SizedBox(height: 20),
 
-                // Price per Unit Field
-                TextFormField(
-                  controller: _pricePerUnitController,
-                  decoration: InputDecoration(
-                    labelText: isAgri ? 'Price per acre' : 'Price per sqyd',
+                if (isDevelopmentPlot || isDevelopmentLand) ...[
+                  DropdownButtonFormField<String>(
+                    value: propertyProvider.ownerBuilderShare,
+                    decoration: const InputDecoration(
+                      labelText: 'Select Owner Builder share split',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: ['50-50', '55-45', '60-40', '45-55', '40-60'].map((value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      if (value != null) {
+                        propertyProvider.setOwnerBuilderShare(value);
+                      }
+                    },
+                    validator: Validators.requiredValidator,
                   ),
-                  keyboardType: TextInputType.numberWithOptions(decimal: true),
-                  validator: Validators.priceValidator,
-                  onChanged: (value) {
-                    String formattedValue = _formatToIndianSystem(value);
-                    _pricePerUnitController.value = TextEditingValue(
-                      text: formattedValue,
-                      selection: TextSelection.collapsed(
-                        offset: formattedValue.length,
-                      ),
-                    );
-                    double? parsedValue =
-                    double.tryParse(value.replaceAll(',', ''));
-                    propertyProvider.setPricePerUnit(parsedValue ?? 0.0);
-                  },
-                ),
-                const SizedBox(height: 20),
-
-                // Total Land Price Field (Auto-calculated)
-                TextFormField(
-                  controller: _totalPriceController,
-                  decoration: InputDecoration(
-                    labelText: 'Total Land Price (auto-calculated)',
-                  ),
-                  keyboardType: TextInputType.numberWithOptions(decimal: true),
-                  enabled: false, // Auto-calculated
-                ),
-                SizedBox(height: 20),
-
-                // Survey Number Field
-                TextFormField(
-                  decoration: InputDecoration(labelText: 'Survey Number'),
-                  initialValue: propertyProvider.surveyNumber,
-                  validator: Validators.surveyNumberValidator,
-                  onChanged: (value) => propertyProvider.setSurveyNumber(value),
-                ),
-
-                // Conditional Plot Numbers Field
-                if (['plot', 'farm land']
-                    .contains(propertyProvider.propertyType.toLowerCase())) ...[
-
-                  // Plot Number
-                  TextFormField(
-                    decoration: const InputDecoration(labelText: 'Plot Number'),
-                    validator: Validators.plotNumberValidator,
-                    onChanged: (v) => propertyProvider.addPlotNumber(v),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Venture Name
-                  TextFormField(
-                    decoration: const InputDecoration(labelText: 'Venture Name'),
-                    validator: (v) =>
-                    v == null || v.isEmpty ? 'Please enter venture name' : null,
-                    onChanged: (v) => propertyProvider.setVentureName(v),
-                  ),
-
                   const SizedBox(height: 20),
                 ],
 
-                if (['agri land']
-                    .contains(propertyProvider.propertyType.toLowerCase())) ...[
-                ],
 
-                if (['house', 'villa', 'apartment']
-                    .contains(propertyProvider.propertyType.toLowerCase())) ...[
-
-                  // House / Villa / Apartment Number
+                if (isDevelopmentLand) ...[
                   TextFormField(
-                    decoration: const InputDecoration(labelText: 'House/Villa/Apartment Number'),
-                    validator: Validators.hvaNumberValidator,
-                    onChanged: propertyProvider.addPlotNumber,
+                    controller: _totalPriceController,
+                    decoration: const InputDecoration(
+                      labelText: 'Total Land Price (manual entry)',
+                    ),
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    onChanged: (value) {
+                      double? parsed =
+                          double.tryParse(value.replaceAll(',', ''));
+                      propertyProvider.setTotalPrice(parsed ?? 0);
+                    },
                   ),
 
-                  const SizedBox(height: 16),
+                  SizedBox(height: 20),
 
-                  // Society Name
+                  // Survey Number Field
                   TextFormField(
-                    decoration: const InputDecoration(labelText: 'Society Name'),
-                    validator: (v) =>
-                    v == null || v.isEmpty ? 'Please enter Society name' : null,
-                    onChanged: propertyProvider.setVentureName,
+                    decoration: InputDecoration(labelText: 'Survey Number'),
+                    initialValue: propertyProvider.surveyNumber,
+                    validator: Validators.surveyNumberValidator,
+                    onChanged: (value) =>
+                        propertyProvider.setSurveyNumber(value),
                   ),
 
-                  const SizedBox(height: 16),
-
-                  // 4) Bedrooms row
-                  const Text("Bedrooms", style: TextStyle(fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 8),
-                  _buildBhkSelection(),
-                  const SizedBox(height: 20),
-
-                  // 5) Bathrooms row
-                  const Text("Bathrooms", style: TextStyle(fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 8),
-                  _buildBathSelection(),
-                  const SizedBox(height: 20),
-
-                  // 4) ParkingSpots row
-                  const Text("ParkingSpots", style: TextStyle(fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 8),
-                  _buildParkingSpotsSelection(),
-                  const SizedBox(height: 20),
-
-                  const SizedBox(height: 20),
-                ],
-
-                if (['development', 'commercial space']
-                    .contains(propertyProvider.propertyType.toLowerCase())) ...[
+                ] else ...[
                   TextFormField(
-                    decoration: const InputDecoration(labelText: 'Plot/Site Number'),
-                    validator: Validators.plotNumberValidator,
-                    onChanged: (v) => propertyProvider.addPlotNumber(v),
+                    controller: _pricePerUnitController,
+                    decoration: InputDecoration(
+                      labelText: isAgri ? 'Price per acre' : 'Price per sqyd',
+                    ),
+                    keyboardType:
+                        TextInputType.numberWithOptions(decimal: true),
+                    validator: Validators.priceValidator,
+                    onChanged: (value) {
+                      String formattedValue = _formatToIndianSystem(value);
+                      _pricePerUnitController.value = TextEditingValue(
+                        text: formattedValue,
+                        selection: TextSelection.collapsed(
+                          offset: formattedValue.length,
+                        ),
+                      );
+                      double? parsedValue =
+                          double.tryParse(value.replaceAll(',', ''));
+                      propertyProvider.setPricePerUnit(parsedValue ?? 0.0);
+                    },
                   ),
+                  const SizedBox(height: 20),
+
+                  // Total Land Price Field (Auto-calculated)
+                  TextFormField(
+                    controller: _totalPriceController,
+                    decoration: InputDecoration(
+                      labelText: 'Total Land Price (auto-calculated)',
+                    ),
+                    keyboardType:
+                        TextInputType.numberWithOptions(decimal: true),
+                    enabled: false, // Auto-calculated
+                  ),
+                  SizedBox(height: 20),
+
+                  // Survey Number Field
+                  TextFormField(
+                    decoration: InputDecoration(labelText: 'Survey Number'),
+                    initialValue: propertyProvider.surveyNumber,
+                    validator: Validators.surveyNumberValidator,
+                    onChanged: (value) =>
+                        propertyProvider.setSurveyNumber(value),
+                  ),
+
+                  // Conditional Plot Numbers Field
+                  if ([
+                    'plot',
+                    'farm land'
+                  ].contains(propertyProvider.propertyType.toLowerCase())) ...[
+                    // Plot Number
+                    TextFormField(
+                      decoration:
+                          const InputDecoration(labelText: 'Plot Number'),
+                      validator: Validators.plotNumberValidator,
+                      onChanged: (v) => propertyProvider.setPlotNumber(v),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Venture Name
+                    TextFormField(
+                      decoration:
+                          const InputDecoration(labelText: 'Venture Name'),
+                      validator: (v) => v == null || v.isEmpty
+                          ? 'Please enter venture name'
+                          : null,
+                      onChanged: (v) => propertyProvider.setVentureName(v),
+                    ),
+
+                    const SizedBox(height: 20),
+                  ],
+
+                  if (['agri land']
+                      .contains(propertyProvider.propertyType.toLowerCase()))
+                    ...[],
+
+                  if ([
+                    'house',
+                    'villa',
+                    'apartment'
+                  ].contains(propertyProvider.propertyType.toLowerCase())) ...[
+                    // House / Villa / Apartment Number
+                    TextFormField(
+                      decoration: const InputDecoration(
+                          labelText: 'House/Villa/Apartment Number'),
+                      validator: Validators.hvaNumberValidator,
+                      onChanged: propertyProvider.setPlotNumber,
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Society Name
+                    TextFormField(
+                      decoration:
+                          const InputDecoration(labelText: 'Society Name'),
+                      validator: (v) => v == null || v.isEmpty
+                          ? 'Please enter Society name'
+                          : null,
+                      onChanged: propertyProvider.setVentureName,
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // 4) Bedrooms row
+                    const Text("Bedrooms",
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    _buildBhkSelection(),
+                    const SizedBox(height: 20),
+
+                    // 5) Bathrooms row
+                    const Text("Bathrooms",
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    _buildBathSelection(),
+                    const SizedBox(height: 20),
+
+                    // 4) ParkingSpots row
+                    const Text("ParkingSpots",
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    _buildParkingSpotsSelection(),
+                    const SizedBox(height: 20),
+
+                    const SizedBox(height: 20),
+                  ],
+
+                  if ([
+                    'commercial space'
+                  ].contains(propertyProvider.propertyType.toLowerCase())) ...[
+                    TextFormField(
+                      decoration:
+                          const InputDecoration(labelText: 'Plot/Site Number'),
+                      validator: Validators.plotNumberValidator,
+                      onChanged: (v) => propertyProvider.setPlotNumber(v),
+                    ),
+                  ],
+                  const SizedBox(height: 20),
                 ],
-                const SizedBox(height: 20),
               ],
             ),
           ),

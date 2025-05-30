@@ -23,7 +23,7 @@ class PropertyProvider with ChangeNotifier {
   String _phoneNumber = '';
   String _name = '';
   String _propertyOwnerName = '';
-  String _propertyType = 'Plot'; // Default value
+  String _propertyType = 'plot'; // ✅ use lowercase
 
   // **New Field: User Type**
   String _userType = 'Owner'; // Default to 'Owner'
@@ -146,6 +146,20 @@ class PropertyProvider with ChangeNotifier {
       throw Exception("Failed to fetch proposed prices.");
     }
   }
+
+  // For Development Type: Owner-Builder Share
+  String _ownerBuilderShare = '50-50';
+  String get ownerBuilderShare => _ownerBuilderShare;
+  void setOwnerBuilderShare(String value) {
+    _ownerBuilderShare = value;
+    notifyListeners();
+  }
+
+  void setTotalPrice(double value) {
+    _totalPrice = value;
+    notifyListeners();
+  }
+
 
   // Getters and Setters
   bool get fencing => _fencing;
@@ -306,7 +320,7 @@ class PropertyProvider with ChangeNotifier {
   }
 
   List<String> get plotNumbers => _plotNumbers;
-  void addPlotNumber(String plotNumber) {
+  void setPlotNumber(String plotNumber) {
     if (!_plotNumbers.contains(plotNumber)) {
       _plotNumbers.add(plotNumber);
       notifyListeners();

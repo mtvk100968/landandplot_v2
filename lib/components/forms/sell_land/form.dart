@@ -3,7 +3,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:landandplot/components/forms/sell_land/steps/step7_landtype_amenities_details.dart';
-// import 'package:landandplot/components/forms/sell_land/steps/step7_landtype_amenities_details.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/property_provider.dart';
 import '../../../services/property_service.dart';
@@ -14,7 +13,6 @@ import './steps/step2_property_details.dart';
 import './steps/step3_address_details.dart';
 import './steps/step4_map_location.dart';
 import './steps/step5_media_upload.dart';
-// ← new:
 import './steps/step6_housetype_amenities_details.dart';
 
 // For switching tabs after successful submit
