@@ -87,7 +87,7 @@ class PropertyService {
         ventureName: property.ventureName,
         createdAt: createdAt,
         amenities: property.amenities,
-        agri_amenities: property.agri_amenities,
+        // agri_amenities: property.agri_amenities,
         stage: property.stage,
         fencing: property.fencing,
         gate: property.gate,

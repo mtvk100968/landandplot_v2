@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:firebase_functions/firebase_functions.dart';
 import '../models/notification_model.dart';
 
 class NotificationService {

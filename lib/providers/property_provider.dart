@@ -684,7 +684,7 @@ class PropertyProvider with ChangeNotifier {
 
       createdAt: Timestamp.now(), // or DateTime.now()
       amenities: _selectedAmenities,
-      agri_amenities: _agriAmenities,
+      // agri_amenities: _agriAmenities,
       fencing: fencing,
       gate: gate,
       bore: bore,

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../components/property_screen/image_gallery_screen.dart';
+import '../models/amenities_model.dart';
 import '../models/property_model.dart';
 import 'package:provider/provider.dart';
 import '../providers/property_provider.dart';
-import '../components/property_details_screen/image_gallery_screen.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -21,6 +21,7 @@ class PropertyDetailsScreen extends StatefulWidget {
 class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
   late Future<void> _fetchProposedPricesFuture;
   bool get _isActive => widget.property.stage != 'sold';
+  Amenities? _amenities;
 
   Future<void> _openGoogleMaps(double latitude, double longitude) async {
     final googleMapsUrl = Uri.parse(
@@ -45,6 +46,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
     _fetchProposedPricesFuture =
         Provider.of<PropertyProvider>(context, listen: false)
             .fetchProposedPrices(widget.property.id);
+    fetchPropertyData();
   }
 
   String formatPrice(double value) {
@@ -59,6 +61,23 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
     }
   }
 
+  Future<void> fetchPropertyData() async {
+    final amenitiesDoc = await FirebaseFirestore.instance
+        .collection('amenities')
+        .doc(widget.property.id)
+        .get();
+
+    print('📥 fetched amenities for ${widget.property.id}: ${amenitiesDoc.data()}');
+
+    if (amenitiesDoc.exists) {
+      setState(() {
+        _amenities = Amenities.fromMap(amenitiesDoc.data()!, amenitiesDoc.id);
+      });
+    } else {
+      print('⚠️ No amenities doc found for ${widget.property.id}');
+    }
+  }
+
   // Function to initiate a phone call
   Future<void> _makePhoneCall(String phoneNumber) async {
     final Uri phoneUri = Uri(scheme: 'tel', path: phoneNumber);
@@ -69,6 +88,53 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
         const SnackBar(content: Text('Could not initiate call')),
       );
     }
+  }
+
+  List<Widget> getFeatureWidgets(Property property, Amenities? amenities) {
+    final type = property.propertyType.toLowerCase();
+    final features = <Widget>[];
+
+    // Basic land-related amenities (always from property model)
+    if (type.contains('agri Land') || type.contains('farm Land')) {
+      features.addAll([
+        featureRow('Fencing', property.fencing),
+        featureRow('Gate', property.gate),
+        featureRow('Bore', property.bore),
+        featureRow('Pipeline', property.pipeline),
+        featureRow('Electricity', property.electricity),
+        featureRow('Plantation', property.plantation),
+      ]);
+    }
+
+    else if (type.contains('plot')) {
+      features.addAll([
+        featureRow('Fencing', property.fencing),
+        featureRow('Gate', property.gate),
+        featureRow('Bore', property.bore),
+        featureRow('Electricity', property.electricity),
+      ]);
+    }
+
+    // Flat / Villa / House → from amenities model
+    else if (type.contains('house') ||
+        type.contains('villa') ||
+        type.contains('apartment')) {
+      features.addAll([
+        featureRow('Lift', amenities?.lift.toLowerCase() == 'yes'),
+        featureRow('Security', amenities?.security.toLowerCase() == 'yes'),
+        featureRow('Power Backup', amenities?.powerBackup.toLowerCase() == 'yes'),
+        featureRow('Parking', amenities?.parking.toLowerCase() == 'yes'),
+        featureRow('Swimming Pool', amenities?.swimmingPool == true),
+        featureRow('Garden', amenities?.garden == true),
+        featureRow('Club House', amenities?.clubHouse == true),
+      ]);
+    }
+
+    if (features.isEmpty) {
+      features.add(const Text('No features available for this property.'));
+    }
+
+    return features;
   }
 
   @override
@@ -141,7 +207,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.7),
+                              color: Colors.black.withAlpha((0.7 * 255).toInt()), // ✅ preferred
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Row(
@@ -188,6 +254,17 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                           ),
                           Text(
                             'Plot Numbers: ${widget.property.plotNumbers.isNotEmpty ? widget.property.plotNumbers.join(', ') : 'N/A'}',
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                        ],
+                        if (['apartment', 'house', 'villa']
+                            .contains(widget.property.propertyType.toLowerCase())) ...[
+                          Text(
+                            'Bedrooms: ${widget.property.bedrooms?.trim().isNotEmpty == true ? widget.property.bedrooms : 'N/A'}',
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                          Text(
+                            'Bathrooms: ${widget.property.bathrooms?.trim().isNotEmpty == true ? widget.property.bathrooms : 'N/A'}',
                             style: const TextStyle(fontSize: 16),
                           ),
                         ],
@@ -249,19 +326,13 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
                   const SizedBox(height: 16),
 
                   // Features Card
-                  buildCard(
-                    title: 'Features',
-                    content: Column(
-                      children: [
-                        featureRow('Fencing', widget.property.fencing),
-                        featureRow('Gate', widget.property.gate),
-                        featureRow('Bore', widget.property.bore),
-                        featureRow('Pipeline', widget.property.pipeline),
-                        featureRow('Electricity', widget.property.electricity),
-                        featureRow('Plantation', widget.property.plantation),
-                      ],
+                  if (_isActive)
+                    buildCard(
+                      title: 'Features',
+                      content: Column(
+                        children: getFeatureWidgets(widget.property, _amenities),
+                      ),
                     ),
-                  ),
 
                   const SizedBox(height: 16),
 

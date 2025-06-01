@@ -1,3 +1,4 @@
+//
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 enum PropertyType {
@@ -46,18 +47,26 @@ class Amenities {
   final bool? shoppingCenter;
 
   // House / Villa / Apartment (new)
-  final bool? inUnitWasherDryer;
-  final bool? dishwasher;
-  final bool? microwave;
-  final bool? centralHeatingAndAirConditioning;
+  final String bedrooms;
+  final String bathrooms;
+  final String parking;
+  final String lift;
+  final String security;
+  final String powerBackup;
+
+  // House / Villa / Apartment (new)
+  // final bool? inUnitWasherDryer;
+  // final bool? dishwasher;
+  // final bool? microwave;
   final bool? stainlessSteelAppliances;
   final bool? cableAndHighSpeedInternetReady;
   final bool? ceilingFans;
+  final bool? centralHeatingAndAirConditioning;
   final bool? onSiteFitnessCenter;
   final bool? controlledAccessEntry;
   final bool? elevatorAccess;
   final bool? coveredOrGarageParking;
-  final bool? packageForGuests;
+  final bool? parkingForGuests;
   final bool? petFriendlyAreasOrDogWashStation;
   final bool? onSiteManagementAndMaintenance;
   final bool? recyclingAndCompostFacilities;
@@ -67,6 +76,8 @@ class Amenities {
   final bool? privateBalconyOrPatio;
   final bool? walkInClosets;
   final bool? graniteOrQuartzCountertops;
+
+  final Amenities? amenities;
 
   Amenities({
     required this.id,
@@ -81,15 +92,23 @@ class Amenities {
     this.waterGhmc,
     this.gasPipeline,
     this.garden,
+    required this.bedrooms,
+    required this.bathrooms,
+    required this.parking,
+    required this.lift,
+    required this.security,
+    required this.powerBackup,
+
     this.swimmingPool,
     this.playingArea,
     this.clubHouse,
-    this.packageForGuests,
+    // this.packageForGuests,
+    // this.inUnitWasherDryer,
+    // this.dishwasher,
+    // this.microwave,
     this.flooring,
     this.shoppingCenter,
-    this.inUnitWasherDryer,
-    this.dishwasher,
-    this.microwave,
+    this.parkingForGuests,
     this.centralHeatingAndAirConditioning,
     this.privateBalconyOrPatio,
     this.walkInClosets,
@@ -106,6 +125,8 @@ class Amenities {
     this.recyclingAndCompostFacilities,
     this.outdoorGrillingOrPicnicAreas,
     this.rooftopTerraceOrCourtyardGardens,
+
+    this.amenities,
   });
 
   factory Amenities.fromMap(Map<String, dynamic> data, String documentId) {
@@ -121,6 +142,12 @@ class Amenities {
       pipeline: data['pipeline'] as bool?,
       electricity: data['electricity'] as bool?,
       plantation: data['plantation'] as bool?,
+      bedrooms: data['bedrooms']?.toString() ?? '',
+      bathrooms: data['bathrooms']?.toString() ?? '',
+      parking: data['parking'] ?? '',
+      lift: data['lift'] ?? '',
+      security: data['security'] ?? '',
+      powerBackup: data['power_backup'] ?? '',
       waterGhmc: data['water_ghmc'] as bool?,
       gasPipeline: data['gas_pipeline'] as bool?,
       garden: data['garden'] as bool?,
@@ -128,9 +155,9 @@ class Amenities {
       playingArea: data['playing_area'] as bool?,
       clubHouse: data['club_house'] as bool?,
       shoppingCenter: data['shopping_center'] as bool?,
-      inUnitWasherDryer: data['in_unit_washer_dryer'] as bool?,
-      dishwasher: data['dishwasher'] as bool?,
-      microwave: data['microwave'] as bool?,
+      // inUnitWasherDryer: data['in_unit_washer_dryer'] as bool?,
+      // dishwasher: data['dishwasher'] as bool?,
+      // microwave: data['microwave'] as bool?,
       centralHeatingAndAirConditioning: data['central_heating_and_air_conditioning'] as bool?,
       privateBalconyOrPatio: data['private_balcony_or_patio'] as bool?,
       walkInClosets: data['walk_in_closets'] as bool?,
@@ -154,6 +181,12 @@ class Amenities {
     return {
       'property_id': propertyId,
       'property_type': propertyType.toString().split('.').last,
+      'bedrooms': bedrooms,
+      'bathrooms': bathrooms,
+      'parking': parking,
+      'lift': lift,
+      'security': security,
+      'powerBackup': powerBackup,
       'fencing': fencing,
       'gate': gate,
       'bore': bore,
@@ -167,9 +200,9 @@ class Amenities {
       'playing_area': playingArea,
       'club_house': clubHouse,
       'shopping_center': shoppingCenter,
-      'in_unit_washer_dryer': inUnitWasherDryer,
-      'dishwasher': dishwasher,
-      'microwave': microwave,
+      // 'in_unit_washer_dryer': inUnitWasherDryer,
+      // 'dishwasher': dishwasher,
+      // 'microwave': microwave,
       'central_heating_and_air_conditioning': centralHeatingAndAirConditioning,
       'private_balcony_or_patio': privateBalconyOrPatio,
       'walk_in_closets': walkInClosets,

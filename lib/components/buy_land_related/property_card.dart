@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import '../../../../models/property_model.dart';
+import '../../models/amenities_model.dart';
 import '../../utils/format.dart';
 import '../../../screens/property_details_screen.dart';
 // import 'google_fonts';
@@ -252,7 +253,7 @@ class _PropertyCardState extends State<PropertyCard> {
                             ),
                           const SizedBox(height: 4),
                           Text(
-                            '${formatPrice(widget.property.pricePerUnit)}/${widget.property.propertyType == 'Agri Land' ? 'acre' : 'sqyd'}',
+                            '${formatPrice(widget.property.pricePerUnit)}/${widget.property.propertyType == PropertyType.agriLand ? 'acre' : 'sqyd'}',
                             style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
@@ -262,7 +263,7 @@ class _PropertyCardState extends State<PropertyCard> {
                           const SizedBox(height: 4),
                           if (widget.property.landArea != null)
                             Text(
-                              '${formatValue(widget.property.landArea)} ${widget.property.propertyType == 'Agri Land' ? 'acres' : 'sqyds'}',
+                              '${formatValue(widget.property.landArea)} ${widget.property.propertyType == PropertyType.agriLand ? 'acres' : 'sqyds'}',
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w700,

@@ -9,6 +9,8 @@ class Property {
   final String name;
   final String mobileNumber;
   final String propertyType;
+  final String? bedrooms;
+  final String? bathrooms;
   final double landArea;
   final double pricePerUnit;
   final double totalPrice;
@@ -43,7 +45,7 @@ class Property {
   final bool? electricity;
   final bool? plantation;
   final List<String> amenities;
-  final List<String> agri_amenities;
+  // final List<String> agri_amenities;
 
   /// All buyers in various statuses: 'visitPending', 'negotiating', 'accepted', 'rejected'
   final List<Buyer> buyers;
@@ -63,6 +65,8 @@ class Property {
     required this.name,
     required this.mobileNumber,
     required this.propertyType,
+    this.bedrooms,
+    this.bathrooms,
     required this.landArea,
     required this.pricePerUnit,
     required this.totalPrice,
@@ -90,7 +94,7 @@ class Property {
     this.ventureName,
     required this.createdAt,
     required this.amenities,
-    required this.agri_amenities,
+    // required this.agri_amenities,
     this.ownerBuilderShare,
     this.fencing,
     this.gate,
@@ -111,6 +115,8 @@ class Property {
       'name': name,
       'mobileNumber': mobileNumber,
       'propertyType': propertyType,
+      'bedrooms': bedrooms,
+      'bathrooms': bathrooms,
       'landArea': landArea,
       'pricePerUnit': pricePerUnit,
       'totalPrice': totalPrice,
@@ -138,7 +144,7 @@ class Property {
       'createdAt': createdAt,
       'ownerBuilderShare': ownerBuilderShare,
       'amenities': amenities,
-      'agri_amenities': agri_amenities,
+      // 'agri_amenities': agri_amenities,
       'fencing': fencing,
       'gate': gate,
       'bore': bore,
@@ -161,6 +167,8 @@ class Property {
       name: m['name'] ?? '',
       mobileNumber: m['mobileNumber'] ?? '',
       propertyType: m['propertyType'] ?? '',
+      bedrooms: m['bedrooms'],
+      bathrooms: m['bathrooms'],
       landArea: (m['landArea'] as num?)?.toDouble() ?? 0.0,
       pricePerUnit: (m['pricePerUnit'] as num?)?.toDouble() ?? 0.0,
       totalPrice: (m['totalPrice'] as num?)?.toDouble() ?? 0.0,
@@ -187,7 +195,7 @@ class Property {
       ventureName: m['ventureName'],
       createdAt: m['createdAt'] as Timestamp,
       amenities: List<String>.from(m['amenities'] ?? []),
-      agri_amenities: List<String>.from(m['agri_amenities'] ?? []),
+      // agri_amenities: List<String>.from(m['agri_amenities'] ?? []),
       fencing: m['fencing'],
       gate: m['gate'],
       bore: m['bore'],
