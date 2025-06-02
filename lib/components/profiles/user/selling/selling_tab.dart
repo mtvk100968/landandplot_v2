@@ -31,7 +31,14 @@ class _SellingTabState extends State<SellingTab> {
       UserService()
           .getSellerPropertiesByStage(widget.user.uid, 'saleInProgress'),
       UserService().getSellerPropertiesByStage(widget.user.uid, 'sold'),
-    ]);
+    ]).then((lists) {
+      // Debug print counts per stage
+      print('SellingTab.initState: findingAgents count=${lists[0].length}');
+      print('SellingTab.initState: findingBuyers count=${lists[1].length}');
+      print('SellingTab.initState: saleInProgress count=${lists[2].length}');
+      print('SellingTab.initState: sold count=${lists[3].length}');
+      return lists;
+    });
   }
 
   @override
@@ -42,11 +49,30 @@ class _SellingTabState extends State<SellingTab> {
         if (snapshot.connectionState != ConnectionState.done) {
           return const Center(child: CircularProgressIndicator());
         }
+        if (snapshot.hasError) {
+          return Center(
+              child: Text('Error loading properties: ${snapshot.error}'));
+        }
+
         final lists = snapshot.data!;
         final findingAgents = lists[0];
         final findingBuyers = lists[1];
         final saleInProgress = lists[2];
         final sold = lists[3];
+
+        // Debug: print each property’s ID and stage
+        for (var p in findingAgents) {
+          print('SellingTab: [findingAgents] id=${p.id} stage=${p.stage}');
+        }
+        for (var p in findingBuyers) {
+          print('SellingTab: [findingBuyers] id=${p.id} stage=${p.stage}');
+        }
+        for (var p in saleInProgress) {
+          print('SellingTab: [saleInProgress] id=${p.id} stage=${p.stage}');
+        }
+        for (var p in sold) {
+          print('SellingTab: [sold] id=${p.id} stage=${p.stage}');
+        }
 
         final cards = <Widget>[
           ...findingAgents.map((p) => FindingAgentsCard(property: p)),
@@ -58,8 +84,11 @@ class _SellingTabState extends State<SellingTab> {
         if (cards.isEmpty) {
           return const Center(child: Text('No properties to display.'));
         }
+
         return ListView(
-            padding: const EdgeInsets.symmetric(vertical: 8), children: cards);
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          children: cards,
+        );
       },
     );
   }

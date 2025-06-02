@@ -27,15 +27,23 @@ class UserDetailCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(user.name ?? '',
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  Text(
+                    user.name ?? '',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   const SizedBox(height: 4),
-                  Text(user.phoneNumber ?? '',
-                      style: TextStyle(color: Colors.grey[700])),
+                  Text(
+                    user.phoneNumber ?? '',
+                    style: TextStyle(color: Colors.grey[700]),
+                  ),
                   const SizedBox(height: 2),
-                  Text(user.email ?? '',
-                      style: TextStyle(color: Colors.grey[700])),
+                  Text(
+                    user.email ?? '',
+                    style: TextStyle(color: Colors.grey[700]),
+                  ),
                 ],
               ),
             ),

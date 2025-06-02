@@ -1,5 +1,5 @@
+// lib/components/profiles/user/common/edit_profile_dialog.dart
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -42,27 +42,27 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
 
     final firebaseUser = FirebaseAuth.instance.currentUser!;
     String? photoUrl = widget.user.photoUrl;
+
     if (_pickedImage != null) {
-      // upload to storage and get URL
       photoUrl = await UserService().uploadProfileImage(
         uid: firebaseUser.uid,
         file: _pickedImage!,
       );
-      // also update FirebaseAuth profile
       await firebaseUser.updatePhotoURL(photoUrl);
     }
 
     final updated = widget.user.copyWith(
       name: _nameCtrl.text.trim(),
       email: _emailCtrl.text.trim().isEmpty ? null : _emailCtrl.text.trim(),
-      // you may need to add photoUrl field to your AppUser
+      photoUrl: photoUrl,
     );
 
     await UserService().saveUser(updated);
 
-    // Update FirebaseAuth displayName/email
-    await firebaseUser.updateDisplayName(updated.name);
-    if (updated.email != null) {
+    if (_nameCtrl.text.trim().isNotEmpty) {
+      await firebaseUser.updateDisplayName(updated.name);
+    }
+    if (updated.email != null && updated.email!.isNotEmpty) {
       await firebaseUser.updateEmail(updated.email!);
     }
 
@@ -94,7 +94,13 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
             const SizedBox(height: 12),
             TextFormField(
               controller: _nameCtrl,
+              enabled: widget.user.name == null || widget.user.name!.isEmpty,
               decoration: InputDecoration(labelText: 'Name *'),
+              style: TextStyle(
+                color: (widget.user.name == null || widget.user.name!.isEmpty)
+                    ? Colors.black
+                    : Colors.grey,
+              ),
               validator: (v) =>
                   v == null || v.trim().isEmpty ? 'Name is required' : null,
             ),

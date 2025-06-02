@@ -1,11 +1,10 @@
 // lib/services/user_service.dart
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import '../models/user_model.dart';
 import '../models/property_model.dart';
-import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'dart:io';
 
 class UserService {
   // Reference to the 'users' collection
@@ -16,8 +15,6 @@ class UserService {
   final CollectionReference<Map<String, dynamic>> _propertiesCollection =
       FirebaseFirestore.instance.collection('properties');
 
-  final FirebaseStorage _storage = FirebaseStorage.instance;
-
   /// Fetch a user by their UID
   Future<AppUser?> getUserById(String userId) async {
     try {
@@ -27,7 +24,7 @@ class UserService {
       }
       return null;
     } catch (e) {
-      print('Error fetching user by ID: $e');
+      print('UserService.getUserById ERROR: $e');
       return null;
     }
   }
@@ -50,7 +47,7 @@ class UserService {
             SetOptions(merge: true),
           );
     } catch (e) {
-      print('Error saving user: $e');
+      print('UserService.saveUser ERROR: $e');
       throw Exception('Failed to save user');
     }
   }
@@ -60,7 +57,7 @@ class UserService {
     try {
       await _usersCollection.doc(userId).delete();
     } catch (e) {
-      print('Error deleting user: $e');
+      print('UserService.deleteUser ERROR: $e');
       throw Exception('Failed to delete user');
     }
   }
@@ -70,7 +67,7 @@ class UserService {
     try {
       await _usersCollection.doc(user.uid).update(user.toMap());
     } catch (e) {
-      print('Error updating user: $e');
+      print('UserService.updateUser ERROR: $e');
       throw Exception('Failed to update user');
     }
   }
@@ -82,7 +79,7 @@ class UserService {
         'favoritedPropertyIds': FieldValue.arrayUnion([propertyId]),
       }, SetOptions(merge: true));
     } catch (e) {
-      print('Error adding favorite property: $e');
+      print('UserService.addFavoriteProperty ERROR: $e');
       throw Exception('Failed to add favorite property');
     }
   }
@@ -94,7 +91,7 @@ class UserService {
         'favoritedPropertyIds': FieldValue.arrayRemove([propertyId]),
       }, SetOptions(merge: true));
     } catch (e) {
-      print('Error removing favorite property: $e');
+      print('UserService.removeFavoriteProperty ERROR: $e');
       throw Exception('Failed to remove favorite property');
     }
   }
@@ -106,7 +103,7 @@ class UserService {
         'postedPropertyIds': FieldValue.arrayUnion([propertyId]),
       });
     } catch (e) {
-      print('Error adding property to user: $e');
+      print('UserService.addPropertyToUser ERROR: $e');
       throw Exception('Failed to add property to user');
     }
   }
@@ -118,7 +115,7 @@ class UserService {
         'interestedPropertyIds': FieldValue.arrayUnion([propertyId]),
       });
     } catch (e) {
-      print('Error adding in-talks property: $e');
+      print('UserService.addInTalksProperty ERROR: $e');
       throw Exception('Failed to add in-talks property');
     }
   }
@@ -130,78 +127,168 @@ class UserService {
         'boughtPropertyIds': FieldValue.arrayUnion([propertyId]),
       });
     } catch (e) {
-      print('Error adding bought property: $e');
+      print('UserService.addBoughtProperty ERROR: $e');
       throw Exception('Failed to add bought property');
     }
   }
 
-  /// Fetch all properties this user has posted
+  /// Fetch all properties this user has posted by looking at postedPropertyIds
   Future<List<Property>> getSellerProperties(String userId) async {
-    final snap =
-        await _propertiesCollection.where('userId', isEqualTo: userId).get();
-    return snap.docs.map((doc) => Property.fromDocument(doc)).toList();
+    try {
+      final user = await getUserById(userId);
+      if (user == null) {
+        print('getSellerProperties: no user found for userId=$userId');
+        return [];
+      }
+      if (user.postedPropertyIds.isEmpty) {
+        print(
+            'getSellerProperties: postedPropertyIds is empty for userId=$userId');
+        return [];
+      }
+      final props = await getPropertiesByIds(user.postedPropertyIds);
+      print(
+          'getSellerProperties: retrieved ${props.length} properties for userId=$userId');
+      return props;
+    } catch (e) {
+      print('UserService.getSellerProperties ERROR: $e');
+      return [];
+    }
   }
 
   /// Fetch only the properties this user has posted in a given stage
   Future<List<Property>> getSellerPropertiesByStage(
       String userId, String stage) async {
-    final snap = await _propertiesCollection
-        .where('userId', isEqualTo: userId)
-        .where('stage', isEqualTo: stage)
-        .get();
-    return snap.docs.map((doc) => Property.fromDocument(doc)).toList();
+    try {
+      final user = await getUserById(userId);
+      if (user == null) {
+        print('getSellerPropertiesByStage: no user found for userId=$userId');
+        return [];
+      }
+      if (user.postedPropertyIds.isEmpty) {
+        print(
+            'getSellerPropertiesByStage: postedPropertyIds is empty for userId=$userId');
+        return [];
+      }
+
+      final allProps = await getPropertiesByIds(user.postedPropertyIds);
+      final filtered = allProps.where((p) => p.stage == stage).toList();
+
+      print(
+          'getSellerPropertiesByStage: userId=$userId, stage=$stage, totalPosted=${allProps.length}, matched=${filtered.length}');
+
+      return filtered;
+    } catch (e) {
+      print('UserService.getSellerPropertiesByStage ERROR: $e');
+      return [];
+    }
   }
 
   /// Fetch properties this user is interested in (in-talks)
   Future<List<Property>> getInTalksProperties(String userId) async {
-    final user = await getUserById(userId);
-    if (user == null || user.interestedPropertyIds.isEmpty) return [];
-    return getPropertiesByIds(user.interestedPropertyIds);
+    try {
+      final user = await getUserById(userId);
+      if (user == null || user.interestedPropertyIds.isEmpty) {
+        print(
+            'getInTalksProperties: no user or no interestedPropertyIds for userId=$userId');
+        return [];
+      }
+      final props = await getPropertiesByIds(user.interestedPropertyIds);
+      print(
+          'getInTalksProperties: retrieved ${props.length} properties for userId=$userId');
+      return props;
+    } catch (e) {
+      print('UserService.getInTalksProperties ERROR: $e');
+      return [];
+    }
   }
 
   /// Fetch properties this user has bought
   Future<List<Property>> getBoughtProperties(String userId) async {
-    final user = await getUserById(userId);
-    if (user == null || user.boughtPropertyIds.isEmpty) return [];
-    return getPropertiesByIds(user.boughtPropertyIds);
+    try {
+      final user = await getUserById(userId);
+      if (user == null || user.boughtPropertyIds.isEmpty) {
+        print(
+            'getBoughtProperties: no user or no boughtPropertyIds for userId=$userId');
+        return [];
+      }
+      final props = await getPropertiesByIds(user.boughtPropertyIds);
+      print(
+          'getBoughtProperties: retrieved ${props.length} properties for userId=$userId');
+      return props;
+    } catch (e) {
+      print('UserService.getBoughtProperties ERROR: $e');
+      return [];
+    }
   }
 
   /// Fetch multiple Property documents by their IDs
   Future<List<Property>> getPropertiesByIds(List<String> propertyIds) async {
-    if (propertyIds.isEmpty) return [];
-    List<Property> all = [];
-    const batchSize = 10;
-    for (var i = 0; i < propertyIds.length; i += batchSize) {
-      final end = (i + batchSize < propertyIds.length)
-          ? i + batchSize
-          : propertyIds.length;
-      final batch = propertyIds.sublist(i, end);
-      final snap = await _propertiesCollection
-          .where(FieldPath.documentId, whereIn: batch)
-          .get();
-      all.addAll(snap.docs.map((d) => Property.fromDocument(d)));
+    try {
+      if (propertyIds.isEmpty) return [];
+      List<Property> all = [];
+      const batchSize = 10;
+      for (var i = 0; i < propertyIds.length; i += batchSize) {
+        final end = (i + batchSize < propertyIds.length)
+            ? i + batchSize
+            : propertyIds.length;
+        final batch = propertyIds.sublist(i, end);
+        final snap = await _propertiesCollection
+            .where(FieldPath.documentId, whereIn: batch)
+            .get();
+        all.addAll(snap.docs.map((d) => Property.fromDocument(d)));
+      }
+      print('getPropertiesByIds: retrieved ${all.length} properties by IDs');
+      return all;
+    } catch (e) {
+      print('UserService.getPropertiesByIds ERROR: $e');
+      return [];
     }
-    return all;
   }
 
   /// Fetch a user by their phone number
   Future<AppUser?> getUserByPhoneNumber(String phoneNumber) async {
-    final snap = await _usersCollection
-        .where('phoneNumber', isEqualTo: phoneNumber)
-        .get();
-    if (snap.docs.isNotEmpty) {
-      return AppUser.fromDocument(snap.docs.first.data());
+    try {
+      final snap = await _usersCollection
+          .where('phoneNumber', isEqualTo: phoneNumber)
+          .get();
+      if (snap.docs.isNotEmpty) {
+        return AppUser.fromDocument(snap.docs.first.data());
+      }
+      return null;
+    } catch (e) {
+      print('UserService.getUserByPhoneNumber ERROR: $e');
+      return null;
     }
-    return null;
   }
 
-  /// Uploads a profile image and returns its download URL.
+  /// Uploads a new profile image for [uid], updates Firestore, and returns the download URL.
   Future<String> uploadProfileImage({
     required String uid,
     required File file,
   }) async {
-    final ref = _storage.ref().child('users/$uid/profile.jpg');
-    await ref.putFile(file);
-    return ref.getDownloadURL();
+    try {
+      // 1. Upload file to Firebase Storage under "profile_photos/{uid}.jpg"
+      final storageRef = FirebaseStorage.instance
+          .ref()
+          .child('profile_photos')
+          .child('$uid.jpg');
+
+      final uploadTask = storageRef.putFile(file);
+      final snapshot = await uploadTask.whenComplete(() {});
+
+      // 2. Get the download URL of the uploaded image
+      final downloadUrl = await snapshot.ref.getDownloadURL();
+
+      // 3. Update the user's Firestore document with the new photoUrl
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .update({'photoUrl': downloadUrl});
+
+      return downloadUrl;
+    } catch (e) {
+      print('UserService.uploadProfileImage ERROR: $e');
+      rethrow;
+    }
   }
 }
