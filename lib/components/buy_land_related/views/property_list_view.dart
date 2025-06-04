@@ -11,7 +11,7 @@ typedef PropertyTapCallback = void Function(Property property);
 class PropertyListView extends StatelessWidget {
   final List<Property> properties;
   final List<String> favoritedPropertyIds;
-  final String?        selectedCity;
+  final String? selectedCity;
   final FavoriteToggleCallback onFavoriteToggle;
   final PropertyTapCallback onTapProperty; // New callback for property taps
 
@@ -40,7 +40,7 @@ class PropertyListView extends StatelessWidget {
       itemBuilder: (context, index) {
         final property = properties[index];
         final isFavorited = favoritedPropertyIds.contains(property.id);
-        print("Rendering Property: ${property.id}, Rent Price: ${property.totalPrice}");
+        print("Rendering Property: ${property.id}, Property Price: ${property.totalPrice}");
 
         return PropertyCard(
           property: property,

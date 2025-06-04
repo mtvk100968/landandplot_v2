@@ -134,8 +134,8 @@ class _Step2PropertyDetailsState extends State<Step2PropertyDetails> {
     );
   }
 
-  /// Build a row of ChoiceChips for ParkingSpots selection
-  Widget _buildParkingSpotsSelection() {
+  /// Build a row of ChoiceChips for parkingSpots selection
+  Widget _buildparkingSpotsSelection() {
     final propertyProvider = Provider.of<PropertyProvider>(context);
     final pksOptions = ["1 PKS", "2 PKS", "3 PKS", "4 PKS"];
 
@@ -153,7 +153,7 @@ class _Step2PropertyDetailsState extends State<Step2PropertyDetails> {
           onSelected: (selected) {
             if (selected) {
               propertyProvider
-                  .setParkingSpots(pksValue); // ✅ Pass int correctly
+                  .setparkingSpots(pksValue); // ✅ Pass int correctly
             }
           },
         );
@@ -167,7 +167,8 @@ class _Step2PropertyDetailsState extends State<Step2PropertyDetails> {
     // final isAgri = propertyProvider.propertyType.toLowerCase() == 'agri land';
     final type = propertyProvider.propertyType.toLowerCase();
 
-    final isDevelopment = ['development', 'development_plot', 'development_land'].contains(type);
+    final isDevelopment =
+        ['development', 'development_plot', 'development_land'].contains(type);
     final isDevelopmentLand = type == 'development_land';
     final isDevelopmentPlot = type == 'development_plot';
     final isAgri = type == 'agri land';
@@ -189,7 +190,8 @@ class _Step2PropertyDetailsState extends State<Step2PropertyDetails> {
               children: [
                 if (isDevelopment) ...[
                   DropdownButtonFormField<String>(
-                    value: ['development_plot', 'development_land'].contains(propertyProvider.propertyType)
+                    value: ['development_plot', 'development_land']
+                            .contains(propertyProvider.propertyType)
                         ? propertyProvider.propertyType
                         : null,
                     decoration: const InputDecoration(
@@ -235,7 +237,6 @@ class _Step2PropertyDetailsState extends State<Step2PropertyDetails> {
                   },
                 ),
                 const SizedBox(height: 20),
-
                 if (isDevelopmentPlot || isDevelopmentLand) ...[
                   DropdownButtonFormField<String>(
                     value: propertyProvider.ownerBuilderShare,
@@ -243,7 +244,8 @@ class _Step2PropertyDetailsState extends State<Step2PropertyDetails> {
                       labelText: 'Select Owner Builder share split',
                       border: OutlineInputBorder(),
                     ),
-                    items: ['50-50', '55-45', '60-40', '45-55', '40-60'].map((value) {
+                    items: ['50-50', '55-45', '60-40', '45-55', '40-60']
+                        .map((value) {
                       return DropdownMenuItem<String>(
                         value: value,
                         child: Text(value),
@@ -258,8 +260,6 @@ class _Step2PropertyDetailsState extends State<Step2PropertyDetails> {
                   ),
                   const SizedBox(height: 20),
                 ],
-
-
                 if (isDevelopmentLand) ...[
                   TextFormField(
                     controller: _totalPriceController,
@@ -285,7 +285,6 @@ class _Step2PropertyDetailsState extends State<Step2PropertyDetails> {
                     onChanged: (value) =>
                         propertyProvider.setSurveyNumber(value),
                   ),
-
                 ] else ...[
                   TextFormField(
                     controller: _pricePerUnitController,
@@ -404,11 +403,11 @@ class _Step2PropertyDetailsState extends State<Step2PropertyDetails> {
                     _buildBathSelection(),
                     const SizedBox(height: 20),
 
-                    // 4) ParkingSpots row
-                    const Text("ParkingSpots",
+                    // 4) parkingSpots row
+                    const Text("parkingSpots",
                         style: TextStyle(fontWeight: FontWeight.bold)),
                     const SizedBox(height: 8),
-                    _buildParkingSpotsSelection(),
+                    _buildparkingSpotsSelection(),
                     const SizedBox(height: 20),
 
                     const SizedBox(height: 20),

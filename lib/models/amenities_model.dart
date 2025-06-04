@@ -18,7 +18,7 @@ enum PropertyType {
   /// helper to look up an enum from the DB‐string
   static PropertyType fromLabel(String dbValue) {
     return PropertyType.values.firstWhere(
-          (e) => e.label.toLowerCase() == dbValue.toLowerCase(),
+      (e) => e.label.toLowerCase() == dbValue.toLowerCase(),
       orElse: () => PropertyType.plot,
     );
   }
@@ -49,7 +49,7 @@ class Amenities {
   // House / Villa / Apartment (new)
   final String bedrooms;
   final String bathrooms;
-  final String parking;
+  final String parkingSpots;
   final String lift;
   final String security;
   final String powerBackup;
@@ -94,11 +94,10 @@ class Amenities {
     this.garden,
     required this.bedrooms,
     required this.bathrooms,
-    required this.parking,
+    required this.parkingSpots,
     required this.lift,
     required this.security,
     required this.powerBackup,
-
     this.swimmingPool,
     this.playingArea,
     this.clubHouse,
@@ -125,7 +124,6 @@ class Amenities {
     this.recyclingAndCompostFacilities,
     this.outdoorGrillingOrPicnicAreas,
     this.rooftopTerraceOrCourtyardGardens,
-
     this.amenities,
   });
 
@@ -134,7 +132,8 @@ class Amenities {
       id: documentId,
       propertyId: data['property_id'] as String,
       propertyType: PropertyType.values.firstWhere(
-            (e) => e.toString() == 'PropertyType.' + (data['property_type'] as String),
+        (e) =>
+            e.toString() == 'PropertyType.' + (data['property_type'] as String),
       ),
       fencing: data['fencing'] as bool?,
       gate: data['gate'] as bool?,
@@ -144,7 +143,7 @@ class Amenities {
       plantation: data['plantation'] as bool?,
       bedrooms: data['bedrooms']?.toString() ?? '',
       bathrooms: data['bathrooms']?.toString() ?? '',
-      parking: data['parking'] ?? '',
+      parkingSpots: data['parkingSpots'] ?? '',
       lift: data['lift'] ?? '',
       security: data['security'] ?? '',
       powerBackup: data['power_backup'] ?? '',
@@ -158,22 +157,30 @@ class Amenities {
       // inUnitWasherDryer: data['in_unit_washer_dryer'] as bool?,
       // dishwasher: data['dishwasher'] as bool?,
       // microwave: data['microwave'] as bool?,
-      centralHeatingAndAirConditioning: data['central_heating_and_air_conditioning'] as bool?,
+      centralHeatingAndAirConditioning:
+          data['central_heating_and_air_conditioning'] as bool?,
       privateBalconyOrPatio: data['private_balcony_or_patio'] as bool?,
       walkInClosets: data['walk_in_closets'] as bool?,
-      graniteOrQuartzCountertops: data['granite_or_quartz_countertops'] as bool?,
+      graniteOrQuartzCountertops:
+          data['granite_or_quartz_countertops'] as bool?,
       stainlessSteelAppliances: data['stainless_steel_appliances'] as bool?,
-      cableAndHighSpeedInternetReady: data['cable_and_high_speed_internet_ready'] as bool?,
+      cableAndHighSpeedInternetReady:
+          data['cable_and_high_speed_internet_ready'] as bool?,
       ceilingFans: data['ceiling_fans'] as bool?,
       onSiteFitnessCenter: data['on_site_fitness_center'] as bool?,
       controlledAccessEntry: data['controlled_access_entry'] as bool?,
       elevatorAccess: data['elevator_access'] as bool?,
       coveredOrGarageParking: data['covered_or_garage_parking'] as bool?,
-      petFriendlyAreasOrDogWashStation: data['pet_friendly_areas_or_dog_wash_station'] as bool?,
-      onSiteManagementAndMaintenance: data['on_site_management_and_maintenance'] as bool?,
-      recyclingAndCompostFacilities: data['recycling_and_compost_facilities'] as bool?,
-      outdoorGrillingOrPicnicAreas: data['outdoor_grilling_or_picnic_areas'] as bool?,
-      rooftopTerraceOrCourtyardGardens: data['rooftop_terrace_or_courtyard_gardens'] as bool?,
+      petFriendlyAreasOrDogWashStation:
+          data['pet_friendly_areas_or_dog_wash_station'] as bool?,
+      onSiteManagementAndMaintenance:
+          data['on_site_management_and_maintenance'] as bool?,
+      recyclingAndCompostFacilities:
+          data['recycling_and_compost_facilities'] as bool?,
+      outdoorGrillingOrPicnicAreas:
+          data['outdoor_grilling_or_picnic_areas'] as bool?,
+      rooftopTerraceOrCourtyardGardens:
+          data['rooftop_terrace_or_courtyard_gardens'] as bool?,
     );
   }
 
@@ -183,7 +190,7 @@ class Amenities {
       'property_type': propertyType.toString().split('.').last,
       'bedrooms': bedrooms,
       'bathrooms': bathrooms,
-      'parking': parking,
+      'parkingSpots': parkingSpots,
       'lift': lift,
       'security': security,
       'powerBackup': powerBackup,
@@ -214,7 +221,8 @@ class Amenities {
       'controlled_access_entry': controlledAccessEntry,
       'elevator_access': elevatorAccess,
       'covered_or_garage_parking': coveredOrGarageParking,
-      'pet_friendly_areas_or_dog_wash_station': petFriendlyAreasOrDogWashStation,
+      'pet_friendly_areas_or_dog_wash_station':
+          petFriendlyAreasOrDogWashStation,
       'on_site_management_and_maintenance': onSiteManagementAndMaintenance,
       'recycling_and_compost_facilities': recyclingAndCompostFacilities,
       'outdoor_grilling_or_picnic_areas': outdoorGrillingOrPicnicAreas,

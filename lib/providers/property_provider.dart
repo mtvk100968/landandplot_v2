@@ -137,7 +137,7 @@ class PropertyProvider with ChangeNotifier {
         final data = doc.data();
         if (data != null && data.containsKey('proposedPrices')) {
           _proposedPrices =
-          List<Map<String, dynamic>>.from(data['proposedPrices'] ?? []);
+              List<Map<String, dynamic>>.from(data['proposedPrices'] ?? []);
           notifyListeners();
         }
       }
@@ -159,7 +159,6 @@ class PropertyProvider with ChangeNotifier {
     _totalPrice = value;
     notifyListeners();
   }
-
 
   // Getters and Setters
   bool get fencing => _fencing;
@@ -261,7 +260,7 @@ class PropertyProvider with ChangeNotifier {
 
   // 3. PKS
   int get parkingSpots => _parkingSpots;
-  void setParkingSpots(int value) {
+  void setparkingSpots(int value) {
     _parkingSpots = value; // Extract number from "2 PKS"
     notifyListeners();
   }
@@ -569,8 +568,8 @@ class PropertyProvider with ChangeNotifier {
       'components': 'country:IN',
       'key': key,
     });
-    final geoResp  = await http.get(geoUri);
-    final geoJson  = jsonDecode(geoResp.body) as Map<String, dynamic>;
+    final geoResp = await http.get(geoUri);
+    final geoJson = jsonDecode(geoResp.body) as Map<String, dynamic>;
 
     if (geoJson['status'] != 'OK' || (geoJson['results'] as List).isEmpty) {
       _isGeocoding = false;
@@ -598,21 +597,21 @@ class PropertyProvider with ChangeNotifier {
       final comps = (revJson['results'][0]['address_components'] as List)
           .cast<Map<String, dynamic>>();
       final d = comps.firstWhere(
-            (c) => (c['types'] as List).contains('administrative_area_level_2'),
+        (c) => (c['types'] as List).contains('administrative_area_level_2'),
         orElse: () => <String, dynamic>{},
       );
       if (d.isNotEmpty) district = d['long_name'] as String;
     }
 
     // ── STEP 3: PULL CITY / STATE / TALUK / VILLAGE from the first hit ──
-    String city    = '';
-    String state   = '';
-    String taluk   = '';
+    String city = '';
+    String state = '';
+    String taluk = '';
     String village = '';
-    for (final comp in firstResult['address_components']
-        .cast<Map<String, dynamic>>()) {
+    for (final comp
+        in firstResult['address_components'].cast<Map<String, dynamic>>()) {
       final types = (comp['types'] as List).cast<String>();
-      final name  = comp['long_name'] as String;
+      final name = comp['long_name'] as String;
       if (types.contains('postal_town') || types.contains('locality')) {
         city = name;
       }
