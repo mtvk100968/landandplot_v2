@@ -657,4 +657,11 @@ class PropertyService {
       'buyers': FieldValue.arrayUnion([newBuyer.toMap()]),
     });
   }
+
+  Future<void> markSaleInProgress(String propertyId) async {
+    await FirebaseFirestore.instance
+        .collection('properties')
+        .doc(propertyId)
+        .update({'stage': 'saleInProgress'});
+  }
 }

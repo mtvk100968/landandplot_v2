@@ -3,6 +3,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user_model.dart';
 import '../models/property_model.dart';
+import '../models/buyer_model.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'dart:io';
 
@@ -203,7 +204,7 @@ class UserService {
   }
 
   /// Fetch properties this user has bought
-  Future<List<Property>> getBoughtProperties(String userId) async {
+  Future<List<Property>> getBoughtProperties2(String userId) async {
     try {
       final user = await getUserById(userId);
       if (user == null || user.boughtPropertyIds.isEmpty) {
@@ -290,5 +291,104 @@ class UserService {
       print('UserService.uploadProfileImage ERROR: $e');
       rethrow;
     }
+  }
+
+  /// 1. Interested properties (buyer.status == 'visitPending')
+  ///    Uses AppUser.interestedPropertyIds
+  Future<List<Property>> getInterestedProperties(String userId) async {
+    final user = await getUserById(userId);
+    if (user == null || user.interestedPropertyIds.isEmpty) return [];
+    return getPropertiesByIds(user.interestedPropertyIds);
+  }
+
+  /// 2. Bought properties (buyer.status == 'bought' && property.stage == 'sold')
+  ///    Uses AppUser.boughtPropertyIds
+  Future<List<Property>> getBoughtProperties(String userId) async {
+    final user = await getUserById(userId);
+    if (user == null || user.boughtPropertyIds.isEmpty) return [];
+    return getPropertiesByIds(user.boughtPropertyIds);
+  }
+
+  /// 3. Visited properties:
+  ///    Those which were in interestedPropertyIds or boughtPropertyIds, but now
+  ///    buyer.status != 'visitPending' and != 'bought'
+  Future<List<Property>> getVisitedProperties(String userId) async {
+    final user = await getUserById(userId);
+    if (user == null) return [];
+    // combine interested and bought IDs
+    final combinedIds = {
+      ...user.interestedPropertyIds,
+      ...user.boughtPropertyIds,
+    }.toList();
+    if (combinedIds.isEmpty) return [];
+    final props = await getPropertiesByIds(combinedIds);
+    return props.where((p) {
+      final buyer = p.buyers.firstWhere(
+        (b) => b.phone == userId,
+        orElse: () => Buyer(name: '', phone: '', status: '', currentStep: ''),
+      );
+      return buyer.status != 'visitPending' && buyer.status != 'bought';
+    }).toList();
+  }
+
+  /// 4. Accepted properties (buyer.status == 'accepted' && property.stage == 'saleInProgress')
+  Future<List<Property>> getAcceptedProperties(String userId) async {
+    final user = await getUserById(userId);
+    if (user == null || user.interestedPropertyIds.isEmpty) return [];
+    final props = await getPropertiesByIds(user.interestedPropertyIds);
+    return props.where((p) {
+      final buyer = p.buyers.firstWhere(
+        (b) => b.phone == userId && b.status == 'accepted',
+        orElse: () => Buyer(name: '', phone: '', status: '', currentStep: ''),
+      );
+      return buyer.status == 'accepted' && p.stage == 'saleInProgress';
+    }).toList();
+  }
+
+  /// 5. Rejected properties (buyer.status == 'rejected')
+  Future<List<Property>> getRejectedProperties(String userId) async {
+    final user = await getUserById(userId);
+    if (user == null || user.interestedPropertyIds.isEmpty) return [];
+    final props = await getPropertiesByIds(user.interestedPropertyIds);
+    return props.where((p) {
+      final buyer = p.buyers.firstWhere(
+        (b) => b.phone == userId && b.status == 'rejected',
+        orElse: () => Buyer(name: '', phone: '', status: '', currentStep: ''),
+      );
+      return buyer.status == 'rejected';
+    }).toList();
+  }
+
+  /// Fetch all Property documents in which this user appears as a buyer,
+  /// by combining their interestedPropertyIds and boughtPropertyIds.
+  Future<List<Property>> getBuyerProperties(String userId) async {
+    // 1. Load the AppUser record.
+    final userDoc = await _usersCollection.doc(userId).get();
+    if (!userDoc.exists || userDoc.data() == null) {
+      return [];
+    }
+    final user = AppUser.fromDocument(userDoc.data()!);
+
+    // 2. Combine the two lists (avoid duplicates).
+    final idsSet = <String>{
+      ...user.interestedPropertyIds,
+      ...user.boughtPropertyIds,
+    };
+    final allIds = idsSet.toList();
+    if (allIds.isEmpty) return [];
+
+    // 3. Fetch those Property documents in batches of 10.
+    List<Property> result = [];
+    const batchSize = 10;
+    for (var i = 0; i < allIds.length; i += batchSize) {
+      final end =
+          (i + batchSize < allIds.length) ? i + batchSize : allIds.length;
+      final batchIds = allIds.sublist(i, end);
+      final snap = await _propertiesCollection
+          .where(FieldPath.documentId, whereIn: batchIds)
+          .get();
+      result.addAll(snap.docs.map((d) => Property.fromDocument(d)));
+    }
+    return result;
   }
 }
