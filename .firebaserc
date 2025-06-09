@@ -1,5 +1,8 @@
 {
   "projects": {
-    "default": "landandplot-v2"
-  }
+    "default": "landandplot-v2",
+    "staging": "landandplot-v2"
+  },
+  "targets": {},
+  "etags": {}
 }
