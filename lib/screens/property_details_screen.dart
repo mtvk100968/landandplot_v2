@@ -123,7 +123,7 @@ class _PropertyDetailsScreenState extends State<PropertyDetailsScreen> {
         featureRow('Lift', amenities?.lift.toLowerCase() == 'yes'),
         featureRow('Security', amenities?.security.toLowerCase() == 'yes'),
         featureRow('Power Backup', amenities?.powerBackup.toLowerCase() == 'yes'),
-        featureRow('Parking', amenities?.parking.toLowerCase() == 'yes'),
+        featureRow('Parking', amenities?.parkingSpots.toLowerCase() == 'yes'),
         featureRow('Swimming Pool', amenities?.swimmingPool == true),
         featureRow('Garden', amenities?.garden == true),
         featureRow('Club House', amenities?.clubHouse == true),

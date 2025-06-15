@@ -20,6 +20,11 @@ class AppUser {
   // NEW: agentAreas (for agents to show their areas of operation)
   final List<String> agentAreas;
 
+  // NEW
+  final List<String> fcmTokens; // for push notifications
+  final List<String>
+      searchedAreas; // areas this user wants new‐property alerts for
+
   AppUser({
     required this.uid,
     this.name,
@@ -34,6 +39,8 @@ class AppUser {
     List<String>? interestedPropertyIds,
     List<String>? assignedPropertyIds,
     List<String>? agentAreas,
+    this.fcmTokens = const [],
+    this.searchedAreas = const [],
   })  : postedPropertyIds = postedPropertyIds ?? [],
         favoritedPropertyIds = favoritedPropertyIds ?? [],
         boughtPropertyIds = boughtPropertyIds ?? [],
@@ -72,6 +79,13 @@ class AppUser {
     if (agentAreas.isNotEmpty) {
       data['agentAreas'] = agentAreas;
     }
+    if (fcmTokens.isNotEmpty) {
+      data['fcmTokens'] = fcmTokens;
+    }
+    if (searchedAreas.isNotEmpty) {
+      data['searchedAreas'] = searchedAreas;
+    }
+
     return data;
   }
 
@@ -93,6 +107,8 @@ class AppUser {
       assignedPropertyIds: List<String>.from(doc['assignedPropertyIds'] ?? []),
       // NEW: load agentAreas
       agentAreas: List<String>.from(doc['agentAreas'] ?? []),
+      fcmTokens: List<String>.from(doc['fcmTokens'] ?? []),
+      searchedAreas: List<String>.from(doc['searchedAreas'] ?? []),
     );
   }
 
@@ -108,6 +124,8 @@ class AppUser {
     List<String>? interestedPropertyIds,
     List<String>? assignedPropertyIds,
     List<String>? agentAreas,
+    List<String>? fcmTokens,
+    List<String>? searchedAreas,
   }) {
     return AppUser(
       uid: uid, // never changes
@@ -123,6 +141,8 @@ class AppUser {
           interestedPropertyIds ?? this.interestedPropertyIds,
       assignedPropertyIds: assignedPropertyIds ?? this.assignedPropertyIds,
       agentAreas: agentAreas ?? this.agentAreas,
+      fcmTokens: fcmTokens ?? this.fcmTokens,
+      searchedAreas: searchedAreas ?? this.searchedAreas,
     );
   }
 

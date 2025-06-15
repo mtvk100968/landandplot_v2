@@ -33,7 +33,9 @@
   },
   "functions": [
     {
+      "runtime": "nodejs18",
       "source": "functions",
+       "region": ["asia-south1"],
       "codebase": "default",
       "ignore": [
         "node_modules",
