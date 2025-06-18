@@ -1,6 +1,7 @@
 // functions/index.js
 const functions = require("firebase-functions");
-functions.setGlobalOptions({region: ["asia-south1"]});
+// Force all Functions V2 to live in asia-south1
+functions.setGlobalOptions({region:["asia-south1"]});
 
 const admin = require("firebase-admin");
 admin.initializeApp();

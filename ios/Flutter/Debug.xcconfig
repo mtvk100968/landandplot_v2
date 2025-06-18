@@ -1,2 +1,7 @@
-#include? "Pods/Target Support Files/Pods-Runner/Pods-Runner.debug.xcconfig"
+// ios/Flutter/Debug.xcconfig
+
+// 1) First pull in all of Flutter’s settings:
 #include "Generated.xcconfig"
+
+// 2) Then pull in CocoaPods’ debug settings:
+#include "../Pods/Target Support Files/Pods-Runner/Pods-Runner.debug.xcconfig"

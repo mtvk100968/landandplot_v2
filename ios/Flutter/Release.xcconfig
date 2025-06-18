@@ -1,2 +1,7 @@
-#include? "Pods/Target Support Files/Pods-Runner/Pods-Runner.release.xcconfig"
+// ios/Flutter/Release.xcconfig
+
+// 1) Flutter’s settings (e.g. FLUTTER_ROOT, FRAMEWORK_SEARCH_PATHS, etc)
 #include "Generated.xcconfig"
+
+// 2) CocoaPods’ release settings
+#include "../Pods/Target Support Files/Pods-Runner/Pods-Runner.release.xcconfig"
