@@ -9,6 +9,7 @@ class Property {
   final String name;
   final String mobileNumber;
   final String propertyType;
+  final String? reraNo; // NEW: optional RERA number
   final String? bedrooms;
   final String? bathrooms;
   final double landArea;
@@ -65,6 +66,7 @@ class Property {
     required this.name,
     required this.mobileNumber,
     required this.propertyType,
+    this.reraNo,
     this.bedrooms,
     this.bathrooms,
     required this.landArea,
@@ -115,6 +117,7 @@ class Property {
       'name': name,
       'mobileNumber': mobileNumber,
       'propertyType': propertyType,
+      'reraNo': reraNo,
       'bedrooms': bedrooms,
       'bathrooms': bathrooms,
       'landArea': landArea,
@@ -167,6 +170,7 @@ class Property {
       name: m['name'] ?? '',
       mobileNumber: m['mobileNumber'] ?? '',
       propertyType: m['propertyType'] ?? '',
+      reraNo: m['reraNo'] ?? '',
       bedrooms: m['bedrooms'],
       bathrooms: m['bathrooms'],
       landArea: (m['landArea'] as num?)?.toDouble() ?? 0.0,

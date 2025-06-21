@@ -18,6 +18,7 @@ class _UserProfileState extends State<UserProfile>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   late AppUser _user;
+  final _authService = AuthService();
 
   @override
   void initState() {
@@ -45,8 +46,8 @@ class _UserProfileState extends State<UserProfile>
         actions: [
           TextButton(
             onPressed: () async {
-              await signOut();
-            },
+              await _authService.signOut();
+              },
             child: Text(
               'Logout',
               style: TextStyle(

@@ -48,27 +48,27 @@ class PropertyMapViewState extends State<PropertyMapView> {
       onClusterTap: _onClusterTap,
     );
 
-    _setInitialLocation();
+    // _setInitialLocation();
   }
 
-  Future<void> _setInitialLocation() async {
-    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) return;
+  // Future<void> _setInitialLocation() async {
+  //   bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+  //   if (!serviceEnabled) return;
 
-    LocationPermission permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.deniedForever ||
-          permission == LocationPermission.denied) {
-        return;
-      }
-    }
+  //   LocationPermission permission = await Geolocator.checkPermission();
+  //   if (permission == LocationPermission.denied) {
+  //     permission = await Geolocator.requestPermission();
+  //     if (permission == LocationPermission.deniedForever ||
+  //         permission == LocationPermission.denied) {
+  //       return;
+  //     }
+  //   }
 
-    final pos = await Geolocator.getCurrentPosition();
-    setState(() {
-      _initialPosition = LatLng(pos.latitude, pos.longitude);
-    });
-  }
+  //   final pos = await Geolocator.getCurrentPosition();
+  //   setState(() {
+  //     _initialPosition = LatLng(pos.latitude, pos.longitude);
+  //   });
+  // }
 
   void _onClusterTap(Cluster cluster) async {
     // Get current zoom level
@@ -193,19 +193,86 @@ class PropertyMapViewState extends State<PropertyMapView> {
     );
   }
 
-  void _onMapCreated(GoogleMapController ctrl) async {
-    _mapController = ctrl;
-    if (_initialPosition != null) {
-      _mapController.animateCamera(
-        CameraUpdate.newLatLngZoom(_initialPosition!, 14),
+  Future<void> _addCustomMarkers() async {
+    if (_markersInitialized) {
+      print("⏭️ Markers already initialized. Skipping...");
+      return;
+    }
+
+    final seenIds = <String>{};
+    final uniqueProps =
+        widget.properties.where((p) => seenIds.add(p.id)).toList();
+
+    Set<Marker> markers = {};
+    print("Number of properties: ${widget.properties.length}");
+    print("Number of unique properties: ${uniqueProps.length}");
+
+    if (uniqueProps.isEmpty) {
+      print("⚠️ No properties found!");
+      return;
+    }
+
+    for (Property property in uniqueProps) {
+      print(
+        "📍 Processing property: ${property.id}, (${property.latitude}, ${property.longitude})",
+      );
+
+      if (property.latitude == 0 || property.longitude == 0) {
+        print("⚠️ Skipping property with invalid coordinates: ${property.id}");
+        continue;
+      }
+
+      final String priceText = formatPrice(property.totalPrice ?? 0.0);
+      final BitmapDescriptor customIcon =
+          await CustomMarker.createMarker(priceText);
+
+      markers.add(
+        Marker(
+          markerId: MarkerId(property.id),
+          position: LatLng(property.latitude, property.longitude),
+          icon: customIcon,
+          onTap: () => _showPropertyCard(property),
+        ),
       );
     }
 
-    // Move to the initial location first
-    _moveToInitialLocation();
+    if (mounted) {
+      setState(() {
+        _markers = markers;
+        _markersInitialized = true;
+        print("✅ Markers added: ${_markers.length}");
+      });
+    }
+  }
 
-    // Now safely build clusters (mapController is ready)
-    await _buildClusters();
+  // void _onMapCreated(GoogleMapController ctrl) async {
+  //   _mapController = ctrl;
+  //   if (_initialPosition != null) {
+  //     _mapController.animateCamera(
+  //       CameraUpdate.newLatLngZoom(_initialPosition!, 14),
+  //     );
+  //   }
+
+  //   // Move to the initial location first
+  //   _moveToInitialLocation();
+
+  //   // Now safely build clusters (mapController is ready)
+  //   await _buildClusters();
+  // }
+
+  void _onMapCreated(GoogleMapController controller) {
+    print("✅ Google Map created");
+    setState(() {
+      _mapController = controller;
+    });
+
+    // Future.delayed(const Duration(milliseconds: 500), () {
+    print("🔹 Adding markers after map creation");
+    // Add markers first
+    _addCustomMarkers().then((_) {
+      // Move camera **after** markers are added
+      _moveToInitialLocation();
+    });
   }
 
   /// Put this inside your PropertyMapViewState class:
@@ -229,27 +296,48 @@ class PropertyMapViewState extends State<PropertyMapView> {
     );
   }
 
+  // void _moveToInitialLocation() {
+  //   if (widget.center != null) {
+  //     _mapController.animateCamera(
+  //       CameraUpdate.newLatLngZoom(widget.center!, 12),
+  //     );
+  //   } else if (_markers.isNotEmpty) {
+  //     // Fit bounds to markers.
+  //     final lats = _markers.map((m) => m.position.latitude);
+  //     final lngs = _markers.map((m) => m.position.longitude);
+  //     final sw =
+  //         LatLng(lats.reduce(math.min) - .01, lngs.reduce(math.min) - .01);
+  //     final ne =
+  //         LatLng(lats.reduce(math.max) + .01, lngs.reduce(math.max) + .01);
+  //     _mapController.animateCamera(
+  //       CameraUpdate.newLatLngBounds(
+  //           LatLngBounds(southwest: sw, northeast: ne), 30),
+  //     );
+  //   } else if (_markers.isNotEmpty) {
+  //     final bounds = _getBoundsForMarkers(_markers);
+  //     _mapController.animateCamera(
+  //       CameraUpdate.newLatLngBounds(bounds, 50),
+  //     );
+  //   }
+  // }
+
   void _moveToInitialLocation() {
     if (widget.center != null) {
+      print("🔍 Moving to user-selected location: ${widget.center}");
       _mapController.animateCamera(
-        CameraUpdate.newLatLngZoom(widget.center!, 12),
+        CameraUpdate.newLatLngZoom(widget.center!, 9), // ✅ Zoom level closer
       );
     } else if (_markers.isNotEmpty) {
-      // Fit bounds to markers.
-      final lats = _markers.map((m) => m.position.latitude);
-      final lngs = _markers.map((m) => m.position.longitude);
-      final sw =
-          LatLng(lats.reduce(math.min) - .01, lngs.reduce(math.min) - .01);
-      final ne =
-          LatLng(lats.reduce(math.max) + .01, lngs.reduce(math.max) + .01);
+      // If markers exist, calculate the bounds dynamically
+      LatLngBounds bounds = _getBoundsForMarkers(_markers);
+      _mapController.animateCamera(CameraUpdate.newLatLngBounds(bounds, 50));
+    } else {
+      print("🌍 Defaulting to India map.");
       _mapController.animateCamera(
-        CameraUpdate.newLatLngBounds(
-            LatLngBounds(southwest: sw, northeast: ne), 30),
-      );
-    } else if (_markers.isNotEmpty) {
-      final bounds = _getBoundsForMarkers(_markers);
-      _mapController.animateCamera(
-        CameraUpdate.newLatLngBounds(bounds, 50),
+        CameraUpdate.newLatLngZoom(
+          const LatLng(20.5937, 78.9629),
+          9,
+        ), // India default
       );
     }
   }
@@ -303,16 +391,15 @@ class PropertyMapViewState extends State<PropertyMapView> {
         child: GoogleMap(
           mapType: MapType.normal,
           initialCameraPosition: CameraPosition(
-            target:
-                _initialPosition ?? const LatLng(20.5937, 78.9629), // fallback
+            target: LatLng(20.5937, 78.9629), // fallback
             zoom: 8,
           ),
-          onMapCreated: _onMapCreated,
           onCameraIdle: () {
             if (_mapController != null) {
               _buildClusters();
             }
           },
+          onMapCreated: _onMapCreated,
           markers: _markers, // ✅ Show only markers
           myLocationEnabled: true,
           myLocationButtonEnabled: true,

@@ -1,104 +1,256 @@
-You already have all the Firestore‐backed methods you need—now it’s just a matter of wiring them into the UI components we built. Here’s a quick mapping of which service calls feed which widget, and how you stitch them together:
+enum UserLoginType { agent, user }
 
----
+class ProfileScreen extends StatefulWidget {
+  const ProfileScreen({Key? key}) : super(key: key);
 
-## 1. BuyingTab
-
-You want to show exactly one card per property, based on buyer–status. You already have:
-
-* `UserService.getInTalksProperties(userId)` → returns properties where the user has expressed interest
-* `UserService.getBoughtProperties(userId)` → returns properties the user has completed buying
-
-We combined and de-duped those in `_fetchAllBuyingProperties()`. In your `BuyingTab` you simply do:
-
-```dart
-// inside _loadProperties()
-_allPropsFuture = _fetchAllBuyingProperties();
-// …
-Future<List<Property>> _fetchAllBuyingProperties() async {
-  final inTalks = await UserService().getInTalksProperties(widget.userId);
-  final bought  = await UserService().getBoughtProperties(widget.userId);
-  // merge + de-dupe by p.id …
+  @override
+  ProfileScreenState createState() => ProfileScreenState();
 }
-```
 
-You then inspect each `Property.buyers` list to find the `Buyer` with your `userId` (by phone), look at its `status`, and route it into one of your five sections:
+class ProfileScreenState extends State<ProfileScreen>
+    with SingleTickerProviderStateMixin {
+  final TextEditingController _phoneController =
+      TextEditingController(text: '+91');
+  final TextEditingController _otpController = TextEditingController();
 
-* **visitPending** → Interest
-* **(date reached)** → Visiting
-* **negotiating** → Negotiating
-* **accepted** → Purchased
-* **rejected** → Rejected
+  final _formKey = GlobalKey<FormState>();
+  final _authService = AuthService();
 
----
+  UserLoginType _selectedLoginType = UserLoginType.user;
+  String _verificationId = '';
+  bool _isOtpSent = false;
+  bool _isProcessing = false;
+  TabController? _tabController;
 
-## 2. SellingTab
+  Future<void> _sendOtp() async {
+    final phone = _phoneController.text.trim();
+    final userType =
+        (_selectedLoginType == UserLoginType.agent) ? 'agent' : 'user';
 
-For your own posted properties you have:
+    if (!_formKey.currentState!.validate()) return;
 
-* `UserService.getSellerProperties(userId)` → all properties where `property.userId == userId`
+    setState(() {
+      _isProcessing = true;
+    });
 
-You group them by `Property.stage`:
+    await _authService.verifyPhoneNumber(
+      phoneNumber: phone,
+      userType: userType,
+      verificationCompleted: (credential) async {
+        // auto‐verified
+        await _authService.signInWithPhoneAuthCredential(credential, userType);
+      },
+      verificationFailed: (e) {
+        setState(() {
+          _isProcessing = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Verification failed: ${e.message}')));
+      },
+      codeSent: (verificationId, resendToken) {
+        setState(() {
+          _verificationId = verificationId;
+          _isOtpSent = true;
+          _isProcessing = false;
+        });
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('OTP sent via SMS')));
+      },
+    );
+  }
 
-* `findingAgents` / `findingBuyers` → “Finding Buyers”
-* `saleInProgress` → “Sale In Progress”
-* `sold` → “Sold”
+  Future<void> _verifyOtp() async {
+    debugPrint('ProfileScreen: Entering _verifyOtp()');
+    setState(() => _isProcessing = true);
+    try {
+      final cred = PhoneAuthProvider.credential(
+        verificationId: _verificationId,
+        smsCode: _otpController.text.trim(),
+      );
+      final userType = _phoneController.text.trim() == '9959788005'
+          ? 'admin'
+          : _selectedLoginType == UserLoginType.agent
+              ? 'agent'
+              : 'user';
+      await _authService.signInWithPhoneAuthCredential(cred, userType);
+    } catch (err) {
+      debugPrint('ProfileScreen: OTP verification failed, exception=$err');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Verification failed')),
+      );
+    } finally {
+      setState(() => _isProcessing = false);
+    }
+  }
 
-```dart
-final all = await UserService().getSellerProperties(widget.userId);
-final finding = all.where((p) => p.stage.startsWith('finding')).toList();
-final progress = all.where((p) => p.stage == 'saleInProgress').toList();
-final sold     = all.where((p) => p.stage == 'sold').toList();
-```
+  Future<void> _signOut() async {
+    await _authService.signOut();
+    setState(() {
+      _isOtpSent = false;
+      _phoneController.text = '+91';
+      _otpController.clear();
+    });
+  }
 
----
+  Widget _buildLoginComponent() {
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text(
+                'Welcome to LANDANDPLOT',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 40),
+              TextFormField(
+                controller: _phoneController,
+                keyboardType: TextInputType.phone,
+                decoration: const InputDecoration(
+                  labelText: 'Phone Number',
+                  border: OutlineInputBorder(),
+                ),
+                // <-- only TextFormField supports validator
+                validator: (value) {
+                  if (value == null) return 'Enter a valid +91 10-digit number';
+                  final input = value.trim();
+                  final pattern = RegExp(r'^(?:\+91)?[6-9]\d{9}$');
+                  if (!pattern.hasMatch(input)) {
+                    return 'Enter a valid +91 10-digit number';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 20),
+              if (!_isOtpSent)
+                ToggleButtons(
+                  borderRadius: BorderRadius.circular(8),
+                  isSelected: [
+                    _selectedLoginType == UserLoginType.agent,
+                    _selectedLoginType == UserLoginType.user,
+                  ],
+                  onPressed: (index) {
+                    // final phone = _phoneController.text.trim();
+                    // if (!RegExp(r'^\+91\d{10}\$').hasMatch(phone)) {
+                    //   ScaffoldMessenger.of(context).showSnackBar(
+                    //     const SnackBar(
+                    //       content: Text('Enter a valid +91 10-digit number'),
+                    //     ),
+                    //   );
+                    //   return;
+                    // }
+                    if (!_formKey.currentState!.validate()) return;
 
-## 3. AgentProfile (if you ever surface it here)
+                    setState(() {
+                      _selectedLoginType =
+                          index == 0 ? UserLoginType.agent : UserLoginType.user;
+                    });
+                    _sendOtp();
+                  },
+                  constraints:
+                      const BoxConstraints(minWidth: 120, minHeight: 40),
+                  children: const [Text('As Agent'), Text('As User')],
+                ),
+              if (_isOtpSent) ...[
+                const SizedBox(height: 20),
+                TextField(
+                  controller: _otpController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Enter OTP',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: _verifyOtp,
+                  child: const Text('Verify OTP'),
+                ),
+              ],
+              if (_isProcessing)
+                const Padding(
+                  padding: EdgeInsets.only(top: 20),
+                  child: CircularProgressIndicator(),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
-You’ve got:
+  Widget _buildProfileComponent(AppUser appUser) {
+    _tabController ??= TabController(
+      length: appUser.userType == 'admin' ? 3 : 2,
+      vsync: this,
+    );
+    switch (appUser.userType) {
+      case 'admin':
+        return AdminProfile(
+          appUser: appUser,
+          tabController: _tabController!,
+          onSignOut: _signOut,
+        );
+      case 'agent':
+        return AgentProfile(
+          appUser: appUser,
+          tabController: _tabController!,
+          onSignOut: _signOut,
+        );
+      default:
+        return UserProfile(initialUser: appUser);
+    }
+  }
 
-* `AgentService.getPostedProperties(agentId)`
-* `AgentService.getAssignedProperties(agentId)`
-* `AgentService.getFindBuyerProperties(agentId)`
-* `AgentService.getSalesInProgressProperties(agentId)`
-
-Those feed your three tabs in the agent’s view exactly the same way you’re doing for the user:
-
-* Finding buyers
-* In progress sales
-* (Optionally) Sold
-
----
-
-## 4. Detail‐Screen mutations
-
-All your update paths—setting visit dates, uploading proof, negotiating, accepting buyers—ultimately call one of:
-
-* `PropertyService.updateBuyerStatus(...)`
-* `PropertyService.updateBuyer(...)`
-* `PropertyService.addBuyer(...)`
-* `AgentService.assignAgent(...)`
-
-And on a successful write you trigger a UI refresh by re-calling your load method:
-
-```dart
-await PropertyService().updateBuyerStatus(...);
-_loadProperties();  // triggers setState & reload FutureBuilder
-```
-
----
-
-### Putting it all together
-
-1. **Imports** at top of each tab/detail:
-
-   ```dart
-   import '../../services/user_service.dart';
-   import '../../services/property_service.dart';
-   import '../../services/agent_service.dart';  // if needed
-   ```
-2. **Fetch** in `initState()` or via pull-to-refresh.
-3. **Build** your lists by grouping the returned `List<Property>`.
-4. **On user action** (date pick, upload, negotiate, accept), call the matching service method then re-invoke your loader.
-
-With that wiring, your UI and your Firestore services will be fully connected. Let me know which part you’d like to implement next!
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, authSnap) {
+        if (authSnap.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+        if (authSnap.data == null) {
+          return Scaffold(body: _buildLoginComponent());
+        }
+        return StreamBuilder<AppUser?>(
+          stream: UserService().getUserStream(authSnap.data!.uid),
+          builder: (context, profileSnap) {
+            if (profileSnap.connectionState == ConnectionState.waiting) {
+              return const Scaffold(
+                body: Center(child: CircularProgressIndicator()),
+              );
+            }
+            final appUser = profileSnap.data;
+            if (appUser == null) {
+              return Scaffold(
+                body: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Text('Profile not found.'),
+                      const SizedBox(height: 20),
+                      ElevatedButton(
+                        onPressed: _signOut,
+                        child: const Text('Sign Out'),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+            return _buildProfileComponent(appUser);
+          },
+        );
+      },
+    );
+  }
+}

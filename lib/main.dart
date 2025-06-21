@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -33,6 +34,10 @@ Future<void> main() async {
     // 1. Initialize Firebase
     await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform
+    );
+
+    await FirebaseAuth.instance.setSettings(
+      appVerificationDisabledForTesting: false,
     );
 
     // 2. Setup background message handling

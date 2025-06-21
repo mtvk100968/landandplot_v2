@@ -32,6 +32,8 @@ class ProfileScreenState extends State<ProfileScreen>
   bool _isProcessing = false;
   TabController? _tabController;
 
+  final AuthService _authService = AuthService();
+
   Future<void> _sendOtp() async {
     debugPrint('ProfileScreen: >>> Entering _sendOtp()');
     setState(() => _isProcessing = true);
@@ -62,26 +64,37 @@ class ProfileScreenState extends State<ProfileScreen>
       }
 
       debugPrint('ProfileScreen: calling signInWithPhoneNumber()');
-      await signInWithPhoneNumber(
-        phone,
-        (verId) {
-          debugPrint('ProfileScreen: OTP sent callback, verId=$verId');
-          setState(() {
-            _verificationId = verId;
-            _isOtpSent = true;
-            _isProcessing = false;
-          });
-          ScaffoldMessenger.of(context)
-              .showSnackBar(const SnackBar(content: Text('OTP sent')));
-        },
-        (e) {
-          debugPrint(
-              'ProfileScreen: OTP send failed callback, error=${e.message}');
-          setState(() => _isProcessing = false);
-          ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(e.message ?? 'Failed sending OTP')));
-        },
-      );
+      await _authService.signInWithPhoneNumber(phone, (verId) {
+        debugPrint('ProfileScreen: OTP sent callback, verId=$verId');
+        setState(() {
+          _verificationId = verId;
+          _isOtpSent = true;
+          _isProcessing = false;
+        });
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('OTP sent')));
+      },
+          // (e) {
+          //   debugPrint(
+          //       'ProfileScreen: OTP send failed callback, error=${e.message}');
+          //   setState(() => _isProcessing = false);
+          //   ScaffoldMessenger.of(context).showSnackBar(
+          //       SnackBar(content: Text(e.message ?? 'Failed sending OTP')));
+          // },
+          (FirebaseAuthException e) {
+        debugPrint('❌ OTP send failed');
+        debugPrint('Code: ${e.code}');
+        debugPrint('Message: ${e.message}');
+        debugPrint('Details: ${e.toString()}');
+        if (e.stackTrace != null) {
+          debugPrint('StackTrace: ${e.stackTrace}');
+        }
+
+        setState(() => _isProcessing = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message ?? 'Failed sending OTP')),
+        );
+      });
       debugPrint('ProfileScreen: signInWithPhoneNumber() returned');
     } catch (e, st) {
       debugPrint('ProfileScreen: Exception in _sendOtp(): $e');
@@ -108,7 +121,7 @@ class ProfileScreenState extends State<ProfileScreen>
               ? 'agent'
               : 'user';
       debugPrint('ProfileScreen: Signing in with userType=$userType');
-      await signInWithPhoneAuthCredential(cred, userType);
+      await _authService.signInWithPhoneAuthCredential(cred, userType);
       debugPrint('ProfileScreen: signInWithPhoneAuthCredential completed');
     } catch (err) {
       debugPrint('ProfileScreen: OTP verification failed, exception=$err');
@@ -122,7 +135,7 @@ class ProfileScreenState extends State<ProfileScreen>
 
   Future<void> _signOut() async {
     debugPrint('ProfileScreen: >>> Entering _signOut()');
-    await signOut();
+    await _authService.signOut();
     debugPrint('ProfileScreen: signOut() completed');
     setState(() {
       _isOtpSent = false;

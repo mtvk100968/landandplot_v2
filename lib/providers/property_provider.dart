@@ -80,6 +80,8 @@ class PropertyProvider with ChangeNotifier {
   bool _isGeocoding = false;
   bool get isGeocoding => _isGeocoding;
 
+  String? _reraNo;            // ← new
+
   // **Added Field: Proposed Prices**
   List<Map<String, dynamic>> _proposedPrices = [];
 
@@ -225,6 +227,12 @@ class PropertyProvider with ChangeNotifier {
   String get propertyType => _propertyType;
   void setPropertyType(String value) {
     _propertyType = value;
+    notifyListeners();
+  }
+
+  String? get reraNo => _reraNo;
+  void setReraNo(String? no) {
+    _reraNo = no;
     notifyListeners();
   }
 
