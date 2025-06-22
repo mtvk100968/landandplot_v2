@@ -1,12 +1,15 @@
 //
 import 'dart:async';
 import 'dart:math' as math;
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:google_maps_flutter_platform_interface/google_maps_flutter_platform_interface.dart'
     as gpi;
 import '../../../../models/property_model.dart';
+import '../../../models/user_model.dart';
+import '../../../services/user_service.dart';
 import '../../map_related/cluster_marker.dart';
 import '../../map_related/marker.dart'; // your CustomMarker helper
 import '../../../utils/format.dart';
@@ -31,6 +34,8 @@ class PropertyMapViewState extends State<PropertyMapView> {
   late bool _markersInitialized = false;
   bool _clustersBuilt = false;
   LatLng? _initialPosition;
+  List<String> _favoritedIds = [];
+  late final String _currentUid;
 
   // Create a ClusterManagerId
   final ClusterManagerId _clusterManagerId = const ClusterManagerId(
@@ -50,25 +55,6 @@ class PropertyMapViewState extends State<PropertyMapView> {
 
     // _setInitialLocation();
   }
-
-  // Future<void> _setInitialLocation() async {
-  //   bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-  //   if (!serviceEnabled) return;
-
-  //   LocationPermission permission = await Geolocator.checkPermission();
-  //   if (permission == LocationPermission.denied) {
-  //     permission = await Geolocator.requestPermission();
-  //     if (permission == LocationPermission.deniedForever ||
-  //         permission == LocationPermission.denied) {
-  //       return;
-  //     }
-  //   }
-
-  //   final pos = await Geolocator.getCurrentPosition();
-  //   setState(() {
-  //     _initialPosition = LatLng(pos.latitude, pos.longitude);
-  //   });
-  // }
 
   void _onClusterTap(Cluster cluster) async {
     // Get current zoom level
@@ -173,25 +159,47 @@ class PropertyMapViewState extends State<PropertyMapView> {
   }
 
   void _showPropertyCard(Property property) {
+    final fbUser = FirebaseAuth.instance.currentUser!;
     showModalBottomSheet(
       context: context,
       builder: (context) {
-        return PropertyCard2(
-          property: property,
-          isFavorited: false,
-          onFavoriteToggle: (bool newValue) {},
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => PropertyDetailsScreen(property: property),
-              ),
+        return StreamBuilder<AppUser?>(
+          stream: UserService().getUserStream(fbUser.uid),
+          builder: (c, snap) {
+            if (snap.connectionState == ConnectionState.waiting)
+              return const Center(child: CircularProgressIndicator());
+            final appUser = snap.data;
+            final favIds = appUser?.favoritedPropertyIds ?? [];
+
+            // 2) Seed the card with whether this property is in the fav list
+            return PropertyCard2(
+              property: property,
+              isFavorited: favIds.contains(property.id),
+              onFavoriteToggle: (newFav) async {
+                // 3) Push the update to Firestore
+                if (newFav) {
+                  await UserService().addFavoriteProperty(fbUser.uid, property.id);
+                } else {
+                  await UserService().removeFavoriteProperty(fbUser.uid, property.id);
+                }
+                // no need to pop the sheet—when the stream updates,
+                // both this card and your FavoritesScreen will rebuild themselves.
+              },
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => PropertyDetailsScreen(property: property),
+                  ),
+                );
+              },
             );
           },
         );
       },
     );
   }
+
 
   Future<void> _addCustomMarkers() async {
     if (_markersInitialized) {
@@ -245,21 +253,6 @@ class PropertyMapViewState extends State<PropertyMapView> {
     }
   }
 
-  // void _onMapCreated(GoogleMapController ctrl) async {
-  //   _mapController = ctrl;
-  //   if (_initialPosition != null) {
-  //     _mapController.animateCamera(
-  //       CameraUpdate.newLatLngZoom(_initialPosition!, 14),
-  //     );
-  //   }
-
-  //   // Move to the initial location first
-  //   _moveToInitialLocation();
-
-  //   // Now safely build clusters (mapController is ready)
-  //   await _buildClusters();
-  // }
-
   void _onMapCreated(GoogleMapController controller) {
     print("✅ Google Map created");
     setState(() {
@@ -295,31 +288,6 @@ class PropertyMapViewState extends State<PropertyMapView> {
       ),
     );
   }
-
-  // void _moveToInitialLocation() {
-  //   if (widget.center != null) {
-  //     _mapController.animateCamera(
-  //       CameraUpdate.newLatLngZoom(widget.center!, 12),
-  //     );
-  //   } else if (_markers.isNotEmpty) {
-  //     // Fit bounds to markers.
-  //     final lats = _markers.map((m) => m.position.latitude);
-  //     final lngs = _markers.map((m) => m.position.longitude);
-  //     final sw =
-  //         LatLng(lats.reduce(math.min) - .01, lngs.reduce(math.min) - .01);
-  //     final ne =
-  //         LatLng(lats.reduce(math.max) + .01, lngs.reduce(math.max) + .01);
-  //     _mapController.animateCamera(
-  //       CameraUpdate.newLatLngBounds(
-  //           LatLngBounds(southwest: sw, northeast: ne), 30),
-  //     );
-  //   } else if (_markers.isNotEmpty) {
-  //     final bounds = _getBoundsForMarkers(_markers);
-  //     _mapController.animateCamera(
-  //       CameraUpdate.newLatLngBounds(bounds, 50),
-  //     );
-  //   }
-  // }
 
   void _moveToInitialLocation() {
     if (widget.center != null) {

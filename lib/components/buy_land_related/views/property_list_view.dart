@@ -13,7 +13,7 @@ class PropertyListView extends StatelessWidget {
   final List<String> favoritedPropertyIds;
   final String? selectedCity;
   final FavoriteToggleCallback onFavoriteToggle;
-  final PropertyTapCallback onTapProperty; // New callback for property taps
+  final PropertyTapCallback onTapProperty;
 
   const PropertyListView({
     Key? key,

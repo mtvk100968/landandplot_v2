@@ -35,7 +35,7 @@ class _PropertyCardState extends State<PropertyCard> {
     isFavorited = widget.isFavorited;
   }
 
-  void _toggleFavorite() {
+  void onFavoriteToggle() {
     // Toggle favorite status and notify parent
     setState(() {
       isFavorited = !isFavorited;
@@ -55,6 +55,9 @@ class _PropertyCardState extends State<PropertyCard> {
 
   @override
   Widget build(BuildContext context) {
+    final heartIcon = isFavorited ? Icons.favorite : Icons.favorite_border;
+    final heartColor = isFavorited ? Colors.pink : Colors.grey;
+
     final screenWidth = MediaQuery.of(context).size.width;
 
     return InkWell(
@@ -95,7 +98,7 @@ class _PropertyCardState extends State<PropertyCard> {
                                   child: CircularProgressIndicator(
                                     value: progress.expectedTotalBytes != null
                                         ? progress.cumulativeBytesLoaded /
-                                        (progress.expectedTotalBytes ?? 1)
+                                            (progress.expectedTotalBytes ?? 1)
                                         : null,
                                   ),
                                 );
@@ -117,29 +120,26 @@ class _PropertyCardState extends State<PropertyCard> {
                         top: 10,
                         right: 10,
                         child: GestureDetector(
-                          onTap: () {
-                            // Prevent the tap from triggering the card's onTap
-                            _toggleFavorite();
-                          },
+                          onTap: onFavoriteToggle,
                           child: Icon(
                             isFavorited
                                 ? Icons.favorite
                                 : Icons
-                                .favorite_border, // Filled or outlined heart
+                                    .favorite_border, // Filled or outlined heart
                             size: 30, // Adjust the size as needed
                             color: isFavorited
                                 ? Colors.pink
                                 : Colors
-                                .pink, // Pink for favorited, black for not favorited
+                                    .pink, // Pink for favorited, black for not favorited
                             shadows: isFavorited
                                 ? [
-                              Shadow(
-                                offset: Offset(0, 0),
-                                blurRadius: 2,
-                                color: Colors
-                                    .white, // Adds a subtle glow when favorited
-                              ),
-                            ]
+                                    Shadow(
+                                      offset: Offset(0, 0),
+                                      blurRadius: 2,
+                                      color: Colors
+                                          .white, // Adds a subtle glow when favorited
+                                    ),
+                                  ]
                                 : null, // No shadow for the outline
                           ),
                         ),
@@ -153,7 +153,7 @@ class _PropertyCardState extends State<PropertyCard> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: List.generate(
                             widget.property.images.length,
-                                (index) => Container(
+                            (index) => Container(
                               margin: const EdgeInsets.symmetric(horizontal: 4),
                               width: 8,
                               height: 8,
@@ -253,7 +253,8 @@ class _PropertyCardState extends State<PropertyCard> {
                             ),
                           const SizedBox(height: 4),
                           Text(
-                            '${formatPrice(widget.property.pricePerUnit)}/${widget.property.propertyType == PropertyType.agriLand ? 'acre' : 'sqyd'}',
+                            '${formatPrice(widget.property.pricePerUnit)}/'
+                            '${widget.property.propertyType == PropertyType.agriLand ? 'acre' : 'sqyd'}',
                             style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
@@ -263,7 +264,8 @@ class _PropertyCardState extends State<PropertyCard> {
                           const SizedBox(height: 4),
                           if (widget.property.landArea != null)
                             Text(
-                              '${formatValue(widget.property.landArea)} ${widget.property.propertyType == PropertyType.agriLand ? 'acres' : 'sqyds'}',
+                              '${formatValue(widget.property.landArea)} '
+                              '${widget.property.propertyType == 'Agri Land' ? 'acres' : 'sqyds'}',
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w700,

@@ -15,28 +15,26 @@ class FavoritesScreen extends StatefulWidget {
 }
 
 class FavoritesScreenState extends State<FavoritesScreen> {
-  // Handle toggling favorites from FavoritesScreen
-  void _onFavoriteToggle(String propertyId, bool nowFavorited) async {
-    User? firebaseUser = FirebaseAuth.instance.currentUser;
-    if (firebaseUser == null) {
+
+  Future<void> onFavoriteToggle(String propertyId, bool nowFavorited) async {
+    final fbUser = FirebaseAuth.instance.currentUser;
+    if (fbUser == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('You need to be logged in to manage favorites.'),
-        ),
+        const SnackBar(content: Text('Please log in to manage favorites.')),
       );
       return;
     }
-
     try {
       if (nowFavorited) {
-        await UserService().addFavoriteProperty(firebaseUser.uid, propertyId);
+        await UserService().addFavoriteProperty(fbUser.uid, propertyId);
       } else {
-        await UserService()
-            .removeFavoriteProperty(firebaseUser.uid, propertyId);
+        await UserService().removeFavoriteProperty(fbUser.uid, propertyId);
       }
+      // rebuild after change:
+      setState(() {});
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to update favorite: $e')),
+        SnackBar(content: Text('Couldn’t update favorite: $e')),
       );
     }
   }
@@ -100,13 +98,13 @@ class FavoritesScreenState extends State<FavoritesScreen> {
                 if (userSnapshot.hasError) {
                   return Center(child: Text('Error: ${userSnapshot.error}'));
                 }
-                final currentUser = userSnapshot.data;
-                if (currentUser == null) {
+                final appUser = userSnapshot.data;
+                if (appUser == null) {
                   return const Center(child: Text('No user data available.'));
                 }
                 return FutureBuilder<List<Property>>(
                   future: _fetchFavoriteProperties(
-                      currentUser.favoritedPropertyIds),
+                      appUser.favoritedPropertyIds),
                   builder: (context, propertySnapshot) {
                     if (propertySnapshot.connectionState ==
                         ConnectionState.waiting) {
@@ -117,15 +115,18 @@ class FavoritesScreenState extends State<FavoritesScreen> {
                     } else if (!propertySnapshot.hasData ||
                         propertySnapshot.data!.isEmpty) {
                       return const Center(child: Text('No favorites yet.'));
-                    } else {
-                      final properties = propertySnapshot.data!;
-                      return PropertyListView(
-                        properties: properties,
-                        favoritedPropertyIds: currentUser.favoritedPropertyIds,
-                        onFavoriteToggle: _onFavoriteToggle,
-                        onTapProperty: _onTapProperty,
-                      );
                     }
+
+                      final properties = propertySnapshot.data!;
+                      if (properties.isEmpty) {
+                        return const Center(child: Text('No favorites yet.'));
+                      }
+                      return PropertyListView(
+                          properties: properties,
+                          favoritedPropertyIds: appUser.favoritedPropertyIds,
+                          onFavoriteToggle: onFavoriteToggle,
+                          onTapProperty: _onTapProperty,
+                        );
                   },
                 );
               },

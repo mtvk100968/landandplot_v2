@@ -25,26 +25,45 @@ class PropertyCard2 extends StatefulWidget {
 }
 
 class _PropertyCardState2 extends State<PropertyCard2> {
-  late bool isFavorited;
+  late bool _isFavorited;
   int currentPage = 0; // For Carousel Dots
 
   @override
   void initState() {
     super.initState();
-    isFavorited = widget.isFavorited;
+    _isFavorited = widget.isFavorited;
+  }
+
+  @override
+  void didUpdateWidget(covariant PropertyCard2 old) {
+    super.didUpdateWidget(old);
+    // if the parent changes isFavorited (e.g. you removed it elsewhere),
+    // make sure we reflect that too:
+    if (old.isFavorited != widget.isFavorited) {
+      setState(() {
+        _isFavorited = widget.isFavorited;
+      });
+    }
   }
 
   void _toggleFavorite() {
-    // Toggle favorite status and notify parent
     setState(() {
-      isFavorited = !isFavorited;
+      _isFavorited = !_isFavorited;
     });
-    widget.onFavoriteToggle(isFavorited);
+    // let the parent & your Firestore logic run
+    widget.onFavoriteToggle(_isFavorited);
   }
 
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
+// pick the right icon & color directly from widget.isFavorited
+    final icon = widget.isFavorited
+        ? Icons.favorite
+        : Icons.favorite_border;
+    final color = widget.isFavorited
+        ? Colors.pink
+        : Colors.grey;              // ← make the “off” state obviously grey
 
     return InkWell(
       onTap: widget.onTap, // Navigate to property details
@@ -102,36 +121,20 @@ class _PropertyCardState2 extends State<PropertyCard2> {
                           },
                         ),
                       ),
+
                       // Heart Icon Positioned on the Image
                       Positioned(
                         top: 10,
                         right: 10,
-                        child: GestureDetector(
-                          onTap: () {
-                            // Prevent the tap from triggering the card's onTap
-                            _toggleFavorite();
-                          },
-                          child: Icon(
-                            isFavorited
+                        child: IconButton(
+                          iconSize: 30,
+                          icon: Icon(
+                            _isFavorited
                                 ? Icons.favorite
-                                : Icons
-                                .favorite_border, // Filled or outlined heart
-                            size: 30, // Adjust the size as needed
-                            color: isFavorited
-                                ? Colors.pink
-                                : Colors
-                                .pink, // Pink for favorited, black for not favorited
-                            shadows: isFavorited
-                                ? [
-                              Shadow(
-                                offset: Offset(0, 0),
-                                blurRadius: 2,
-                                color: Colors
-                                    .white, // Adds a subtle glow when favorited
-                              ),
-                            ]
-                                : null, // No shadow for the outline
+                                : Icons.favorite_border,
                           ),
+                          color: _isFavorited ? Colors.pink : Colors.grey,
+                          onPressed: _toggleFavorite,
                         ),
                       ),
                       // Carousel Dots
