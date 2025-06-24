@@ -222,7 +222,7 @@ class PropertyMapViewState extends State<PropertyMapView> {
 
     for (Property property in uniqueProps) {
       print(
-        "📍 Processing property: ${property.id}, (${property.latitude}, ${property.longitude})",
+        "📍 Processing property: ${property.id}, ${property.propertyType}, (${property.latitude}, ${property.longitude})",
       );
 
       if (property.latitude == 0 || property.longitude == 0) {

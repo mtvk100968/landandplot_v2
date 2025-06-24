@@ -67,6 +67,12 @@ class BuyLandScreenState extends State<BuyLandScreen> {
     _propertyFuture = fetchPropertiesWithGeo();
   }
 
+  Future<void> _refreshProperties() async {
+    setState(() {
+      _propertyFuture = fetchPropertiesWithGeo();
+    });
+  }
+
   @override
   void dispose() {
     _debounce?.cancel();
@@ -98,7 +104,7 @@ class BuyLandScreenState extends State<BuyLandScreen> {
     print('  selectedPolygon: $selectedPolygon');
     print('  searchRadius: $searchRadius');
 
-    final propertyService = context.read<PropertyService>();
+    print('UI-selections (labels): $selectedPropertyTypes');
 
     double? minLat, maxLat, minLon, maxLon;
 
@@ -122,35 +128,94 @@ class BuyLandScreenState extends State<BuyLandScreen> {
       maxLon = lon + radiusInDegrees;
     }
 
+    // 1️⃣ Build the actual list of Firestore keys:
+    //     start from your UI’s selectedPropertyTypes (strings like "Plot", "Development", ...)
+
+    // if (typesForQuery.contains('Development')) {
+    //   // replace “Development” with its two real keys
+    //   typesForQuery
+    //     ..remove('Development')
+    //     ..addAll(['development_plot', 'development_land']);
+    // }
+
+    // List<String> typesForQuery = List.from(selectedPropertyTypes);
+
+    var typesForQuery = List<String>.from(selectedPropertyTypes);
+
+    // 1️⃣ Build the actual list of Firestore keys:
+    if (typesForQuery.contains('Development')) {
+      typesForQuery
+        ..remove('Development')
+        ..addAll(['development_plot','development_land']);
+    }
+
+    print('→ querying Firestore for types: $typesForQuery');
+
     // When using geo-based search, we relax the pincode filter by passing null.
-    List<Property> properties = await propertyService.getPropertiesWithFilters(
-      propertyTypes: selectedPropertyTypes,
-      minPricePerUnit: selectedPriceRange.start > 0 ? selectedPriceRange.start : null,
-      maxPricePerUnit: selectedPriceRange.end > 0 ? selectedPriceRange.end : null,
-      minLandArea: selectedLandAreaRange.start > 0 ? selectedLandAreaRange.start : null,
-      maxLandArea: selectedLandAreaRange.end > 0 ? selectedLandAreaRange.end : null,
-      minLat: minLat,
-      maxLat: maxLat,
-      minLon: minLon,
-      maxLon: maxLon,
-      city:    geoSearchType == GeoSearchType.point ? null : selectedCity,
-      district: geoSearchType == GeoSearchType.point
+    // final properties = await propertyService.getPropertiesWithFilters(
+    //   propertyTypes:   typesForQuery,
+    //   minPricePerUnit: selectedPriceRange.start > 0 ? selectedPriceRange.start : null,
+    //   maxPricePerUnit: selectedPriceRange.end > 0 ? selectedPriceRange.end : null,
+    //   minLandArea: selectedLandAreaRange.start > 0 ? selectedLandAreaRange.start : null,
+    //   maxLandArea: selectedLandAreaRange.end > 0 ? selectedLandAreaRange.end : null,
+    //   minLat: minLat,
+    //   maxLat: maxLat,
+    //   minLon: minLon,
+    //   maxLon: maxLon,
+    //   city:    geoSearchType == GeoSearchType.point ? null : selectedCity,
+    //   district: geoSearchType == GeoSearchType.point
+    //       ? null
+    //       : selectedDistrict,
+    //   pincode: geoSearchType == GeoSearchType.point ? null : selectedPincode,
+    // );
+
+    // 4️⃣ Ask your service with **only** typesForQuery
+    var properties = await context
+        .read<PropertyService>()
+        .getPropertiesWithFilters(
+      propertyTypes:   typesForQuery,
+      minPricePerUnit: selectedPriceRange.start > 0
+          ? selectedPriceRange.start
+          : null,
+      maxPricePerUnit: selectedPriceRange.end > 0
+          ? selectedPriceRange.end
+          : null,
+      minLandArea:     selectedLandAreaRange.start > 0
+          ? selectedLandAreaRange.start
+          : null,
+      maxLandArea:     selectedLandAreaRange.end > 0
+          ? selectedLandAreaRange.end
+          : null,
+      minLat:          minLat,
+      maxLat:          maxLat,
+      minLon:          minLon,
+      maxLon:          maxLon,
+      city:            geoSearchType == GeoSearchType.point
+          ? null
+          : selectedCity,
+      district:        geoSearchType == GeoSearchType.point
           ? null
           : selectedDistrict,
-      pincode: geoSearchType == GeoSearchType.point ? null : selectedPincode,
+      pincode:         geoSearchType == GeoSearchType.point
+          ? null
+          : selectedPincode,
     );
 
     // For polygon searches, further filter properties using point-in-polygon test.
+    // 3️⃣ If polygon search, filter in-memory:
+    List<Property> filteredProperties = properties;
     if (geoSearchType == GeoSearchType.polygon &&
         selectedPolygon != null &&
         selectedPolygon!.isNotEmpty) {
-      properties = properties.where((property) {
+      filteredProperties = properties.where((p) {
         return isPointInsidePolygon(
-            LatLng(property.latitude, property.longitude), selectedPolygon!);
+          LatLng(p.latitude, p.longitude),
+          selectedPolygon!,
+        );
       }).toList();
     }
 
-    return properties;
+    return filteredProperties;
   }
 
   /// Helper: Check if a point is inside a polygon using the ray-casting algorithm.
@@ -331,13 +396,6 @@ class BuyLandScreenState extends State<BuyLandScreen> {
       );
       return false;
     }
-  }
-
-  // Pull-to-refresh method.
-  Future<void> _refreshProperties() async {
-    setState(() {
-      _propertyFuture = fetchPropertiesWithGeo();
-    });
   }
 
   // Helper method to format price.
