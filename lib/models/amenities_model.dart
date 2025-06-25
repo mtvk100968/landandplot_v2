@@ -1,28 +1,6 @@
 //
 import 'package:cloud_firestore/cloud_firestore.dart';
-
-enum PropertyType {
-  plot('Plot'),
-  agriLand('Agri Land'),
-  farmLand('Farm Land'),
-  house('House'),
-  villa('Villa'),
-  apartment('Apartment'),
-  development('Development'),
-  commercialSpace('Commercial Space');
-
-  /// the exact label you store in the database
-  final String label;
-  const PropertyType(this.label);
-
-  /// helper to look up an enum from the DB‐string
-  static PropertyType fromLabel(String dbValue) {
-    return PropertyType.values.firstWhere(
-      (e) => e.label.toLowerCase() == dbValue.toLowerCase(),
-      orElse: () => PropertyType.plot,
-    );
-  }
-}
+import 'package:landandplot/models/property_type.dart';
 
 class Amenities {
   final String id;

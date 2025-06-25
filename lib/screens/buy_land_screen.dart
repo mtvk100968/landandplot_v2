@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../models/filter_config.dart' as fc;
+import '../models/property_type.dart' as pt;
 import '../services/property_service.dart';
 import '../models/property_model.dart';
 import '../providers/property_provider.dart';
@@ -51,7 +52,7 @@ class BuyLandScreenState extends State<BuyLandScreen> {
   String? selectedDistrict;
   String? selectedPincode;
   String? selectedState;
-  fc.PropertyType? _selectedType;
+  pt.PropertyType? _selectedType;
   int? _selectedBedrooms;
   int? _selectedBathrooms;
 
@@ -118,9 +119,9 @@ class BuyLandScreenState extends State<BuyLandScreen> {
       maxLon = selectedPolygon!.map((p) => p.longitude).reduce(math.max);
     } else if (selectedPlace != null) {
       // Point search: use selectedPlace with a search radius
-      double lat = selectedPlace!['geometry']['location']['lat'];
-      double lon = selectedPlace!['geometry']['location']['lng'];
-      double radiusInDegrees =
+      final lat = selectedPlace!['geometry']['location']['lat'];
+      final lon = selectedPlace!['geometry']['location']['lng'];
+      final radiusInDegrees =
           searchRadius / 111; // Approx conversion km -> degrees
       minLat = lat - radiusInDegrees;
       maxLat = lat + radiusInDegrees;
@@ -128,64 +129,54 @@ class BuyLandScreenState extends State<BuyLandScreen> {
       maxLon = lon + radiusInDegrees;
     }
 
-    // 1️⃣ Build the actual list of Firestore keys:
-    //     start from your UI’s selectedPropertyTypes (strings like "Plot", "Development", ...)
+    // 2️⃣ Turn your UI‐labels into enums, then into actual Firestore keys:
+    final selectedEnums = selectedPropertyTypes
+        .map((label) => pt.PropertyType.fromLabel(label))
+        .toList();
 
-    // if (typesForQuery.contains('Development')) {
-    //   // replace “Development” with its two real keys
-    //   typesForQuery
-    //     ..remove('Development')
-    //     ..addAll(['development_plot', 'development_land']);
-    // }
-
-    // List<String> typesForQuery = List.from(selectedPropertyTypes);
-
-    var typesForQuery = List<String>.from(selectedPropertyTypes);
-
-    // 1️⃣ Build the actual list of Firestore keys:
-    if (typesForQuery.contains('Development')) {
-      typesForQuery
-        ..remove('Development')
-        ..addAll(['development_plot','development_land']);
-    }
+    // 1️⃣ Build your list of Firestore keys (including expanding “Development”):
+    final typesForQuery = selectedPropertyTypes
+        .map((label) => pt.PropertyType.fromLabel(label))
+        .expand<String>((t) {
+      if (t == pt.PropertyType.development) {
+        return ['development_plot', 'development_land'];
+      }
+      return [t.firestoreKey];
+    })
+        .toList();
 
     print('→ querying Firestore for types: $typesForQuery');
+    
+    // If any dwelling type is selected, **don't** filter by area:
+    const dwellings = {
+      pt.PropertyType.house,
+      pt.PropertyType.apartment,
+      pt.PropertyType.villa,
+      pt.PropertyType.commercialSpace,
+    };
 
-    // When using geo-based search, we relax the pincode filter by passing null.
-    // final properties = await propertyService.getPropertiesWithFilters(
-    //   propertyTypes:   typesForQuery,
-    //   minPricePerUnit: selectedPriceRange.start > 0 ? selectedPriceRange.start : null,
-    //   maxPricePerUnit: selectedPriceRange.end > 0 ? selectedPriceRange.end : null,
-    //   minLandArea: selectedLandAreaRange.start > 0 ? selectedLandAreaRange.start : null,
-    //   maxLandArea: selectedLandAreaRange.end > 0 ? selectedLandAreaRange.end : null,
-    //   minLat: minLat,
-    //   maxLat: maxLat,
-    //   minLon: minLon,
-    //   maxLon: maxLon,
-    //   city:    geoSearchType == GeoSearchType.point ? null : selectedCity,
-    //   district: geoSearchType == GeoSearchType.point
-    //       ? null
-    //       : selectedDistrict,
-    //   pincode: geoSearchType == GeoSearchType.point ? null : selectedPincode,
-    // );
+    bool isDwelling = selectedPropertyTypes
+        .map((l) => pt.PropertyType.fromLabel(l))
+        .any(dwellings.contains);
+
+    double? minPrice = isDwelling ? null : (selectedPriceRange.start > 0 ? selectedPriceRange.start : null);
+    double? maxPrice = isDwelling ? null : (selectedPriceRange.end   > 0 ? selectedPriceRange.end   : null);
+    double? minArea  = isDwelling ? null : (selectedLandAreaRange.start > 0 ? selectedLandAreaRange.start : null);
+    double? maxArea  = isDwelling ? null : (selectedLandAreaRange.end   > 0 ? selectedLandAreaRange.end   : null);
+
+    if (selectedEnums.any(dwellings.contains)) {
+      minArea = maxArea = null;
+    }
 
     // 4️⃣ Ask your service with **only** typesForQuery
     var properties = await context
         .read<PropertyService>()
         .getPropertiesWithFilters(
       propertyTypes:   typesForQuery,
-      minPricePerUnit: selectedPriceRange.start > 0
-          ? selectedPriceRange.start
-          : null,
-      maxPricePerUnit: selectedPriceRange.end > 0
-          ? selectedPriceRange.end
-          : null,
-      minLandArea:     selectedLandAreaRange.start > 0
-          ? selectedLandAreaRange.start
-          : null,
-      maxLandArea:     selectedLandAreaRange.end > 0
-          ? selectedLandAreaRange.end
-          : null,
+      minPricePerUnit: minPrice,
+      maxPricePerUnit: maxPrice,
+      minLandArea:     minArea,
+      maxLandArea:     maxArea,
       minLat:          minLat,
       maxLat:          maxLat,
       minLon:          minLon,
@@ -253,10 +244,10 @@ class BuyLandScreenState extends State<BuyLandScreen> {
   Future<void> openFilterBottomSheet() async {
     // Seed the dropdown from your existing selection, if any:
     final seedType = selectedPropertyTypes.isNotEmpty
-        ? fc.PropertyType.values.firstWhere(
+        ? pt.PropertyType.values.firstWhere(
           (t) =>
       t.toString().split('.').last == selectedPropertyTypes.first,
-      orElse: () => fc.PropertyType.values.first,
+      orElse: () => pt.PropertyType.values.first,
     )
         : null;
 
@@ -302,7 +293,7 @@ class BuyLandScreenState extends State<BuyLandScreen> {
     } else {
       // Apply the filters they picked:
       setState(() {
-        _selectedType = result['type'] as fc.PropertyType?;
+        _selectedType = result['type'] as pt.PropertyType?;
         selectedPropertyTypes = _selectedType != null
             ? [ _selectedType!.label ]    // ← use the exact DB label
             : [];

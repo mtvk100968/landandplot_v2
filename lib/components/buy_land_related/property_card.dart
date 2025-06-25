@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import '../../../../models/property_model.dart';
 import '../../models/amenities_model.dart';
+import '../../models/property_type.dart';
 import '../../utils/format.dart';
 import '../../../screens/property_details_screen.dart';
 // import 'google_fonts';

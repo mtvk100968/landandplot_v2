@@ -1,26 +1,6 @@
 // lib/models/filter_config.dart
 
-enum PropertyType {
-  plot('Plot'),
-  agriLand('Agri Land'),
-  farmLand('Farm Land'),
-  apartment('Apartment'),
-  villa('Villa'),
-  house('House'),
-  development('Development'),
-  commercialSpace('Commercial Space');
-  /// The exact label you store in your documents
-  final String label;
-  const PropertyType(this.label);
-
-  /// Look up an enum by the stored label
-  static PropertyType fromLabel(String dbValue) {
-  return PropertyType.values.firstWhere(
-  (e) => e.label.toLowerCase() == dbValue.toLowerCase(),
-  orElse: () => PropertyType.plot,
-  );
-  }
-}
+import 'package:landandplot/models/property_type.dart';
 
 class FilterConfig {
   /// Label to show next to the price slider, e.g. "₹ per sqft"

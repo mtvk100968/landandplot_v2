@@ -6,16 +6,17 @@ enum PropertyType {
   villa('Villa'),
   house('House'),
   development('Development'),
-  developmentPlot('Development Plot'),
-  developmentLand('Development Land'),
+  // developmentPlot('Development Plot'),
+  // developmentLand('Development Land'),
   commercialSpace('Commercial Space');
 
   final String label;
   const PropertyType(this.label);
 
-  static PropertyType fromLabel(String value) {
+
+  static PropertyType fromLabel(String dbValue) {
     return PropertyType.values.firstWhere(
-          (e) => e.label.toLowerCase() == value.toLowerCase(),
+          (e) => e.label.toLowerCase() == dbValue.toLowerCase(),
       orElse: () => PropertyType.plot,
     );
   }
@@ -40,8 +41,8 @@ enum PropertyType {
       case PropertyType.villa:          return 'Villa';
       case PropertyType.house:          return 'House';
       case PropertyType.development:    return 'Development';
-      case PropertyType.developmentPlot:return 'development_plot';
-      case PropertyType.developmentLand:return 'development_land';
+      // case PropertyType.developmentPlot:return 'development_plot';
+      // case PropertyType.developmentLand:return 'development_land';
       case PropertyType.commercialSpace:return 'Commercial Space';
     }
   }
