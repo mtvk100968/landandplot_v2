@@ -139,34 +139,47 @@ class BuyLandScreenState extends State<BuyLandScreen> {
         .map((label) => pt.PropertyType.fromLabel(label))
         .expand<String>((t) {
       if (t == pt.PropertyType.development) {
+        // umbrella → two real keys
         return ['development_plot', 'development_land'];
       }
       return [t.firestoreKey];
-    })
-        .toList();
+    }).toList();
 
     print('→ querying Firestore for types: $typesForQuery');
-    
+
     // If any dwelling type is selected, **don't** filter by area:
     const dwellings = {
       pt.PropertyType.house,
       pt.PropertyType.apartment,
       pt.PropertyType.villa,
       pt.PropertyType.commercialSpace,
+      pt.PropertyType.development,   // ← add Development here
     };
 
     bool isDwelling = selectedPropertyTypes
         .map((l) => pt.PropertyType.fromLabel(l))
         .any(dwellings.contains);
 
-    double? minPrice = isDwelling ? null : (selectedPriceRange.start > 0 ? selectedPriceRange.start : null);
-    double? maxPrice = isDwelling ? null : (selectedPriceRange.end   > 0 ? selectedPriceRange.end   : null);
-    double? minArea  = isDwelling ? null : (selectedLandAreaRange.start > 0 ? selectedLandAreaRange.start : null);
-    double? maxArea  = isDwelling ? null : (selectedLandAreaRange.end   > 0 ? selectedLandAreaRange.end   : null);
+    // 3️⃣ Only apply price/area filters when NOT a dwelling:
+    double? minPrice = isDwelling
+        ? null
+        : (selectedPriceRange.start > 0 ? selectedPriceRange.start : null);
+    double? maxPrice = isDwelling
+        ? null
+        : (selectedPriceRange.end   > 0 ? selectedPriceRange.end   : null);
+    double? minArea  = isDwelling
+        ? null
+        : (selectedLandAreaRange.start > 0 ? selectedLandAreaRange.start : null);
+    double? maxArea  = isDwelling
+        ? null
+        : (selectedLandAreaRange.end   > 0 ? selectedLandAreaRange.end   : null);
 
     if (selectedEnums.any(dwellings.contains)) {
       minArea = maxArea = null;
     }
+
+    print('→ querying Firestore for types: $typesForQuery');
+    print('   (clearing area/price filters? $isDwelling)');
 
     // 4️⃣ Ask your service with **only** typesForQuery
     var properties = await context

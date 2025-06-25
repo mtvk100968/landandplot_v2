@@ -4,11 +4,11 @@
 import 'package:flutter/material.dart';
 import '../../models/dev_subtype.dart';
 import '../../models/filter_config.dart' as fc;
-import '../../models/property_type.dart' as ft;
+import '../../models/property_type.dart' as pt;
 import 'location_search_bar.dart';
 
 class FilterBottomSheet extends StatefulWidget {
-  final ft.PropertyType? initialType;
+  final pt.PropertyType? initialType;
   final Map<String, dynamic>? initialPlace;
   final double initialMinPrice, initialMaxPrice;
   final double initialMinArea, initialMaxArea;
@@ -40,7 +40,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
   fc.FilterConfig? _config;
   Map<String, dynamic>? _place;
   // String? _devSubtype; // 🆕
-  ft.PropertyType?  _type;
+  pt.PropertyType?  _type;
   DevSubtype?    _devSubtype;
 
   @override
@@ -136,11 +136,11 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // 1️⃣ Property Type Dropdown
-                DropdownButton<ft.PropertyType>(
+                DropdownButton<pt.PropertyType>(
                   hint: const Text('Select property type'),
                   isExpanded: true,
                   value: _type,
-                  items: ft.PropertyType.values.map((t) {
+                  items: pt.PropertyType.values.map((t) {
                     return DropdownMenuItem(
                       value: t,
                       child: Text(t.label),
@@ -165,7 +165,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                 ),
                 const SizedBox(height: 8),
 
-                if (_type == ft.PropertyType.development) ...[
+                if (_type == pt.PropertyType.development) ...[
                   SizedBox(height: 12),
                   DropdownButton<DevSubtype>(
                     items: DevSubtype.values.map((d) {
