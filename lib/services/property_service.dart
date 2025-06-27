@@ -286,6 +286,8 @@ class PropertyService {
     double? maxPricePerUnit,
     double? minLandArea,
     double? maxLandArea,
+    int? bedrooms,      // ← NEW
+    int? bathrooms,     // ← NEW
     double? minLat,
     double? maxLat,
     double? minLon,
@@ -302,6 +304,8 @@ class PropertyService {
       print('  maxPricePerUnit: $maxPricePerUnit');
       print('  minLandArea: $minLandArea');
       print('  maxLandArea: $maxLandArea');
+      print('  minLat: $bedrooms');
+      print('  maxLat: $bathrooms');
       print('  minLat: $minLat');
       print('  maxLat: $maxLat');
       print('  minLon: $minLon');
@@ -336,7 +340,9 @@ class PropertyService {
       // 3️⃣ Fetch once
       final snapshot = await query.get();
       var properties =
-          snapshot.docs.map((d) => Property.fromMap(d.id, d.data())).toList();
+          snapshot.docs
+              .map((d) => Property.fromMap(d.id, d.data()))
+              .toList();
 
       // 4️⃣ Client-side filtering for land area
       // 🔹 3) In-Dart filter **all** ranges: price, land-area, lat/lon
@@ -350,7 +356,10 @@ class PropertyService {
             (maxLat == null || p.latitude <= maxLat);
         final okLon = (minLon == null || p.longitude >= minLon) &&
             (maxLon == null || p.longitude <= maxLon);
-        return okPrice && okArea && okLat && okLon;
+        final okBeds  = (bedrooms         == null || p.bedrooms    == bedrooms);
+        final okBaths = (bathrooms        == null || p.bathrooms   == bathrooms);
+
+        return okPrice && okArea && okLat && okLon && okBeds && okBaths;
       }).toList();
 
       return properties;

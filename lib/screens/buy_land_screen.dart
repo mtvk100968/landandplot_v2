@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
+import '../models/dev_subtype.dart';
 import '../models/filter_config.dart' as fc;
 import '../models/property_type.dart' as pt;
 import '../services/property_service.dart';
@@ -52,7 +53,8 @@ class BuyLandScreenState extends State<BuyLandScreen> {
   String? selectedDistrict;
   String? selectedPincode;
   String? selectedState;
-  pt.PropertyType? _selectedType;
+  pt.PropertyType? _type;
+  DevSubtype?    _devSubtype;
   int? _selectedBedrooms;
   int? _selectedBathrooms;
 
@@ -107,8 +109,31 @@ class BuyLandScreenState extends State<BuyLandScreen> {
 
     print('UI-selections (labels): $selectedPropertyTypes');
 
-    double? minLat, maxLat, minLon, maxLon;
+    // ─── 0: Unpack the DevSubtype & PropertyType you stored from the sheet ──
+    final devSub    = _devSubtype;    // your State field
+    final chosenType = _type;          // your State field
 
+// ─── 1: Build typesForQuery based on type + devSubtype ───
+    List<String> typesForQuery;
+    if (chosenType == pt.PropertyType.development) {
+      if (devSub == DevSubtype.plot) {
+        typesForQuery = ['development_plot'];
+      } else if (devSub == DevSubtype.land) {
+        typesForQuery = ['development_land'];
+      } else {
+        // no subtype chosen → show both
+        typesForQuery = ['development_plot', 'development_land'];
+      }
+    } else if (chosenType != null) {
+      typesForQuery = [chosenType!.firestoreKey];
+    } else {
+      typesForQuery = [];
+    }
+
+    print('→ querying Firestore for types: $typesForQuery');
+
+    // ─── 2: Compute geo-bounds (exactly as before) ──────────────────────────
+    double? minLat, maxLat, minLon, maxLon;
     if (geoSearchType == GeoSearchType.polygon &&
         selectedPolygon != null &&
         selectedPolygon!.isNotEmpty) {
@@ -134,19 +159,6 @@ class BuyLandScreenState extends State<BuyLandScreen> {
         .map((label) => pt.PropertyType.fromLabel(label))
         .toList();
 
-    // 1️⃣ Build your list of Firestore keys (including expanding “Development”):
-    final typesForQuery = selectedPropertyTypes
-        .map((label) => pt.PropertyType.fromLabel(label))
-        .expand<String>((t) {
-      if (t == pt.PropertyType.development) {
-        // umbrella → two real keys
-        return ['development_plot', 'development_land'];
-      }
-      return [t.firestoreKey];
-    }).toList();
-
-    print('→ querying Firestore for types: $typesForQuery');
-
     // If any dwelling type is selected, **don't** filter by area:
     const dwellings = {
       pt.PropertyType.house,
@@ -156,32 +168,26 @@ class BuyLandScreenState extends State<BuyLandScreen> {
       pt.PropertyType.development,   // ← add Development here
     };
 
-    bool isDwelling = selectedPropertyTypes
-        .map((l) => pt.PropertyType.fromLabel(l))
-        .any(dwellings.contains);
+    bool isDwelling = selectedEnums.any(dwellings.contains);
 
-    // 3️⃣ Only apply price/area filters when NOT a dwelling:
     double? minPrice = isDwelling
         ? null
         : (selectedPriceRange.start > 0 ? selectedPriceRange.start : null);
     double? maxPrice = isDwelling
         ? null
-        : (selectedPriceRange.end   > 0 ? selectedPriceRange.end   : null);
-    double? minArea  = isDwelling
+        : (selectedPriceRange.end > 0 ? selectedPriceRange.end : null);
+    double? minArea = isDwelling
         ? null
         : (selectedLandAreaRange.start > 0 ? selectedLandAreaRange.start : null);
-    double? maxArea  = isDwelling
+    double? maxArea = isDwelling
         ? null
-        : (selectedLandAreaRange.end   > 0 ? selectedLandAreaRange.end   : null);
+        : (selectedLandAreaRange.end > 0 ? selectedLandAreaRange.end : null);
 
-    if (selectedEnums.any(dwellings.contains)) {
+    if (isDwelling) {
       minArea = maxArea = null;
     }
 
-    print('→ querying Firestore for types: $typesForQuery');
-    print('   (clearing area/price filters? $isDwelling)');
-
-    // 4️⃣ Ask your service with **only** typesForQuery
+    // ─── 4: Firestore query with our new typesForQuery ──────────────────────
     var properties = await context
         .read<PropertyService>()
         .getPropertiesWithFilters(
@@ -190,6 +196,8 @@ class BuyLandScreenState extends State<BuyLandScreen> {
       maxPricePerUnit: maxPrice,
       minLandArea:     minArea,
       maxLandArea:     maxArea,
+      bedrooms:        _selectedBedrooms,   // ← now included
+      bathrooms:       _selectedBathrooms,  // ← now included
       minLat:          minLat,
       maxLat:          maxLat,
       minLon:          minLon,
@@ -222,6 +230,85 @@ class BuyLandScreenState extends State<BuyLandScreen> {
     return filteredProperties;
   }
 
+
+  /// Opens the filter bottom sheet and applies or resets filters.
+  Future<void> openFilterBottomSheet() async {
+    // Seed the dropdown from your existing selection, if any:
+    // final seedType = selectedPropertyTypes.isNotEmpty
+    //     ? pt.PropertyType.values.firstWhere(
+    //       (t) =>
+    //   t.toString().split('.').last == selectedPropertyTypes.first,
+    //   orElse: () => pt.PropertyType.values.first,
+    // )
+    //     : null;
+
+    final result = await showModalBottomSheet<Map<String, dynamic>?>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(      // optional rounded corners
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) {
+        // 1) Add bottom padding equal to the keyboard inset
+        // 2) Let the FilterBottomSheet be the only child
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(ctx).viewInsets.bottom,
+          ),
+          child: SizedBox(
+            height: MediaQuery.of(ctx).size.height * 0.6,
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+              ),
+              child: FilterBottomSheet(
+                initialType: _type,
+                initialPlace: selectedPlace,
+                initialMinPrice: selectedPriceRange.start,
+                initialMaxPrice: selectedPriceRange.end,
+                initialMinArea: selectedLandAreaRange.start,
+                initialMaxArea: selectedLandAreaRange.end,
+                initialBeds: _selectedBedrooms,
+                initialBaths: _selectedBathrooms,
+              ),
+            ),
+          ),
+        );
+      },
+    );
+
+    if (result == null) {
+      // User tapped “X” or “Reset” → clear filters and reload everything
+      setState(() {
+        _type = null;
+        selectedPropertyTypes = [];
+        selectedPlace = null;
+        selectedPriceRange = const RangeValues(0, 0);
+        selectedLandAreaRange = const RangeValues(0, 0);
+        _selectedBedrooms = null;
+        _selectedBathrooms = null;
+        _propertyFuture = fetchPropertiesWithGeo(); // unfiltered
+      });
+    } else {
+      // Apply the filters they picked:
+      setState(() {
+        _type      = result['type']    as pt.PropertyType?;
+        _devSubtype = result['devSubtype'] as DevSubtype?;
+        // keep your old behavior of mirroring _type → selectedPropertyTypes
+        selectedPropertyTypes = _type != null
+            ? [ _type!.label ]    // ← use the exact DB label
+            : [];
+        selectedPlace = result['place'] as Map<String, dynamic>?;
+        selectedPriceRange = result['price'] as RangeValues;
+        selectedLandAreaRange = result['area'] as RangeValues;
+        _selectedBedrooms = result['beds'] as int?;
+        _selectedBathrooms = result['baths'] as int?;
+        _propertyFuture = fetchPropertiesWithGeo();
+      });
+    }
+  }
+
   /// Helper: Check if a point is inside a polygon using the ray-casting algorithm.
   bool isPointInsidePolygon(LatLng point, List<LatLng> polygon) {
     int intersectCount = 0;
@@ -251,74 +338,6 @@ class BuyLandScreenState extends State<BuyLandScreen> {
     double m = (bY - aY) / (bX - aX);
     double x = (pY - aY) / m + aX;
     return x > pX;
-  }
-
-  /// Opens the filter bottom sheet and applies or resets filters.
-  Future<void> openFilterBottomSheet() async {
-    // Seed the dropdown from your existing selection, if any:
-    final seedType = selectedPropertyTypes.isNotEmpty
-        ? pt.PropertyType.values.firstWhere(
-          (t) =>
-      t.toString().split('.').last == selectedPropertyTypes.first,
-      orElse: () => pt.PropertyType.values.first,
-    )
-        : null;
-
-    final result = await showModalBottomSheet<Map<String, dynamic>?>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) {
-        return FractionallySizedBox(
-          heightFactor: 0.6, // ← occupies 60% of the screen height
-          child: Container(
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-            ),
-            child: FilterBottomSheet(
-              initialType: seedType,
-              initialPlace: selectedPlace,
-              initialMinPrice: selectedPriceRange.start,
-              initialMaxPrice: selectedPriceRange.end,
-              initialMinArea: selectedLandAreaRange.start,
-              initialMaxArea: selectedLandAreaRange.end,
-              initialBeds: _selectedBedrooms,
-              initialBaths: _selectedBathrooms,
-            ),
-          ),
-        );
-      },
-    );
-
-    if (result == null) {
-      // User tapped “X” or “Reset” → clear filters and reload everything
-      setState(() {
-        _selectedType = null;
-        selectedPropertyTypes = [];
-        selectedPlace = null;
-        selectedPriceRange = const RangeValues(0, 0);
-        selectedLandAreaRange = const RangeValues(0, 0);
-        _selectedBedrooms = null;
-        _selectedBathrooms = null;
-        _propertyFuture = fetchPropertiesWithGeo(); // unfiltered
-      });
-    } else {
-      // Apply the filters they picked:
-      setState(() {
-        _selectedType = result['type'] as pt.PropertyType?;
-        selectedPropertyTypes = _selectedType != null
-            ? [ _selectedType!.label ]    // ← use the exact DB label
-            : [];
-        selectedPlace = result['place'] as Map<String, dynamic>?;
-        selectedPriceRange = result['price'] as RangeValues;
-        selectedLandAreaRange = result['area'] as RangeValues;
-        _selectedBedrooms = result['beds'] as int?;
-        _selectedBathrooms = result['baths'] as int?;
-        // re‐run your filtered query:
-        _propertyFuture = fetchPropertiesWithGeo();
-      });
-    }
   }
 
   void _handlePlaceSelected(Map<String, dynamic> place) {

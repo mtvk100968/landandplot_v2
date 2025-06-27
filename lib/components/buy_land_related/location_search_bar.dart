@@ -24,20 +24,15 @@ class LocationSearchBar extends StatefulWidget {
 
 class _LocationSearchBarState extends State<LocationSearchBar> {
   final TextEditingController _controller = TextEditingController();
-  // Will store suggestions coming from the Places API
+  final FocusNode _focusNode = FocusNode();
   List<dynamic> _suggestions = [];
-
-  // A list of all chips (each is a Map storing description, place_id, and more)
   List<Map<String, dynamic>> _chipPlaces = [];
 
   late PlacesService _placesService;
   Timer? _debounce;
-
   final LayerLink _layerLink = LayerLink();
   OverlayEntry? _overlayEntry;
   bool _showSuggestions = false;
-
-  // For measuring where to place the overlay
   final GlobalKey _textFieldKey = GlobalKey();
   double _textFieldHeight = 0;
   Map<String, dynamic>? _currentPlace;
@@ -51,7 +46,7 @@ class _LocationSearchBarState extends State<LocationSearchBar> {
     if (widget.initialPlace != null) {
       // pre‐fill your text field and stash the place
       _controller.text = widget.initialPlace!['description'] ?? '';
-      _currentPlace = widget.initialPlace;
+      _chipPlaces.add(widget.initialPlace!);
     }
     // Measure the text field after first layout
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -75,6 +70,7 @@ class _LocationSearchBarState extends State<LocationSearchBar> {
     _debounce?.cancel();
     _controller.dispose();
     _removeOverlay();
+    _focusNode.dispose();
     super.dispose();
   }
 

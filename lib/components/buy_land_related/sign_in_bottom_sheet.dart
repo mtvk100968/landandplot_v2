@@ -51,12 +51,13 @@ class _SignInBottomSheetState extends State<SignInBottomSheet> {
           // … auto‐sign‐in logic …
         },
 
-        verificationFailed: (e) {
+        verificationFailed: (FirebaseAuthException e) {
           debugPrint("❌ verificationFailed: ${e.code} ${e.message}");
-          ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Verification failed: ${e.code} — ${e.message}'))
-          );
-          setState(() => _isProcessing = false);
+          print('Full exception: $e');
+          // ScaffoldMessenger.of(context).showSnackBar(
+          //     SnackBar(content: Text('Verification failed: ${e.code} — ${e.message}'))
+          // );
+          // setState(() => _isProcessing = false);
         },
 
         codeSent: (verificationId, resendToken) {
@@ -93,7 +94,9 @@ class _SignInBottomSheetState extends State<SignInBottomSheet> {
         smsCode: _otpController.text.trim(),
       );
       final userType =
-      _selectedLoginType == UserLoginType.agent ? 'agent' : 'user';
+      _selectedLoginType == UserLoginType.agent
+          ? 'agent'
+          : 'user';
 
       await _authService.signInWithPhoneAuthCredential(
           credential, userType);

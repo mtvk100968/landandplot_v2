@@ -1,7 +1,8 @@
 // // filter_bottom_sheet.dart
-// lib/components/buy_land_related/filter_bottom_sheet.dart
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../../models/dev_subtype.dart';
 import '../../models/filter_config.dart' as fc;
 import '../../models/property_type.dart' as pt;
@@ -36,20 +37,25 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
   late RangeValues _priceRange;
   late RangeValues _areaRange;
   int? _beds, _baths;
-  // ft.PropertyType? _type;
-  fc.FilterConfig? _config;
   Map<String, dynamic>? _place;
-  // String? _devSubtype; // 🆕
-  pt.PropertyType?  _type;
-  DevSubtype?    _devSubtype;
+  pt.PropertyType? _type;
+  DevSubtype? _devSubtype;
+  fc.FilterConfig? _config;
+  late NumberFormat _indianFormat;
 
   @override
   void initState() {
     super.initState();
+
+    // Initialize your Indian number formatter
+    _indianFormat = NumberFormat.decimalPattern('en_IN');
+
+    // … all of your existing initState code …
     _place = widget.initialPlace;
     _type = widget.initialType;
     _config = _type == null ? null : fc.kFilterMap[_type!];
     _devSubtype = widget.initialDevSubtype as DevSubtype?; // 🆕
+    _recalcConfig();
 
     if (_config != null) {
       final p0 = widget.initialMinPrice != 0
@@ -58,12 +64,10 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
       final p1 = widget.initialMaxPrice != 0
           ? widget.initialMaxPrice
           : _config!.priceMax;
-      final a0 = widget.initialMinArea != 0
-          ? widget.initialMinArea
-          : _config!.areaMin;
-      final a1 = widget.initialMaxArea != 0
-          ? widget.initialMaxArea
-          : _config!.areaMax;
+      final a0 =
+          widget.initialMinArea != 0 ? widget.initialMinArea : _config!.areaMin;
+      final a1 =
+          widget.initialMaxArea != 0 ? widget.initialMaxArea : _config!.areaMax;
 
       _priceRange = RangeValues(p0, p1);
       _areaRange = RangeValues(a0, a1);
@@ -74,6 +78,21 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
 
     _beds = widget.initialBeds;
     _baths = widget.initialBaths;
+  }
+
+  /// Recomputes `_config` based on current `_type` and `_devSubtype`.
+  void _recalcConfig() {
+    if (_type == pt.PropertyType.development) {
+      _config = _devSubtype == DevSubtype.plot
+          ? fc.developmentPlotConfig
+          : _devSubtype == DevSubtype.land
+              ? fc.developmentLandConfig
+              : fc.kFilterMap[pt.PropertyType.development];
+    } else if (_type != null) {
+      _config = fc.kFilterMap[_type!]!;
+    } else {
+      _config = null;
+    }
   }
 
   void _apply() {
@@ -95,19 +114,19 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
   Widget build(BuildContext context) {
     final config = (_type != null) ? fc.kFilterMap[_type!] : null;
 
+    // clamp our ranges to the current config’s bounds
     final clampedPriceRange = config == null
         ? _priceRange
         : RangeValues(
-      _priceRange.start.clamp(config.priceMin, config.priceMax),
-      _priceRange.end.clamp(config.priceMin, config.priceMax),
-    );
-
+            _priceRange.start.clamp(config.priceMin, config.priceMax),
+            _priceRange.end.clamp(config.priceMin, config.priceMax),
+          );
     final clampedAreaRange = config == null
         ? _areaRange
         : RangeValues(
-      _areaRange.start.clamp(config.areaMin, config.areaMax),
-      _areaRange.end.clamp(config.areaMin, config.areaMax),
-    );
+            _areaRange.start.clamp(config.areaMin, config.areaMax),
+            _areaRange.end.clamp(config.areaMin, config.areaMax),
+          );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -118,10 +137,11 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
           child: Row(
             children: [
               const Expanded(
-                  child: Text('Filters', style: TextStyle(fontSize: 20))),
+                child: Text('Filters', style: TextStyle(fontSize: 20)),
+              ),
               IconButton(
                 icon: const Icon(Icons.close),
-                onPressed: () => Navigator.of(context).pop(null),
+                onPressed: () => Navigator.of(context).pop(),
               ),
             ],
           ),
@@ -137,8 +157,8 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
               children: [
                 // 1️⃣ Property Type Dropdown
                 DropdownButton<pt.PropertyType>(
-                  hint: const Text('Select property type'),
                   isExpanded: true,
+                  hint: const Text('Select property type'),
                   value: _type,
                   items: pt.PropertyType.values.map((t) {
                     return DropdownMenuItem(
@@ -150,9 +170,9 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                     if (newType == null) return;
                     setState(() {
                       _type = newType;
-                      _config = fc.kFilterMap[newType]!;
-                      // reset subtype when type changes
                       _devSubtype = null;
+                      _config = fc.kFilterMap[newType]!;
+                      _recalcConfig(); // <-- recompute price/area labels & ranges
                       // reset ranges
                       _priceRange =
                           RangeValues(_config!.priceMin, _config!.priceMax);
@@ -165,20 +185,27 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                 ),
                 const SizedBox(height: 8),
 
+                // 🔹 Dev subtype selector only for Development
                 if (_type == pt.PropertyType.development) ...[
-                  SizedBox(height: 12),
+                  const SizedBox(height: 12),
                   DropdownButton<DevSubtype>(
-                    items: DevSubtype.values.map((d) {
-                      return DropdownMenuItem(value: d, child: Text(d.label));
-                    }).toList(),
-                    value: _devSubtype,
-                    hint: Text('Select sub-type'),
-                    onChanged: (d) => setState(() {
-                      _devSubtype = d;
-                    }),
-                  ),
+                      isExpanded: true,
+                      hint: const Text('Select development subtype'),
+                      value: _devSubtype,
+                      items: DevSubtype.values.map((d) {
+                        return DropdownMenuItem(value: d, child: Text(d.label));
+                      }).toList(),
+                      onChanged: (d) {
+                        setState(() {
+                          _devSubtype = d;
+                          _recalcConfig(); // <-- swap in the plot vs land config
+                          _priceRange =
+                              RangeValues(_config!.priceMin, _config!.priceMax);
+                          _areaRange =
+                              RangeValues(_config!.areaMin, _config!.areaMax);
+                        });
+                      }),
                 ],
-
 
                 const SizedBox(height: 8),
                 // 🔹 Location picker
@@ -195,23 +222,103 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                 if (config != null) ...[
                   const SizedBox(height: 16),
 
+// Price Slider
+//                   Text('Price (${config.priceLabel})'),
+// // show the numeric values
+//                   Padding(
+//                     padding:
+//                         const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+//                     child: Row(
+//                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+//                       children: [
+//                         Text(clampedPriceRange.start.toStringAsFixed(0)),
+//                         Text(clampedPriceRange.end.toStringAsFixed(0)),
+//                       ],
+//                     ),
+//                   ),
+//                   RangeSlider(
+//                     min: config.priceMin,
+//                     max: config.priceMax,
+//                     values: clampedPriceRange,
+//                     labels: RangeLabels(
+//                       clampedPriceRange.start.toStringAsFixed(0),
+//                       clampedPriceRange.end.toStringAsFixed(0),
+//                     ),
+//                     onChanged: (r) => setState(() => _priceRange = r),
+//                   ),
+//
+//                   const SizedBox(height: 8),
+//
+// // Area Slider
+//                   Text('Area (${config.areaLabel})'),
+// // show the numeric values
+//                   Padding(
+//                     padding:
+//                         const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+//                     child: Row(
+//                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+//                       children: [
+//                         Text(clampedAreaRange.start.toStringAsFixed(0)),
+//                         Text(clampedAreaRange.end.toStringAsFixed(0)),
+//                       ],
+//                     ),
+//                   ),
+//                   RangeSlider(
+//                     min: config.areaMin,
+//                     max: config.areaMax,
+//                     values: clampedAreaRange,
+//                     labels: RangeLabels(
+//                       clampedAreaRange.start.toStringAsFixed(0),
+//                       clampedAreaRange.end.toStringAsFixed(0),
+//                     ),
+//                     onChanged: (r) => setState(() => _areaRange = r),
+//                   ),
+
                   // Price Slider
                   Text('Price (${config.priceLabel})'),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(_indianFormat.format(clampedPriceRange.start.round())),
+                        Text(_indianFormat.format(clampedPriceRange.end.round())),
+                      ],
+                    ),
+                  ),
                   RangeSlider(
                     min: config.priceMin,
                     max: config.priceMax,
                     values: clampedPriceRange,
+                    labels: RangeLabels(
+                      _indianFormat.format(clampedPriceRange.start.round()),
+                      _indianFormat.format(clampedPriceRange.end.round()),
+                    ),
                     onChanged: (r) => setState(() => _priceRange = r),
                   ),
 
                   const SizedBox(height: 8),
 
-                  // Area Slider
+// Area Slider
                   Text('Area (${config.areaLabel})'),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(_indianFormat.format(clampedAreaRange.start.round())),
+                        Text(_indianFormat.format(clampedAreaRange.end.round())),
+                      ],
+                    ),
+                  ),
                   RangeSlider(
                     min: config.areaMin,
                     max: config.areaMax,
                     values: clampedAreaRange,
+                    labels: RangeLabels(
+                      _indianFormat.format(clampedAreaRange.start.round()),
+                      _indianFormat.format(clampedAreaRange.end.round()),
+                    ),
                     onChanged: (r) => setState(() => _areaRange = r),
                   ),
 
