@@ -4,39 +4,59 @@ import 'package:landandplot/models/property_type.dart';
 
 /// Special configs for the two sub-types of “Development”
 const FilterConfig developmentPlotConfig = FilterConfig(
-  priceLabel: '₹ total property price',
+  unitPriceLabel:      '₹ per sqft',
+  unitPriceMin: 10000,
+  unitPriceMax: 200000,
+  totalPriceLabel: '₹ total property price',
+  totalPriceMin: 1000000,
+  totalPriceMax: 2000000000,
   areaLabel: 'yards',
-  priceMin: 0,
-  priceMax: 2000000000,
-  areaMin: 0,
+  areaMin: 500,
   areaMax: 5000,
   needsBedsBaths: false,
 );
 
 const FilterConfig developmentLandConfig = FilterConfig(
-  priceLabel: '₹ total property price',
+  unitPriceLabel:      '₹ per sqft',
+  unitPriceMin: 250000,
+  unitPriceMax: 500000000,
+  totalPriceLabel:  '₹ total property price',
+  totalPriceMin: 300000,
+  totalPriceMax: 2000000000,
   areaLabel: 'acres',
-  priceMin: 0,
-  priceMax: 2000000000,
-  areaMin: 0,
+  areaMin: 1,
   areaMax: 5000,
   needsBedsBaths: false,
 );
 
 class FilterConfig {
   // universal
-  final String priceLabel;
-  final String areaLabel;
-  final double priceMin;
-  final double priceMax;
-  final double areaMin;
-  final double areaMax;
+  // 2️⃣ total-price slider
+  final String  totalPriceLabel;
+  final double  totalPriceMin;
+  final double  totalPriceMax;
+
+  // 1️⃣ unit-price slider
+  final String  unitPriceLabel;
+  final double  unitPriceMin;
+  final double  unitPriceMax;
+
+  // 3️⃣ area slider
+  final String  areaLabel;
+  final double  areaMin;
+  final double  areaMax;
+
+  // final String priceLabel;
   final bool needsBedsBaths;
 
+  // plot, farm house
+  final double? priceMin;
+  final double? priceMax;
+
   // apartment-only
-  final String? totalApartmentAreaLabel;
-  final String? totalPriceLabel;
-  final double? pricePerSqft;
+  final String? totalAptAreaLabel;
+  final String? totalAptPriceLabel;
+
   final double? carpetAreaMin;
   final double? carpetAreaMax;
 
@@ -49,18 +69,25 @@ class FilterConfig {
   final double? plotAreaMax;
 
   const FilterConfig({
-    required this.priceLabel,
+    // unit-price
+    required this.unitPriceLabel,
+    required this.unitPriceMin,
+    required this.unitPriceMax,
+
+    required this.totalPriceLabel,
     required this.areaLabel,
-    required this.priceMin,
-    required this.priceMax,
+    required this.totalPriceMin,
+    required this.totalPriceMax,
     required this.areaMin,
     required this.areaMax,
+
     this.needsBedsBaths = false,
 
     // apartment
-    this.totalApartmentAreaLabel,
-    this.totalPriceLabel,
-    this.pricePerSqft,
+    this.totalAptAreaLabel,
+    this.totalAptPriceLabel,
+    this.priceMin,
+    this.priceMax,
     this.carpetAreaMin,
     this.carpetAreaMax,
 
@@ -77,55 +104,67 @@ class FilterConfig {
 /// Configuration for each property type
 const Map<PropertyType, FilterConfig> kFilterMap = {
   PropertyType.plot: FilterConfig(
-    priceLabel: '₹ price per sqyd',
+    unitPriceLabel: '₹ price per sqyd',
+    totalPriceLabel: 'Property price',
     areaLabel: 'yards',
-    priceMin: 2500,
-    priceMax: 200000,
+    unitPriceMin: 2500,
+    unitPriceMax: 250000,
+    totalPriceMin: 100000,
+    totalPriceMax: 100000000,
     areaMin: 100,
     areaMax: 5000,
     needsBedsBaths: false,
   ),
 
   PropertyType.agriLand: FilterConfig(
-    priceLabel: '₹ price per acre',
+    unitPriceLabel: '₹ price per acre',
+    totalPriceLabel: 'Property price',
     areaLabel: 'acres',
-    priceMin: 100000,
-    priceMax: 50000000,
+    unitPriceMin: 100000,
+    unitPriceMax: 2000000000,
+    totalPriceMin: 100000,
+    totalPriceMax: 5000000000,
     areaMin: 1,
-    areaMax: 200,
+    areaMax: 300,
     needsBedsBaths: false,
   ),
 
   PropertyType.farmLand: FilterConfig(
-    priceLabel: '₹ price per sqyd',
+    unitPriceLabel: '₹ price per sqyd',
+    totalPriceLabel: 'Property price',
     areaLabel: 'yards',
-    priceMin: 2500,
-    priceMax: 100000,
+    unitPriceMin: 2500,
+    unitPriceMax: 200000,
+    totalPriceMin: 100000,
+    totalPriceMax: 50000000,
     areaMin: 100,
     areaMax: 5000,
     needsBedsBaths: false,
   ),
 
   PropertyType.apartment: FilterConfig(
-    priceLabel: '₹ price per sqft',
+    unitPriceLabel:      '₹ per sqft',
+    totalPriceLabel: 'Property price',
     areaLabel: 'sqft',
-    priceMin: 2000000,
-    priceMax: 200000000,
+    totalPriceMin: 1000000,
+    totalPriceMax: 200000000,
+    unitPriceMin: 2500,
+    unitPriceMax: 500000,
     areaMin: 300,
     areaMax: 5000,
     needsBedsBaths: true,
-    totalApartmentAreaLabel: 'yards',
-    totalPriceLabel: '₹',          // used if you want totalPrice = pricePerSqft * carpetArea
-    pricePerSqft: 50000,
     carpetAreaMin: 300,
     carpetAreaMax: 5000,
   ),
 
   PropertyType.house: FilterConfig(
-    priceLabel: '₹ total price',
+    unitPriceLabel:      '₹ per sqft',
+    totalPriceLabel: '₹ total price',
     areaLabel: 'sqft',
-    priceMin: 2000000,
-    priceMax: 200000000,
+    totalPriceMin: 2000000,
+    totalPriceMax: 200000000,
+    unitPriceMin: 2500,
+    unitPriceMax: 500000,
     areaMin: 100,
     areaMax: 5000,
     needsBedsBaths: true,
@@ -138,15 +177,17 @@ const Map<PropertyType, FilterConfig> kFilterMap = {
   ),
 
   PropertyType.villa: FilterConfig(
-    priceLabel: '₹ total price',
+    unitPriceLabel:      '₹ per sqft',
+    totalPriceLabel: '₹ total price',
     areaLabel: 'sqft',
-    priceMin: 2000000,
-    priceMax: 200000000,
+    unitPriceMin: 2500,
+    unitPriceMax: 500000,
+    totalPriceMin: 2000000,
+    totalPriceMax: 200000000,
     areaMin: 100,
     areaMax: 5000,
     needsBedsBaths: true,
     constructedAreaLabel: 'sqft',
-    plotAreaLabel: 'yards',
     constructedAreaMin: 100,
     constructedAreaMax: 10000,
     plotAreaMin: 100,
@@ -156,22 +197,35 @@ const Map<PropertyType, FilterConfig> kFilterMap = {
   /// For “development” itself, we’ll show a generic placeholder.
   /// You’ll swap to one of the two special configs at runtime in your sheet.
   PropertyType.development: FilterConfig(
-    priceLabel: '₹ total price for sqyd /acres',
+    unitPriceLabel:      '₹ per sqft',
+    totalPriceLabel: '₹ total price for sqyd /acres',
     areaLabel: 'yards / acres',
-    priceMin: 1000000,
-    priceMax: 2000000000,
+    unitPriceMin: 2500,
+    unitPriceMax: 500000,
+    totalPriceMin: 2000000,
+    totalPriceMax: 200000000,
     areaMin: 1,
     areaMax: 5000,
     needsBedsBaths: false,
   ),
 
   PropertyType.commercialSpace: FilterConfig(
-    priceLabel: '₹ per sqft',
-    areaLabel: 'sqft',
-    priceMin: 2000,
-    priceMax: 200000,
-    areaMin: 100,
-    areaMax: 20000,
-    needsBedsBaths: false,
+    // 1. unit-price per sqft
+    unitPriceLabel:      '₹ per sqft',
+    unitPriceMin:        2000,
+    unitPriceMax:        200000,
+
+    // 2. total-price for the whole property
+    totalPriceLabel: '₹ total price',
+    totalPriceMin:   500000,
+    totalPriceMax:   50000000,
+
+    // 3. plot area in sqft
+    areaLabel:       'sqft',
+    areaMin:         100,
+    areaMax:         10000,
+
+    // no beds/baths filter for comm-space
+    needsBedsBaths:  false,
   ),
 };

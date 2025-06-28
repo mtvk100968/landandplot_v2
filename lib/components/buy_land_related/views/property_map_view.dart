@@ -178,9 +178,11 @@ class PropertyMapViewState extends State<PropertyMapView> {
               onFavoriteToggle: (newFav) async {
                 // 3) Push the update to Firestore
                 if (newFav) {
-                  await UserService().addFavoriteProperty(fbUser.uid, property.id);
+                  await UserService()
+                      .addFavoriteProperty(fbUser.uid, property.id);
                 } else {
-                  await UserService().removeFavoriteProperty(fbUser.uid, property.id);
+                  await UserService()
+                      .removeFavoriteProperty(fbUser.uid, property.id);
                 }
                 // no need to pop the sheet—when the stream updates,
                 // both this card and your FavoritesScreen will rebuild themselves.
@@ -199,7 +201,6 @@ class PropertyMapViewState extends State<PropertyMapView> {
       },
     );
   }
-
 
   Future<void> _addCustomMarkers() async {
     if (_markersInitialized) {
@@ -222,7 +223,7 @@ class PropertyMapViewState extends State<PropertyMapView> {
 
     for (Property property in uniqueProps) {
       print(
-        "📍 Processing property: ${property.id}, ${property.propertyType}, (${property.latitude}, ${property.longitude})",
+        "📍 Processing property: ${property.id}, ${property.propertyType}, ${property.totalPrice}, ${property.pricePerUnit},, (${property.latitude}, ${property.longitude})",
       );
 
       if (property.latitude == 0 || property.longitude == 0) {

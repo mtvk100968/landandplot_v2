@@ -39,9 +39,12 @@ class BuyLandScreenState extends State<BuyLandScreen> {
 
   // Define filter variables
   List<String> selectedPropertyTypes = [];
-  RangeValues selectedPriceRange = const RangeValues(0, 0);
+  RangeValues _selectedAreaRange = const RangeValues(0, 0);
+  RangeValues _selectedTotalPriceRange = const RangeValues(0, 0);
+  RangeValues _selectedUnitPriceRange = const RangeValues(0, 0);
+  bool _useTotalPrice = false;
+
   String pricePerUnitUnit = '';
-  RangeValues selectedLandAreaRange = const RangeValues(0, 0);
   String landAreaUnit = '';
 
   // Variables for location search
@@ -97,8 +100,9 @@ class BuyLandScreenState extends State<BuyLandScreen> {
   }) async {
     print('fetchPropertiesWithGeo called with filters:');
     print('  selectedPropertyTypes: $selectedPropertyTypes');
-    print('  selectedPriceRange: $selectedPriceRange');
-    print('  selectedLandAreaRange: $selectedLandAreaRange');
+    print('  selectedAreaRange: $_selectedAreaRange');
+    print('  selectedAreaRange: $_selectedUnitPriceRange');
+    print('  selectedTotalPriceRange: $_selectedTotalPriceRange');
     print('  selectedCity: $selectedCity');
     print('  selectedDistrict: $selectedDistrict');
     print('  selectedPincode: $selectedPincode');
@@ -114,6 +118,7 @@ class BuyLandScreenState extends State<BuyLandScreen> {
     final chosenType = _type;          // your State field
 
 // ─── 1: Build typesForQuery based on type + devSubtype ───
+
     List<String> typesForQuery;
     if (chosenType == pt.PropertyType.development) {
       if (devSub == DevSubtype.plot) {
@@ -170,47 +175,54 @@ class BuyLandScreenState extends State<BuyLandScreen> {
 
     bool isDwelling = selectedEnums.any(dwellings.contains);
 
-    double? minPrice = isDwelling
-        ? null
-        : (selectedPriceRange.start > 0 ? selectedPriceRange.start : null);
-    double? maxPrice = isDwelling
-        ? null
-        : (selectedPriceRange.end > 0 ? selectedPriceRange.end : null);
-    double? minArea = isDwelling
-        ? null
-        : (selectedLandAreaRange.start > 0 ? selectedLandAreaRange.start : null);
-    double? maxArea = isDwelling
-        ? null
-        : (selectedLandAreaRange.end > 0 ? selectedLandAreaRange.end : null);
+    // ─── decide which price slider was active ─────────────────────────────
+    final useTotal = _useTotalPrice;  // <-- this is your bool from the sheet
 
-    if (isDwelling) {
-      minArea = maxArea = null;
-    }
+    // only apply total‐price when total slider is active
+    final double? minTotal = useTotal && _selectedTotalPriceRange.start > 0
+        ? _selectedTotalPriceRange.start
+        : null;
+    final double? maxTotal = useTotal && _selectedTotalPriceRange.end > 0
+        ? _selectedTotalPriceRange.end
+        : null;
+
+    // only apply unit‐price when unit slider is active
+    final double? minUnit = !useTotal && _selectedUnitPriceRange.start > 0
+        ? _selectedUnitPriceRange.start
+        : null;
+    final double? maxUnit = !useTotal && _selectedUnitPriceRange.end > 0
+        ? _selectedUnitPriceRange.end
+        : null;
+
+    // land‐area always applies (unless it's a dwelling)
+    final double? minArea = isDwelling
+        ? null
+        : (_selectedAreaRange.start > 0 ? _selectedAreaRange.start : null);
+    final double? maxArea = isDwelling
+        ? null
+        : (_selectedAreaRange.end   > 0 ? _selectedAreaRange.end   : null);
 
     // ─── 4: Firestore query with our new typesForQuery ──────────────────────
-    var properties = await context
+    // ─── now pass them into Firestore ──────────────────────
+    final properties = await context
         .read<PropertyService>()
         .getPropertiesWithFilters(
       propertyTypes:   typesForQuery,
-      minPricePerUnit: minPrice,
-      maxPricePerUnit: maxPrice,
+      minTotalPrice:   minTotal,
+      maxTotalPrice:   maxTotal,
+      minPricePerUnit: minUnit,
+      maxPricePerUnit: maxUnit,
       minLandArea:     minArea,
       maxLandArea:     maxArea,
-      bedrooms:        _selectedBedrooms,   // ← now included
-      bathrooms:       _selectedBathrooms,  // ← now included
+      bedrooms:        _selectedBedrooms,
+      bathrooms:       _selectedBathrooms,
       minLat:          minLat,
       maxLat:          maxLat,
       minLon:          minLon,
       maxLon:          maxLon,
-      city:            geoSearchType == GeoSearchType.point
-          ? null
-          : selectedCity,
-      district:        geoSearchType == GeoSearchType.point
-          ? null
-          : selectedDistrict,
-      pincode:         geoSearchType == GeoSearchType.point
-          ? null
-          : selectedPincode,
+      city:            geoSearchType == GeoSearchType.point ? null : selectedCity,
+      district:        geoSearchType == GeoSearchType.point ? null : selectedDistrict,
+      pincode:         geoSearchType == GeoSearchType.point ? null : selectedPincode,
     );
 
     // For polygon searches, further filter properties using point-in-polygon test.
@@ -233,15 +245,6 @@ class BuyLandScreenState extends State<BuyLandScreen> {
 
   /// Opens the filter bottom sheet and applies or resets filters.
   Future<void> openFilterBottomSheet() async {
-    // Seed the dropdown from your existing selection, if any:
-    // final seedType = selectedPropertyTypes.isNotEmpty
-    //     ? pt.PropertyType.values.firstWhere(
-    //       (t) =>
-    //   t.toString().split('.').last == selectedPropertyTypes.first,
-    //   orElse: () => pt.PropertyType.values.first,
-    // )
-    //     : null;
-
     final result = await showModalBottomSheet<Map<String, dynamic>?>(
       context: context,
       isScrollControlled: true,
@@ -256,7 +259,7 @@ class BuyLandScreenState extends State<BuyLandScreen> {
             bottom: MediaQuery.of(ctx).viewInsets.bottom,
           ),
           child: SizedBox(
-            height: MediaQuery.of(ctx).size.height * 0.6,
+            height: MediaQuery.of(ctx).size.height * 0.7,
             child: Container(
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -265,10 +268,12 @@ class BuyLandScreenState extends State<BuyLandScreen> {
               child: FilterBottomSheet(
                 initialType: _type,
                 initialPlace: selectedPlace,
-                initialMinPrice: selectedPriceRange.start,
-                initialMaxPrice: selectedPriceRange.end,
-                initialMinArea: selectedLandAreaRange.start,
-                initialMaxArea: selectedLandAreaRange.end,
+                initialMinArea: _selectedAreaRange.start,
+                initialMaxArea: _selectedAreaRange.end,
+                initialTotalMinPrice: _selectedTotalPriceRange.start,
+                initialTotalMaxPrice: _selectedTotalPriceRange.end,
+                initialUnitMinPrice: _selectedUnitPriceRange.start,
+                initialUnitMaxPrice: _selectedUnitPriceRange.end,
                 initialBeds: _selectedBedrooms,
                 initialBaths: _selectedBathrooms,
               ),
@@ -284,8 +289,9 @@ class BuyLandScreenState extends State<BuyLandScreen> {
         _type = null;
         selectedPropertyTypes = [];
         selectedPlace = null;
-        selectedPriceRange = const RangeValues(0, 0);
-        selectedLandAreaRange = const RangeValues(0, 0);
+        _selectedAreaRange = const RangeValues(0, 0);
+        _selectedTotalPriceRange = const RangeValues(0, 0);
+        _selectedUnitPriceRange = const RangeValues(0, 0);
         _selectedBedrooms = null;
         _selectedBathrooms = null;
         _propertyFuture = fetchPropertiesWithGeo(); // unfiltered
@@ -294,14 +300,14 @@ class BuyLandScreenState extends State<BuyLandScreen> {
       // Apply the filters they picked:
       setState(() {
         _type      = result['type']    as pt.PropertyType?;
+        _useTotalPrice       = result['useTotal']   as bool? ?? false;
         _devSubtype = result['devSubtype'] as DevSubtype?;
-        // keep your old behavior of mirroring _type → selectedPropertyTypes
         selectedPropertyTypes = _type != null
-            ? [ _type!.label ]    // ← use the exact DB label
+            ? [ _type!.firestoreKey ]    // ← use the exact DB label
             : [];
-        selectedPlace = result['place'] as Map<String, dynamic>?;
-        selectedPriceRange = result['price'] as RangeValues;
-        selectedLandAreaRange = result['area'] as RangeValues;
+        _selectedUnitPriceRange  = result['unitPrice']  as RangeValues;  // ← BAD
+        _selectedTotalPriceRange = result['totalPrice'] as RangeValues;  // ← BAD
+        _selectedAreaRange       = result['area']       as RangeValues;  // ← BAD
         _selectedBedrooms = result['beds'] as int?;
         _selectedBathrooms = result['baths'] as int?;
         _propertyFuture = fetchPropertiesWithGeo();
@@ -348,7 +354,7 @@ class BuyLandScreenState extends State<BuyLandScreen> {
       selectedCity = null;
       selectedDistrict = null;
       selectedPincode =
-          null; // <-- Remove the pincode filter for geo-based search.
+      null; // <-- Remove the pincode filter for geo-based search.
       selectedState = null;
 
       // Extract administrative components.
@@ -390,10 +396,10 @@ class BuyLandScreenState extends State<BuyLandScreen> {
     if (firebaseUser == null) {
       // Open the sign-in bottom sheet and wait for completion.
       bool signInSuccess = await showModalBottomSheet<bool>(
-            context: context,
-            isScrollControlled: true,
-            builder: (context) => const SignInBottomSheet(),
-          ) ??
+        context: context,
+        isScrollControlled: true,
+        builder: (context) => const SignInBottomSheet(),
+      ) ??
           false;
       // If sign in fails or is cancelled, return false without updating favorite state.
       if (!signInSuccess) {
@@ -515,7 +521,7 @@ class BuyLandScreenState extends State<BuyLandScreen> {
                   // Search and Filter Section
                   Padding(
                     padding:
-                        const EdgeInsets.symmetric(vertical: 2, horizontal: 8),
+                    const EdgeInsets.symmetric(vertical: 2, horizontal: 8),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
@@ -579,9 +585,9 @@ class BuyLandScreenState extends State<BuyLandScreen> {
                           properties: props,
                           center: selectedPlace != null
                               ? LatLng(
-                                  selectedPlace!['geometry']['location']['lat'],
-                                  selectedPlace!['geometry']['location']['lng'],
-                                )
+                            selectedPlace!['geometry']['location']['lat'],
+                            selectedPlace!['geometry']['location']['lng'],
+                          )
                               : null,
                         );
 
@@ -590,46 +596,46 @@ class BuyLandScreenState extends State<BuyLandScreen> {
                           builder: (authCtx, authSnap) {
                             final favIds = authSnap.hasData
                                 ? (authSnap.data != null
-                                    ? StreamBuilder<AppUser?>(
-                                        stream: UserService()
-                                            .getUserStream(authSnap.data!.uid),
-                                        builder: (uCtx, uSnap) {
-                                          final ids = uSnap
-                                                  .data?.favoritedPropertyIds ??
-                                              [];
-                                          return PropertyListView(
-                                            properties: props,
-                                            favoritedPropertyIds: ids,
-                                            selectedCity: selectedCity,
-                                            onFavoriteToggle: _onFavoriteToggle,
-                                            onTapProperty: (p) =>
-                                                Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                  builder: (_) =>
-                                                      PropertyDetailsScreen(
-                                                          property: p)),
-                                            ),
-                                          );
-                                        },
-                                      )
-                                    : const SizedBox())
+                                ? StreamBuilder<AppUser?>(
+                              stream: UserService()
+                                  .getUserStream(authSnap.data!.uid),
+                              builder: (uCtx, uSnap) {
+                                final ids = uSnap
+                                    .data?.favoritedPropertyIds ??
+                                    [];
+                                return PropertyListView(
+                                  properties: props,
+                                  favoritedPropertyIds: ids,
+                                  selectedCity: selectedCity,
+                                  onFavoriteToggle: _onFavoriteToggle,
+                                  onTapProperty: (p) =>
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                            builder: (_) =>
+                                                PropertyDetailsScreen(
+                                                    property: p)),
+                                      ),
+                                );
+                              },
+                            )
+                                : const SizedBox())
                                 : const SizedBox();
 
                             return authSnap.hasData
                                 ? favIds as Widget
                                 : PropertyListView(
-                                    properties: props,
-                                    favoritedPropertyIds: [],
-                                    selectedCity: selectedCity,
-                                    onFavoriteToggle: _onFavoriteToggle,
-                                    onTapProperty: (p) => Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (_) => PropertyDetailsScreen(
-                                              property: p)),
-                                    ),
-                                  );
+                              properties: props,
+                              favoritedPropertyIds: [],
+                              selectedCity: selectedCity,
+                              onFavoriteToggle: _onFavoriteToggle,
+                              onTapProperty: (p) => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (_) => PropertyDetailsScreen(
+                                        property: p)),
+                              ),
+                            );
                           },
                         );
 
