@@ -31,7 +31,7 @@ enum PropertyType {
 
   String get normalized => label.toLowerCase();
 
-  /// Returns exactly the string you store in Firestore’s `propertyType` field.
+  /// Returns exactly the string you store in Firestore’s propertyType field.
   String get firestoreKey {
     switch (this) {
       case PropertyType.plot:           return 'Plot';
@@ -41,11 +41,9 @@ enum PropertyType {
       case PropertyType.villa:          return 'Villa';
       case PropertyType.house:          return 'House';
       case PropertyType.development:    return 'Development';
-      // case PropertyType.developmentPlot:return 'development_plot';
-      // case PropertyType.developmentLand:return 'development_land';
+    // case PropertyType.developmentPlot:return 'development_plot';
+    // case PropertyType.developmentLand:return 'development_land';
       case PropertyType.commercialSpace:return 'Commercial Space';
     }
   }
 }
-
-

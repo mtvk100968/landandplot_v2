@@ -61,6 +61,7 @@ class PropertyService {
         mobileNumber: property.mobileNumber,
         propertyType: property.propertyType,
         landArea: property.landArea,
+        landAreaUnitRaw: property.landAreaUnitRaw,
         pricePerUnit: property.pricePerUnit,
         totalPrice: property.totalPrice,
         surveyNumber: property.surveyNumber,

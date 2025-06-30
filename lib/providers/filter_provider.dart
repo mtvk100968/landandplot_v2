@@ -1,208 +1,236 @@
-// filter_provider.dart
+// // filter_provider.dart
+
+// lib/providers/filter_provider.dart
 import 'package:flutter/material.dart';
 
-import '../models/property_type.dart';
+enum PropertyType {
+  plot('Plot'),
+  agriLand('Agri Land'),
+  farmLand('Farm Land'),
+  apartment('Apartment'),
+  villa('Villa'),
+  house('House'),
+  development('Development'),
+  developmentPlot('Development Plot', firestoreKey: 'development_plot'),
+  developmentLand('Development Land', firestoreKey: 'development_land'),
+  commercialSpace('Commercial Space');
+
+  /// Display label
+  final String label;
+
+  /// Key used in Firestore (defaults to [label])
+  final String firestoreKey;
+
+  const PropertyType(
+      this.label, {
+        String? firestoreKey,
+      }) : firestoreKey = firestoreKey ?? label;
+
+  /// Lookup by display label (case-insensitive)
+  static PropertyType fromLabel(String dbValue) {
+    return PropertyType.values.firstWhere(
+          (e) => e.label.toLowerCase() == dbValue.toLowerCase(),
+      orElse: () => PropertyType.plot,
+    );
+  }
+}
 
 class FilterProvider extends ChangeNotifier {
-  // Property Type Filters
+  // ─── Selection Flags ────────────────────────────────────────────
   bool isPlotSelected = false;
   bool isFarmLandSelected = false;
   bool isAgriLandSelected = false;
-  bool isPlotEnabled = true;
-  bool isFarmLandEnabled = true;
-  bool isAgriLandEnabled = true;
-
-  // House / Villa / Apartment / Development / Commercial
-  bool isHouseSelected = false;
-  bool isVillaSelected = false;
   bool isApartmentSelected = false;
-  bool isDevelopmentSelected = false;
+  bool isVillaSelected = false;
+  bool isHouseSelected = false;
   bool isCommercialSpaceSelected = false;
 
-  // Units
-  String pricePerUnitUnit = ''; // 'per sqyd' or 'per acre'
-  String landAreaUnit = ''; // 'sqyd' or 'acre'
+  /// Master toggle for “Development”
+  bool isDevelopmentSelected = false;
 
-  // Price and Area Ranges
-  double minPricePerUnit = 0.0;
-  double maxPricePerUnit = 0.0;
-  double minLandArea = 0.0;
-  double maxLandArea = 0.0;
+  /// If user drills into Development, holds either developmentPlot or developmentLand.
+  /// If null (but isDevelopmentSelected==true) → treat as “both.”
+  PropertyType? developmentSubtype;
 
+  // ─── Numeric Ranges State ───────────────────────────────────────
+  String pricePerUnitUnit = '';
+  String landAreaUnit = '';
+  double minPricePerUnit = 0, maxPricePerUnit = 0;
+  double minLandArea = 0, maxLandArea = 0;
   RangeValues selectedPriceRange = const RangeValues(0, 0);
   RangeValues selectedLandAreaRange = const RangeValues(0, 0);
 
-  // Internal method to convert string to PropertyType enum
-  PropertyType? _propertyTypeFromString(String typeString) {
-    switch (typeString) {
-      case 'Plot':
-        return PropertyType.plot;
-      case 'Farm Land':
-        return PropertyType.farmLand;
-      case 'Agri Land':
-        return PropertyType.agriLand;
-      case 'House':
-        return PropertyType.house;
-      case 'Villa':
-        return PropertyType.villa;
-      case 'Apartment':
-        return PropertyType.apartment;
-      case 'Development':
-        return PropertyType.development;
-      case 'Commercial Space':
-        return PropertyType.commercialSpace;
-      default:
-        return null;
+  /// Bulk‐set (e.g. from persisted filters)
+  void setSelections({
+    required List<String> types,
+    String? subtype,
+    required RangeValues priceRange,
+    required RangeValues areaRange,
+  }) {
+    isPlotSelected           = types.contains('Plot');
+    isFarmLandSelected       = types.contains('Farm Land');
+    isAgriLandSelected       = types.contains('Agri Land');
+    isApartmentSelected      = types.contains('Apartment');
+    isVillaSelected          = types.contains('Villa');
+    isHouseSelected          = types.contains('House');
+    isCommercialSpaceSelected= types.contains('Commercial Space');
+    isDevelopmentSelected    = types.contains('Development');
+
+    // turn the incoming Firebase key into our enum, or null if it’s unrecognized
+    if (subtype != null) {
+      final matches = PropertyType.values
+          .where((e) => e.firestoreKey == subtype)
+          .toList();
+      developmentSubtype = matches.isNotEmpty ? matches.first : null;
+    } else {
+      developmentSubtype = null;
     }
+
+    selectedPriceRange    = priceRange;
+    selectedLandAreaRange = areaRange;
+    pricePerUnitUnit      = '';
+    landAreaUnit          = '';
+
+    notifyListeners();
   }
 
-  // Internal method to convert PropertyType enum to string
-  String _propertyTypeToString(PropertyType type) {
+  /// Called when user taps one of the filter buttons
+  void updatePropertyTypeSelection(PropertyType type) {
     switch (type) {
-      case PropertyType.plot:
-        return 'Plot';
-      case PropertyType.farmLand:
-        return 'Farm Land';
+    // ─────────────── Agri Land ───────────────
       case PropertyType.agriLand:
-        return 'Agri Land';
-      case PropertyType.apartment:
-        return 'Apartment';
-      case PropertyType.villa:
-        return 'Villa';
-      case PropertyType.house:
-        return 'House';
+        isAgriLandSelected = !isAgriLandSelected;
+        if (isAgriLandSelected) {
+          // disable conflicting land‐types
+          isPlotSelected = isFarmLandSelected = false;
+          // apply ranges
+          _applyRanges(
+            unit: 'per acre',
+            areaUnit: 'acre',
+            priceRange: const RangeValues(0, 50000000),
+            areaRange: const RangeValues(1, 100),
+          );
+        } else {
+          _resetRanges();
+        }
+        break;
+
+    // ─────────────── Plot & Farm ───────────────
+      case PropertyType.plot:
+      case PropertyType.farmLand:
+        if (type == PropertyType.plot) {
+          isPlotSelected = !isPlotSelected;
+        } else {
+          isFarmLandSelected = !isFarmLandSelected;
+        }
+        if (isPlotSelected || isFarmLandSelected) {
+          isAgriLandSelected = false;
+          _applyRanges(
+            unit: 'per sqyd',
+            areaUnit: 'sqyd',
+            priceRange: const RangeValues(0, 500000),
+            areaRange: const RangeValues(100, 5000),
+          );
+        } else {
+          _resetRanges();
+        }
+        break;
+
+    // ─────────────── Development Umbrella ───────────────
       case PropertyType.development:
-        return 'Development';
+        isDevelopmentSelected = !isDevelopmentSelected;
+        if (!isDevelopmentSelected) developmentSubtype = null;
+        break;
+
+    // ─────────────── Development Subtypes ───────────────
+      case PropertyType.developmentPlot:
+      case PropertyType.developmentLand:
+        isDevelopmentSelected = true;
+        developmentSubtype = type;
+        break;
+
+    // ─────────────── Simple Toggles ───────────────
+      case PropertyType.house:
+        isHouseSelected = !isHouseSelected;
+        break;
+      case PropertyType.villa:
+        isVillaSelected = !isVillaSelected;
+        break;
+      case PropertyType.apartment:
+        isApartmentSelected = !isApartmentSelected;
+        break;
       case PropertyType.commercialSpace:
-        return 'Commercial Space';
+        isCommercialSpaceSelected = !isCommercialSpaceSelected;
+        break;
+
       default:
-        return '';
-    }
-  }
-
-  // Update Property Type Selection Logic
-  void updatePropertyTypeSelection(String propertyType) {
-    PropertyType? typeEnum = _propertyTypeFromString(propertyType);
-    if (typeEnum == null) return;
-
-    if (typeEnum == PropertyType.agriLand) {
-      isAgriLandSelected = !isAgriLandSelected;
-
-      if (isAgriLandSelected) {
-        isPlotSelected = false;
-        isFarmLandSelected = false;
-        isPlotEnabled = false;
-        isFarmLandEnabled = false;
-
-        // Set units and ranges for Agri Land
-        pricePerUnitUnit = 'per acre';
-        landAreaUnit = 'acre';
-        minPricePerUnit = 0; // 0
-        maxPricePerUnit = 50000000; // 5C
-        minLandArea = 1;
-        maxLandArea = 100;
-
-        // Update the selected ranges
-        selectedPriceRange = RangeValues(minPricePerUnit, maxPricePerUnit);
-        selectedLandAreaRange = RangeValues(minLandArea, maxLandArea);
-      } else {
-        resetFilters();
-      }
-    } else {
-      if (typeEnum == PropertyType.plot && isPlotEnabled) {
-        isPlotSelected = !isPlotSelected;
-      } else if (typeEnum == PropertyType.farmLand && isFarmLandEnabled) {
-        isFarmLandSelected = !isFarmLandSelected;
-      }
-
-      if (isPlotSelected || isFarmLandSelected) {
-        isAgriLandSelected = false;
-        isAgriLandEnabled = false;
-
-        // Set units and ranges for Plot or Farm Land
-        pricePerUnitUnit = 'per sqyd';
-        landAreaUnit = 'sqyd';
-        minPricePerUnit = 0; // 0
-        maxPricePerUnit = 500000; // 5L
-        minLandArea = 100;
-        maxLandArea = 5000;
-
-        // Update the selected ranges
-        selectedPriceRange = RangeValues(minPricePerUnit, maxPricePerUnit);
-        selectedLandAreaRange = RangeValues(minLandArea, maxLandArea);
-      } else {
-        resetFilters();
-      }
+        break;
     }
 
-    // Debugging: Print the current selected property types
-    print('Updated Property Types Selection: $selectedPropertyTypes');
     notifyListeners();
   }
 
-  void resetFilters() {
-    isPlotEnabled = true;
-    isFarmLandEnabled = true;
-    isAgriLandEnabled = true;
-    isPlotSelected = false;
-    isFarmLandSelected = false;
-    isApartmentSelected = false;
-    isHouseSelected = false;
-    isVillaSelected = false;
-    isDevelopmentSelected = false;
-    isCommercialSpaceSelected = false;
-    pricePerUnitUnit = '';
-    landAreaUnit = '';
-    minPricePerUnit = 0;
-    maxPricePerUnit = 0;
-    minLandArea = 0;
-    maxLandArea = 0;
-    selectedPriceRange = const RangeValues(0, 0);
+  /// Applies numeric ranges and units
+  void _applyRanges({
+    required String unit,
+    required String areaUnit,
+    required RangeValues priceRange,
+    required RangeValues areaRange,
+  }) {
+    pricePerUnitUnit      = unit;
+    landAreaUnit          = areaUnit;
+    minPricePerUnit       = priceRange.start;
+    maxPricePerUnit       = priceRange.end;
+    minLandArea           = areaRange.start;
+    maxLandArea           = areaRange.end;
+    selectedPriceRange    = priceRange;
+    selectedLandAreaRange = areaRange;
+  }
+
+  /// Clears all numeric ranges
+  void _resetRanges() {
+    pricePerUnitUnit      = '';
+    landAreaUnit          = '';
+    minPricePerUnit = maxPricePerUnit = 0;
+    minLandArea     = maxLandArea     = 0;
+    selectedPriceRange    = const RangeValues(0, 0);
     selectedLandAreaRange = const RangeValues(0, 0);
-    notifyListeners();
   }
 
-  // Format price for display using K, L, C
-  String formatPrice(double value) {
-    if (value >= 10000000) {
-      return '${(value / 10000000).toStringAsFixed(1)}C'; // Crores
-    } else if (value >= 100000) {
-      return '${(value / 100000).toStringAsFixed(1)}L'; // Lakhs
-    } else if (value >= 1000) {
-      return '${(value / 1000).toStringAsFixed(1)}K'; // Thousands
-    } else {
-      return value.toStringAsFixed(0);
-    }
-  }
-
-  // Update selected price range
-  void updatePriceRange(RangeValues values) {
-    selectedPriceRange = values;
-    notifyListeners();
-  }
-
-  // Update selected land area range
-  void updateLandAreaRange(RangeValues values) {
-    selectedLandAreaRange = values;
-    notifyListeners();
-  }
-
-  // Get selected property types
+  /// Firestore `whereIn: [...]` array of keys
   List<String> get selectedPropertyTypes {
-    List<String> types = [];
-    if (isPlotSelected) types.add('Plot');
-    if (isFarmLandSelected) types.add('Farm Land');
-    if (isAgriLandSelected) types.add('Agri Land');
-    if (isApartmentSelected) types.add('Apartment');
-    if (isHouseSelected) types.add('House');
-    if (isVillaSelected) types.add('Villa');
-    if (isDevelopmentSelected) types.add('Development');
-    if (isCommercialSpaceSelected) types.add('Commercial Space');
+    final types = <String>[];
+
+    if (isPlotSelected)      types.add(PropertyType.plot.firestoreKey);
+    if (isFarmLandSelected)  types.add(PropertyType.farmLand.firestoreKey);
+    if (isAgriLandSelected)  types.add(PropertyType.agriLand.firestoreKey);
+    if (isApartmentSelected) types.add(PropertyType.apartment.firestoreKey);
+    if (isVillaSelected)     types.add(PropertyType.villa.firestoreKey);
+    if (isHouseSelected)     types.add(PropertyType.house.firestoreKey);
+    if (isCommercialSpaceSelected) {
+      types.add(PropertyType.commercialSpace.firestoreKey);
+    }
+
+    if (isDevelopmentSelected) {
+      if (developmentSubtype == null) {
+        // both subtypes
+        types.add(PropertyType.developmentPlot.firestoreKey);
+        types.add(PropertyType.developmentLand.firestoreKey);
+      } else {
+        types.add(developmentSubtype!.firestoreKey);
+      }
+    }
+
     return types;
   }
 
-  // Check if any filters are applied
-  bool get hasFiltersApplied {
-    return selectedPropertyTypes.isNotEmpty;
+  bool get hasFiltersApplied => selectedPropertyTypes.isNotEmpty;
+
+  /// Formats numbers with K / L / C suffixes
+  String formatPrice(double v) {
+    if (v >= 10000000) return '${(v / 10000000).toStringAsFixed(1)}C';
+    if (v >= 100000)   return '${(v / 100000).toStringAsFixed(1)}L';
+    if (v >= 1000)     return '${(v / 1000).toStringAsFixed(1)}K';
+    return v.toStringAsFixed(0);
   }
 }

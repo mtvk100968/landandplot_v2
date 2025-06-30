@@ -23,7 +23,7 @@ class ProfileScreen extends StatefulWidget {
 class ProfileScreenState extends State<ProfileScreen>
     with SingleTickerProviderStateMixin {
   final TextEditingController _phoneController =
-      TextEditingController(text: '+91');
+  TextEditingController(text: '+91');
   final TextEditingController _otpController = TextEditingController();
 
   UserLoginType _selectedLoginType = UserLoginType.user;
@@ -46,7 +46,7 @@ class ProfileScreenState extends State<ProfileScreen>
       // skip type-mismatch check for the admin number
       if (phone != '9959788005' && existingUser != null) {
         String expectedType =
-            _selectedLoginType == UserLoginType.agent ? 'agent' : 'user';
+        _selectedLoginType == UserLoginType.agent ? 'agent' : 'user';
         debugPrint(
             'ProfileScreen: existingUser.userType=${existingUser.userType}, expected=$expectedType');
         if (existingUser.userType != expectedType) {
@@ -55,7 +55,7 @@ class ProfileScreenState extends State<ProfileScreen>
             SnackBar(
               content: Text(
                   'You are already registered as ${existingUser.userType}. '
-                  'Please sign in as ${existingUser.userType}.'),
+                      'Please sign in as ${existingUser.userType}.'),
             ),
           );
           setState(() => _isProcessing = false);
@@ -81,20 +81,20 @@ class ProfileScreenState extends State<ProfileScreen>
           //   ScaffoldMessenger.of(context).showSnackBar(
           //       SnackBar(content: Text(e.message ?? 'Failed sending OTP')));
           // },
-          (FirebaseAuthException e) {
-        debugPrint('❌ OTP send failed');
-        debugPrint('Code: ${e.code}');
-        debugPrint('Message: ${e.message}');
-        debugPrint('Details: ${e.toString()}');
-        if (e.stackTrace != null) {
-          debugPrint('StackTrace: ${e.stackTrace}');
-        }
+              (FirebaseAuthException e) {
+            debugPrint('❌ OTP send failed');
+            debugPrint('Code: ${e.code}');
+            debugPrint('Message: ${e.message}');
+            debugPrint('Details: ${e.toString()}');
+            if (e.stackTrace != null) {
+              debugPrint('StackTrace: ${e.stackTrace}');
+            }
 
-        setState(() => _isProcessing = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.message ?? 'Failed sending OTP')),
-        );
-      });
+            setState(() => _isProcessing = false);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(e.message ?? 'Failed sending OTP')),
+            );
+          });
       debugPrint('ProfileScreen: signInWithPhoneNumber() returned');
     } catch (e, st) {
       debugPrint('ProfileScreen: Exception in _sendOtp(): $e');
@@ -118,8 +118,8 @@ class ProfileScreenState extends State<ProfileScreen>
       String userType = _phoneController.text.trim() == '9959788005'
           ? 'admin'
           : _selectedLoginType == UserLoginType.agent
-              ? 'agent'
-              : 'user';
+          ? 'agent'
+          : 'user';
       debugPrint('ProfileScreen: Signing in with userType=$userType');
       await _authService.signInWithPhoneAuthCredential(cred, userType);
       debugPrint('ProfileScreen: signInWithPhoneAuthCredential completed');
@@ -137,10 +137,13 @@ class ProfileScreenState extends State<ProfileScreen>
     debugPrint('ProfileScreen: >>> Entering _signOut()');
     await _authService.signOut();
     debugPrint('ProfileScreen: signOut() completed');
+    _phoneController.text      = '+91';
+    _otpController.clear();
     setState(() {
-      _isOtpSent = false;
-      _phoneController.text = '+91';
-      _otpController.clear();
+      _isOtpSent            = false;
+      _verificationId       = '';
+      _selectedLoginType    = UserLoginType.user;
+      _isProcessing         = false;
     });
   }
 
@@ -186,7 +189,7 @@ class ProfileScreenState extends State<ProfileScreen>
                   }
                   setState(() {
                     _selectedLoginType =
-                        i == 0 ? UserLoginType.agent : UserLoginType.user;
+                    i == 0 ? UserLoginType.agent : UserLoginType.user;
                   });
                   debugPrint(
                       'ProfileScreen: _selectedLoginType=$_selectedLoginType');

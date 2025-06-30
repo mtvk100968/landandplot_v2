@@ -12,7 +12,7 @@ android {
     defaultConfig {
         applicationId = "com.landandplotv2.app"
         minSdk = 23
-        targetSdk = 35 // ✅ Match compileSdk
+        targetSdk = 33 // ✅ Match compileSdk
         versionCode = 1
         versionName = "1.0"
     }
