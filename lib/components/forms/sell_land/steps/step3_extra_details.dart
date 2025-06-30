@@ -1,25 +1,26 @@
-// lib/components/forms/sell_land/steps/step4_extra_details.dart
+// lib/components/forms/sell_land/steps/step_extra_details.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../../providers/property_provider.dart';
 
-class Step4ExtraDetails extends StatefulWidget {
+class Step3ExtraDetails extends StatefulWidget {
   final GlobalKey<FormState> formKey;
 
-  const Step4ExtraDetails({Key? key, required this.formKey})
+  const Step3ExtraDetails({Key? key, required this.formKey})
       : super(key: key);
 
   @override
-  _Step4ExtraDetailsState createState() => _Step4ExtraDetailsState();
+  _Step3ExtraDetailsState createState() => _Step3ExtraDetailsState();
 }
 
-class _Step4ExtraDetailsState extends State<Step4ExtraDetails> {
+class _Step3ExtraDetailsState extends State<Step3ExtraDetails> {
   late TextEditingController _lengthController;
 
   @override
   void initState() {
     super.initState();
     final p = Provider.of<PropertyProvider>(context, listen: false);
+    // initialize your controller from provider
     _lengthController = TextEditingController(text: p.lengthFacing);
   }
 
@@ -78,6 +79,7 @@ class _Step4ExtraDetailsState extends State<Step4ExtraDetails> {
 
             if (p.roadAccess == 'Yes') ...[
               const SizedBox(height: 16),
+
               // Road Type
               DropdownButtonFormField<String>(
                 value: p.roadType,
@@ -100,6 +102,7 @@ class _Step4ExtraDetailsState extends State<Step4ExtraDetails> {
               ),
 
               const SizedBox(height: 16),
+
               // Road Width
               DropdownButtonFormField<double>(
                 value: p.roadWidth,

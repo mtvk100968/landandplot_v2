@@ -6,16 +6,16 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:provider/provider.dart';
 import '../../../../providers/property_provider.dart';
 
-class Step4MapLocation extends StatefulWidget {
+class Step5MapLocation extends StatefulWidget {
   final GlobalKey<FormState> formKey;
 
-  const Step4MapLocation({Key? key, required this.formKey}) : super(key: key);
+  const Step5MapLocation({Key? key, required this.formKey}) : super(key: key);
 
   @override
-  _Step4MapLocationState createState() => _Step4MapLocationState();
+  _Step5MapLocationState createState() => _Step5MapLocationState();
 }
 
-class _Step4MapLocationState extends State<Step4MapLocation> {
+class _Step5MapLocationState extends State<Step5MapLocation> {
   GoogleMapController? _mapController;
   bool _isLoading = true;
   Timer? _debounce; // Timer for debouncing
@@ -34,9 +34,16 @@ class _Step4MapLocationState extends State<Step4MapLocation> {
     final propertyProvider =
         Provider.of<PropertyProvider>(context, listen: false);
 
-    // Ensure pincode is set before geocoding
     if (propertyProvider.pincode.isNotEmpty) {
-      await propertyProvider.geocodePincode(propertyProvider.pincode);
+      try {
+        await propertyProvider.geocodePincode(propertyProvider.pincode);
+      } catch (e) {
+        // log it, show a SnackBar, or silently continue with defaults:
+        debugPrint('Geocode failed: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Couldn’t lookup pincode, using default location.')),
+        );
+      }
     }
 
     setState(() {

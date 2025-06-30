@@ -6,16 +6,16 @@ import '../../../../providers/property_provider.dart';
 import '../../../../utils/validators.dart';
 import 'package:flutter/services.dart';
 
-class Step3AddressDetails extends StatefulWidget {
+class Step4AddressDetails extends StatefulWidget {
   final GlobalKey<FormState> formKey;
 
-  const Step3AddressDetails({Key? key, required this.formKey}) : super(key: key);
+  const Step4AddressDetails({Key? key, required this.formKey}) : super(key: key);
 
   @override
-  _Step3AddressDetailsState createState() => _Step3AddressDetailsState();
+  _Step4AddressDetailsState createState() => _Step4AddressDetailsState();
 }
 
-class _Step3AddressDetailsState extends State<Step3AddressDetails> {
+class _Step4AddressDetailsState extends State<Step4AddressDetails> {
   late TextEditingController _pincodeController;
   late TextEditingController _houseNoController;
   late TextEditingController _propertyNameController;

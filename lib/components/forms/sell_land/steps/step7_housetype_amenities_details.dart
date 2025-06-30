@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-class Step6HousetypeAmenitiesDetails extends StatefulWidget {
+class Step7HousetypeAmenitiesDetails extends StatefulWidget {
   final GlobalKey<FormState> formKey;
   final List<String> selectedAmenities;
   final Function(List<String>) onAmenitiesSelected;
 
-  const Step6HousetypeAmenitiesDetails({
+  const Step7HousetypeAmenitiesDetails({
     Key? key,
     required this.formKey,
     required this.selectedAmenities,
@@ -13,10 +13,10 @@ class Step6HousetypeAmenitiesDetails extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _Step6HousetypeAmenitiesDetailsState createState() => _Step6HousetypeAmenitiesDetailsState();
+  _Step7HousetypeAmenitiesDetailsState createState() => _Step7HousetypeAmenitiesDetailsState();
 }
 
-class _Step6HousetypeAmenitiesDetailsState extends State<Step6HousetypeAmenitiesDetails> {
+class _Step7HousetypeAmenitiesDetailsState extends State<Step7HousetypeAmenitiesDetails> {
   final List<String> allAmenities = [
     'elevator_access',
     'Power Backup',

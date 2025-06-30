@@ -4,12 +4,12 @@ import 'package:flutter/material.dart';
 import '../../../../providers/property_provider.dart';
 import 'package:provider/provider.dart';
 
-class Step7LandtypeAmenitiesDetails extends StatefulWidget {
+class Step8LandtypeAmenitiesDetails extends StatefulWidget {
   final GlobalKey<FormState> formKey;
   final List<String> selectedAmenities;
   final ValueChanged<List<String>> onAmenitiesChanged;
 
-  const Step7LandtypeAmenitiesDetails({
+  const Step8LandtypeAmenitiesDetails({
     Key? key,
     required this.formKey,
     required this.selectedAmenities,
@@ -17,17 +17,16 @@ class Step7LandtypeAmenitiesDetails extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _Step7LandtypeAmenitiesDetailsState createState() =>
-      _Step7LandtypeAmenitiesDetailsState();
+  _Step8LandtypeAmenitiesDetailsState createState() =>
+      _Step8LandtypeAmenitiesDetailsState();
 }
 
-class _Step7LandtypeAmenitiesDetailsState
-    extends State<Step7LandtypeAmenitiesDetails> {
-
+class _Step8LandtypeAmenitiesDetailsState
+    extends State<Step8LandtypeAmenitiesDetails> {
   @override
   Widget build(BuildContext context) {
-    final provider = Provider.of<PropertyProvider>(context);
-
+    final propertyProvider = context.watch<PropertyProvider>();
+    final selected = propertyProvider.agriAmenities;
     final allAgriAmenities = [
       'Fencing',
       'Borewell',
@@ -41,19 +40,21 @@ class _Step7LandtypeAmenitiesDetailsState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("Agricultural Amenities (String List)", style: TextStyle(fontWeight: FontWeight.bold)),
+          const Text("Agricultural Amenities", style: TextStyle(fontWeight: FontWeight.bold)),
           ...allAgriAmenities.map((amenity) {
             return CheckboxListTile(
               title: Text(amenity),
-              value: widget.selectedAmenities.contains(amenity),
+              value: selected.contains(amenity),
               onChanged: (_) {
-                final updated = List<String>.from(widget.selectedAmenities);
-                if (updated.contains(amenity)) {
-                  updated.remove(amenity);
+                if (selected.contains(amenity)) {
+                  propertyProvider.setAgriAmenities(
+                    List.from(selected)..remove(amenity),
+                  );
                 } else {
-                  updated.add(amenity);
+                  propertyProvider.setAgriAmenities(
+                    List.from(selected)..add(amenity),
+                  );
                 }
-                widget.onAmenitiesChanged(updated);
               },
             );
           }),

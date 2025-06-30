@@ -9,16 +9,16 @@ import 'package:photo_view/photo_view.dart';
 import 'package:path_provider/path_provider.dart';
 import '../../../../providers/property_provider.dart';
 
-class Step5MediaUpload extends StatefulWidget {
+class Step6MediaUpload extends StatefulWidget {
   final GlobalKey<FormState> formKey;
 
-  const Step5MediaUpload({Key? key, required this.formKey}) : super(key: key);
+  const Step6MediaUpload({Key? key, required this.formKey}) : super(key: key);
 
   @override
-  _Step5MediaUploadState createState() => _Step5MediaUploadState();
+  _Step6MediaUploadState createState() => _Step6MediaUploadState();
 }
 
-class _Step5MediaUploadState extends State<Step5MediaUpload> {
+class _Step6MediaUploadState extends State<Step6MediaUpload> {
   final Map<String, VideoPlayerController> _videoControllers = {};
   final ImagePicker _picker = ImagePicker();
   final Map<String, Future<String?>> _videoThumbnails = {};
