@@ -214,6 +214,29 @@ class _Step2PropertyDetailsState extends State<Step2PropertyDetails> {
                   ),
                   const SizedBox(height: 20),
                 ],
+                // TextFormField(
+                //   controller: _areaController,
+                //   decoration: InputDecoration(
+                //     labelText: isDevelopmentLand || isAgri
+                //         ? 'Area (in acres)'
+                //         : 'Area (in sqyds)',
+                //   ),
+                //   keyboardType:
+                //       const TextInputType.numberWithOptions(decimal: true),
+                //   validator: Validators.areaValidator,
+                //   onChanged: (value) {
+                //     String formattedValue = _formatToIndianSystem(value);
+                //     _areaController.value = TextEditingValue(
+                //       text: formattedValue,
+                //       selection: TextSelection.collapsed(
+                //           offset: formattedValue.length),
+                //     );
+                //     double? parsedValue =
+                //         double.tryParse(value.replaceAll(',', ''));
+                //     propertyProvider.setArea(parsedValue ?? 0.0);
+                //   },
+                // ),
+
                 TextFormField(
                   controller: _areaController,
                   decoration: InputDecoration(
@@ -221,21 +244,29 @@ class _Step2PropertyDetailsState extends State<Step2PropertyDetails> {
                         ? 'Area (in acres)'
                         : 'Area (in sqyds)',
                   ),
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  inputFormatters: [
+                    // 1) allow only digits and at most one decimal point:
+                    FilteringTextInputFormatter.allow(RegExp(r'\d+\.?\d*')),
+                    // 2) cap the total length to 10 characters:
+                    LengthLimitingTextInputFormatter(10),
+                  ],
                   validator: Validators.areaValidator,
                   onChanged: (value) {
-                    String formattedValue = _formatToIndianSystem(value);
+                    // strip commas before parsing
+                    final raw = value.replaceAll(',', '');
+                    // re-format in Indian style
+                    final formatted = _formatToIndianSystem(raw);
+                    // update the field, keeping the cursor at the end
                     _areaController.value = TextEditingValue(
-                      text: formattedValue,
-                      selection: TextSelection.collapsed(
-                          offset: formattedValue.length),
+                      text: formatted,
+                      selection: TextSelection.collapsed(offset: formatted.length),
                     );
-                    double? parsedValue =
-                        double.tryParse(value.replaceAll(',', ''));
-                    propertyProvider.setArea(parsedValue ?? 0.0);
+                    // commit the numeric value to your provider
+                    propertyProvider.setArea(double.tryParse(raw) ?? 0.0);
                   },
                 ),
+
                 const SizedBox(height: 20),
                 if (isDevelopmentPlot || isDevelopmentLand) ...[
                   DropdownButtonFormField<String>(
@@ -286,27 +317,55 @@ class _Step2PropertyDetailsState extends State<Step2PropertyDetails> {
                         propertyProvider.setSurveyNumber(value),
                   ),
                 ] else ...[
+                  // TextFormField(
+                  //   controller: _pricePerUnitController,
+                  //   decoration: InputDecoration(
+                  //     labelText: isAgri ? 'Price per acre' : 'Price per sqyd',
+                  //   ),
+                  //   keyboardType:
+                  //       TextInputType.numberWithOptions(decimal: true),
+                  //   validator: Validators.priceValidator,
+                  //   onChanged: (value) {
+                  //     String formattedValue = _formatToIndianSystem(value);
+                  //     _pricePerUnitController.value = TextEditingValue(
+                  //       text: formattedValue,
+                  //       selection: TextSelection.collapsed(
+                  //         offset: formattedValue.length,
+                  //       ),
+                  //     );
+                  //     double? parsedValue =
+                  //         double.tryParse(value.replaceAll(',', ''));
+                  //     propertyProvider.setPricePerUnit(parsedValue ?? 0.0);
+                  //   },
+                  // ),
                   TextFormField(
                     controller: _pricePerUnitController,
                     decoration: InputDecoration(
                       labelText: isAgri ? 'Price per acre' : 'Price per sqyd',
                     ),
-                    keyboardType:
-                        TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    inputFormatters: [
+                      // 1) only digits and an optional dot:
+                      FilteringTextInputFormatter.allow(RegExp(r'\d+\.?\d*')),
+                      // 2) no more than 10 characters total:
+                      LengthLimitingTextInputFormatter(10),
+                    ],
                     validator: Validators.priceValidator,
                     onChanged: (value) {
-                      String formattedValue = _formatToIndianSystem(value);
+                      // strip commas
+                      final raw = value.replaceAll(',', '');
+                      // format with Indian commas
+                      final formatted = _formatToIndianSystem(raw);
+                      // update the text field (and keep cursor at the end)
                       _pricePerUnitController.value = TextEditingValue(
-                        text: formattedValue,
-                        selection: TextSelection.collapsed(
-                          offset: formattedValue.length,
-                        ),
+                        text: formatted,
+                        selection: TextSelection.collapsed(offset: formatted.length),
                       );
-                      double? parsedValue =
-                          double.tryParse(value.replaceAll(',', ''));
-                      propertyProvider.setPricePerUnit(parsedValue ?? 0.0);
+                      // parse the raw (un‐comma’d) number into your provider
+                      propertyProvider.setPricePerUnit(double.tryParse(raw) ?? 0.0);
                     },
                   ),
+
                   const SizedBox(height: 20),
 
                   // Total Land Price Field (Auto-calculated)

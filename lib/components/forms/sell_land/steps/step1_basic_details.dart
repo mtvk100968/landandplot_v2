@@ -186,15 +186,29 @@ class _Step1BasicDetailsState extends State<Step1BasicDetails> {
               ],
             ),
             SizedBox(height: 20),
+            // TextFormField(
+            //   decoration: InputDecoration(labelText: 'Property Owner Name'),
+            //   initialValue: propertyProvider.propertyOwnerName,
+            //   validator: Validators.requiredValidator,
+            //   onChanged: (value) =>
+            //       propertyProvider.setPropertyOwnerName(value),
+            //   inputFormatters: [
+            //     capitalizeWordsInputFormatter(),
+            //   ],
+            // ),
+
             TextFormField(
-              decoration: InputDecoration(labelText: 'Property Owner Name'),
+              decoration: InputDecoration(
+                labelText: 'Property Owner Name',
+                hintText: 'Optional',
+                hintStyle: TextStyle(color: Colors.grey),
+              ),
               initialValue: propertyProvider.propertyOwnerName,
-              validator: Validators.requiredValidator,
-              onChanged: (value) =>
-                  propertyProvider.setPropertyOwnerName(value),
+              onChanged: (value) => propertyProvider.setPropertyOwnerName(value),
               inputFormatters: [
                 capitalizeWordsInputFormatter(),
               ],
+              // no validator ⇒ it’s optional
             ),
 
             SizedBox(height: 20),

@@ -20,8 +20,16 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load(fileName: ".env");
   await Future.delayed(const Duration(seconds: 3));
+  await dotenv.load(fileName: ".env");
+
+  // 2️⃣ Check that the key is in memory
+  // sanity-check that you actually got a key
+  assert(
+  dotenv.env['GOOGLE_MAPS_API_KEY']?.isNotEmpty == true,
+  'You must define GOOGLE_MAPS_API_KEY in .env',
+  );
+  print('Maps key: ${dotenv.env['GOOGLE_MAPS_API_KEY']}');
 
   await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform);

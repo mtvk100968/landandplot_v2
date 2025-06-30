@@ -1,13 +1,13 @@
 // lib/components/forms/sell_land/steps/step_extra_details.dart
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../../../providers/property_provider.dart';
 
 class Step3ExtraDetails extends StatefulWidget {
   final GlobalKey<FormState> formKey;
 
-  const Step3ExtraDetails({Key? key, required this.formKey})
-      : super(key: key);
+  const Step3ExtraDetails({Key? key, required this.formKey}) : super(key: key);
 
   @override
   _Step3ExtraDetailsState createState() => _Step3ExtraDetailsState();
@@ -47,6 +47,7 @@ class _Step3ExtraDetailsState extends State<Step3ExtraDetails> {
               value: p.zone,
               decoration: const InputDecoration(labelText: 'Zone'),
               items: [
+                "I don’t know",
                 "Residential Use Zone (R1)",
                 "Residential Use Zone (R2)",
                 "Residential Use Zone (R3)",
@@ -55,9 +56,7 @@ class _Step3ExtraDetailsState extends State<Step3ExtraDetails> {
                 "Commercial Use Zone",
                 "Manufacturing Use Zone",
                 "Conservation (Agriculture) Use Zone",
-              ]
-                  .map((z) => DropdownMenuItem(value: z, child: Text(z)))
-                  .toList(),
+              ].map((z) => DropdownMenuItem(value: z, child: Text(z))).toList(),
               onChanged: (nz) {
                 if (nz != null) p.setZone(nz);
               },
@@ -106,11 +105,10 @@ class _Step3ExtraDetailsState extends State<Step3ExtraDetails> {
               // Road Width
               DropdownButtonFormField<double>(
                 value: p.roadWidth,
-                decoration:
-                const InputDecoration(labelText: 'Road Width (ft)'),
+                decoration: const InputDecoration(labelText: 'Road Width (ft)'),
                 items: [15, 20, 25, 33, 40, 50, 60, 80, 100]
-                    .map((w) =>
-                    DropdownMenuItem(value: w.toDouble(), child: Text('$w ft')))
+                    .map((w) => DropdownMenuItem(
+                        value: w.toDouble(), child: Text('$w ft')))
                     .toList()
                   ..add(DropdownMenuItem(value: 1000, child: Text('100+ ft'))),
                 onChanged: (rw) {
@@ -122,10 +120,18 @@ class _Step3ExtraDetailsState extends State<Step3ExtraDetails> {
             const SizedBox(height: 16),
 
             // ─── Length Facing ─────────────────────────────────────
+
             TextFormField(
               controller: _lengthController,
-              decoration: const InputDecoration(labelText: 'Length Facing (ft)'),
+              decoration:
+                  const InputDecoration(labelText: 'Length Facing (ft)'),
               keyboardType: TextInputType.number,
+              inputFormatters: <TextInputFormatter>[
+                // ONLY digits 0-9
+                FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),
+                // MAXIMUM of 10 digits
+                LengthLimitingTextInputFormatter(10),
+              ],
               onChanged: (v) => p.setLengthFacing(v),
             ),
 
@@ -149,7 +155,7 @@ class _Step3ExtraDetailsState extends State<Step3ExtraDetails> {
             DropdownButtonFormField<String>(
               value: p.nala,
               decoration:
-              const InputDecoration(labelText: 'Nala (Drain) Nearby?'),
+                  const InputDecoration(labelText: 'Nala (Drain) Nearby?'),
               items: ['Yes', 'No']
                   .map((n) => DropdownMenuItem(value: n, child: Text(n)))
                   .toList(),

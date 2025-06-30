@@ -76,6 +76,7 @@ class PropertyProvider with ChangeNotifier {
 
   // **New Field: Venture Name**
   String? _ventureName; // Required for 'Plot' or 'Farm Land'
+  String _propertyName = '';
 
   // Step 5: Media Upload
   List<File> _imageFiles = []; // List to store image files
@@ -201,6 +202,12 @@ class PropertyProvider with ChangeNotifier {
   bool get plantation => _plantation;
   void setPlantation(bool value) {
     _plantation = value;
+    notifyListeners();
+  }
+
+  String get propertyName => _propertyName;
+  void setPropertyName(String name) {
+    _propertyName = name;
     notifyListeners();
   }
 

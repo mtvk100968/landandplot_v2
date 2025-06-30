@@ -20,7 +20,8 @@ class _AgentProfileSetupDialogState extends State<AgentProfileSetupDialog> {
   final _areaController = TextEditingController();
   final List<String> _areas = [];
   final PlacesService _placesService =
-      PlacesService(apiKey: 'AIzaSyC9TbKldN2qRj91FxHl1KC3r7KjUlBXOSk');
+     PlacesService(apiKey: 'AIzaSyC9TbKldN2qRj91FxHl1KC3r7KjUlBXOSk');
+
   List<dynamic> _suggestions = [];
   bool _isSaving = false;
 

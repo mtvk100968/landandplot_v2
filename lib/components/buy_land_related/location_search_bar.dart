@@ -43,6 +43,7 @@ class _LocationSearchBarState extends State<LocationSearchBar> {
     // Initialize PlacesService with your actual API key
     _placesService =
         PlacesService(apiKey: 'AIzaSyC9TbKldN2qRj91FxHl1KC3r7KjUlBXOSk');
+
     if (widget.initialPlace != null) {
       // pre‐fill your text field and stash the place
       _controller.text = widget.initialPlace!['description'] ?? '';
