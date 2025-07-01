@@ -98,24 +98,23 @@ class BuyLandScreenState extends State<BuyLandScreen> {
         : _selectedUnitPriceRange.end;
 
     return PropertyService().getPropertiesWithFilters(
-      propertyTypes: selectedPropertyTypes.isEmpty
-          ? null
-          : selectedPropertyTypes,
+      propertyTypes:
+          selectedPropertyTypes.isEmpty ? null : selectedPropertyTypes,
       priceField: field,
-      minPrice:   minP > 0  ? minP : null,
-      maxPrice:   maxP > 0  ? maxP : null,
-      minArea:    _selectedAreaRange.start > 0 ? _selectedAreaRange.start : null,
-      maxArea:    _selectedAreaRange.end   > 0 ? _selectedAreaRange.end   : null,
-      bedrooms:   _selectedBedrooms,
-      bathrooms:  _selectedBathrooms,
+      minPrice: minP > 0 ? minP : null,
+      maxPrice: maxP > 0 ? maxP : null,
+      minArea: _selectedAreaRange.start > 0 ? _selectedAreaRange.start : null,
+      maxArea: _selectedAreaRange.end > 0 ? _selectedAreaRange.end : null,
+      bedrooms: _selectedBedrooms,
+      bathrooms: _selectedBathrooms,
       // — geo bounds & searchQuery elided for now —
-      city:       selectedCity,
-      district:   selectedDistrict,
-      pincode:    selectedPincode,
-      minLat:      _minLat,
-      maxLat:      _maxLat,
-      minLon:      _minLon,
-      maxLon:      _maxLon,
+      city: selectedCity,
+      district: selectedDistrict,
+      pincode: selectedPincode,
+      minLat: _minLat,
+      maxLat: _maxLat,
+      minLon: _minLon,
+      maxLon: _maxLon,
       searchQuery: _searchQuery,
     );
   }
@@ -168,19 +167,17 @@ class BuyLandScreenState extends State<BuyLandScreen> {
 
     if (result != null) {
       setState(() {
-        _type     = result['type']       as pt.PropertyType?;
+        _type = result['type'] as pt.PropertyType?;
         _devSubtype = result['devSubtype'] as DevSubtype?;
         _useTotalPrice = result['useTotal'] as bool;
-        _selectedUnitPriceRange  = result['unitPrice']  as RangeValues;
+        _selectedUnitPriceRange = result['unitPrice'] as RangeValues;
         _selectedTotalPriceRange = result['totalPrice'] as RangeValues;
-        _selectedAreaRange       = result['area']       as RangeValues;
-        _selectedBedrooms = result['beds']  as int?;
+        _selectedAreaRange = result['area'] as RangeValues;
+        _selectedBedrooms = result['beds'] as int?;
         _selectedBathrooms = result['baths'] as int?;
-        selectedPlace    = result['place'] as Map<String,dynamic>?;
+        selectedPlace = result['place'] as Map<String, dynamic>?;
 
-        selectedPropertyTypes = _type != null
-            ? [ _type!.firestoreKey ]
-            : [];
+        selectedPropertyTypes = _type != null ? [_type!.firestoreKey] : [];
         _propertyFuture = _loadProperties();
       });
     }
@@ -323,7 +320,6 @@ class BuyLandScreenState extends State<BuyLandScreen> {
 //   }
 
   /// Opens the filter bottom sheet and applies or resets filters.
-
 
   /// Helper: Check if a point is inside a polygon using the ray-casting algorithm.
   bool isPointInsidePolygon(LatLng point, List<LatLng> polygon) {
@@ -577,13 +573,13 @@ class BuyLandScreenState extends State<BuyLandScreen> {
                     child: FutureBuilder<List<Property>>(
                       future: _propertyFuture,
                       builder: (context, propertySnapshot) {
-                        if (propertySnapshot.connectionState == ConnectionState.waiting)
-                          return const Center(child: CircularProgressIndicator());
+                        if (propertySnapshot.connectionState ==
+                            ConnectionState.waiting)
+                          return const Center(
+                              child: CircularProgressIndicator());
                         final props = propertySnapshot.data ?? [];
-                        if (props.isEmpty)
-                          return const Center(child: Text('No properties found'));
 
-                        // Build once
+                        // build both views up front
                         final mapView = PropertyMapView(
                           properties: props,
                           center: selectedPlace != null
