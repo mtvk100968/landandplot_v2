@@ -490,7 +490,8 @@ class FilterBottomSheet extends StatefulWidget {
   final double initialMinArea, initialTotalMinPrice, initialUnitMinPrice;
   final double initialMaxArea, initialTotalMaxPrice, initialUnitMaxPrice;
   final int? initialBeds, initialBaths;
-  final String? initialDevSubtype; // 🆕
+  // final String? initialDevSubtype; // 🆕
+  final DevSubtype? initialDevSubtype;
 
   const FilterBottomSheet({
     Key? key,
@@ -535,35 +536,59 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
     _place = widget.initialPlace;
     _type = widget.initialType;
     _config = _type == null ? null : fc.kFilterMap[_type!];
-    _devSubtype = widget.initialDevSubtype as DevSubtype?; // 🆕
+    // _devSubtype = widget.initialDevSubtype as DevSubtype?; // 🆕
+    _devSubtype = widget.initialDevSubtype;
     _recalcConfig();
 
-    if (_config != null) {
-// ▶ fix: seed start/end off the corresponding widget.initial… value
-      final unitStart = widget.initialUnitMinPrice != 0
-          ? widget.initialUnitMinPrice
-          : _config!.unitPriceMin;
-      final unitEnd = widget.initialUnitMaxPrice != 0
-          ? widget.initialUnitMaxPrice
-          : _config!.unitPriceMax;
-      final totalStart = widget.initialTotalMinPrice != 0
-          ? widget.initialTotalMinPrice
-          : _config!.totalPriceMin;
-      final totalEnd = widget.initialTotalMaxPrice != 0
-          ? widget.initialTotalMaxPrice
-          : _config!.totalPriceMax;
-      final areaStart =
-      widget.initialMinArea != 0 ? widget.initialMinArea : _config!.areaMin;
-      final areaEnd =
-      widget.initialMaxArea != 0 ? widget.initialMaxArea : _config!.areaMax;
+//     if (_config != null) {
+// // ▶ fix: seed start/end off the corresponding widget.initial… value
+//       final unitStart = widget.initialUnitMinPrice != 0
+//           ? widget.initialUnitMinPrice
+//           : _config!.unitPriceMin;
+//       final unitEnd = widget.initialUnitMaxPrice != 0
+//           ? widget.initialUnitMaxPrice
+//           : _config!.unitPriceMax;
+//       final totalStart = widget.initialTotalMinPrice != 0
+//           ? widget.initialTotalMinPrice
+//           : _config!.totalPriceMin;
+//       final totalEnd = widget.initialTotalMaxPrice != 0
+//           ? widget.initialTotalMaxPrice
+//           : _config!.totalPriceMax;
+//       final areaStart =
+//       widget.initialMinArea != 0 ? widget.initialMinArea : _config!.areaMin;
+//       final areaEnd =
+//       widget.initialMaxArea != 0 ? widget.initialMaxArea : _config!.areaMax;
+//
+//       _unitPriceRange = RangeValues(unitStart, unitEnd);
+//       _totalPriceRange = RangeValues(totalStart, totalEnd);
+//       _areaRange = RangeValues(areaStart, areaEnd);
+//     } else {
+//       _unitPriceRange = const RangeValues(0, 0);
+//       _totalPriceRange = const RangeValues(0, 0);
+//       _areaRange = const RangeValues(0, 0);
+//     }
+//
+//     _beds = widget.initialBeds;
+//     _baths = widget.initialBaths;
+//   }
 
-      _unitPriceRange = RangeValues(unitStart, unitEnd);
-      _totalPriceRange = RangeValues(totalStart, totalEnd);
-      _areaRange = RangeValues(areaStart, areaEnd);
+    if (_config != null) {
+      _unitPriceRange  = RangeValues(
+        widget.initialUnitMinPrice>0 ? widget.initialUnitMinPrice : _config!.unitPriceMin,
+        widget.initialUnitMaxPrice>0 ? widget.initialUnitMaxPrice : _config!.unitPriceMax,
+      );
+      _totalPriceRange = RangeValues(
+        widget.initialTotalMinPrice>0 ? widget.initialTotalMinPrice : _config!.totalPriceMin,
+        widget.initialTotalMaxPrice>0 ? widget.initialTotalMaxPrice : _config!.totalPriceMax,
+      );
+      _areaRange       = RangeValues(
+        widget.initialMinArea>0 ? widget.initialMinArea : _config!.areaMin,
+        widget.initialMaxArea>0 ? widget.initialMaxArea : _config!.areaMax,
+      );
     } else {
-      _unitPriceRange = const RangeValues(0, 0);
-      _totalPriceRange = const RangeValues(0, 0);
-      _areaRange = const RangeValues(0, 0);
+      _unitPriceRange = const RangeValues(0,0);
+      _totalPriceRange= const RangeValues(0,0);
+      _areaRange      = const RangeValues(0,0);
     }
 
     _beds = widget.initialBeds;

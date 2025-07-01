@@ -12,9 +12,9 @@ class UserService {
   final CollectionReference<Map<String, dynamic>> _usersCollection =
       FirebaseFirestore.instance.collection('users');
 
-  // Reference to the 'properties' collection
+  // **Add this**: reference to the 'properties' collection
   final CollectionReference<Map<String, dynamic>> _propertiesCollection =
-      FirebaseFirestore.instance.collection('properties');
+  FirebaseFirestore.instance.collection('properties');
 
   /// Fetch a user by their UID
   Future<AppUser?> getUserById(String userId) async {
