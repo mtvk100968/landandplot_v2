@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/property_model.dart';
+import '../models/property_type.dart' as pt;
 import 'user_service.dart';
 import '../models/buyer_model.dart';
 
@@ -286,12 +287,11 @@ class PropertyService {
 
   Future<List<Property>> getPropertiesWithFilters({
     List<String>? propertyTypes,
-    double? minPricePerUnit,
-    double? maxPricePerUnit,
-    double? minTotalPrice,
-    double? maxTotalPrice,
-    double? minLandArea,
-    double? maxLandArea,
+    required String priceField,
+    double? minPrice,
+    double? maxPrice,
+    double? minArea,
+    double? maxArea,
     int? bedrooms,      // ← NEW
     int? bathrooms,     // ← NEW
     double? minLat,
@@ -306,12 +306,11 @@ class PropertyService {
     try {
       print('getPropertiesWithFilters called with:');
       print('  propertyTypes: $propertyTypes');
-      print('  minPricePerUnit: $minPricePerUnit');
-      print('  maxPricePerUnit: $maxPricePerUnit');
-      print('  minLandArea: $minLandArea');
-      print('  maxLandArea: $maxLandArea');
-      print('  minTotalPrice: $minTotalPrice');
-      print('  maxTotalPrice: $maxTotalPrice');
+      print('  minPricePerUnit: $priceField');
+      print('  minLandArea: $minArea');
+      print('  maxLandArea: $maxArea');
+      print('  minTotalPrice: $minPrice');
+      print('  maxTotalPrice: $maxPrice');
       print('  minLat: $bedrooms');
       print('  maxLat: $bathrooms');
       print('  minLat: $minLat');
@@ -324,98 +323,52 @@ class PropertyService {
       print('  searchQuery: $searchQuery');
 
       // Start building Firestore query
-      Query<Map<String, dynamic>> query = _firestore.collection(collectionPath);
+      var query = _firestore.collection(collectionPath) as Query<Map<String,dynamic>>;
 
-
-      // 1️⃣ Simple equality filters
+      // Equality filters
       if (propertyTypes != null && propertyTypes.isNotEmpty) {
         query = query.where('propertyType', whereIn: propertyTypes);
       }
-      if (city != null && city.isNotEmpty) {
-        query = query.where('city', isEqualTo: city);
-      }
-      if (district != null && district.isNotEmpty) {
-        query = query.where('district', isEqualTo: district);
-      }
-      if (pincode != null && pincode.isNotEmpty) {
-        query = query.where('pincode', isEqualTo: pincode);
-      }
+      if (city      != null) query = query.where('city',     isEqualTo: city);
+      if (district  != null) query = query.where('district', isEqualTo: district);
+      if (pincode   != null) query = query.where('pincode',  isEqualTo: pincode);
+      // text‐search
       if (searchQuery != null && searchQuery.isNotEmpty) {
         query = query
             .where('name', isGreaterThanOrEqualTo: searchQuery)
             .where('name', isLessThanOrEqualTo: '$searchQuery\uf8ff');
       }
+      // *** exactly one **inequality**:
+      if (minPrice != null) query = query.where(priceField, isGreaterThanOrEqualTo: minPrice);
+      if (maxPrice != null) query = query.where(priceField, isLessThanOrEqualTo:    maxPrice);
 
-      // ── 2️⃣ Apply your **range** filters directly in Firestore ───────────────
-      if (minPricePerUnit != null) {
-        query = query.where(
-          'pricePerUnit',
-          isGreaterThanOrEqualTo: minPricePerUnit,
-        );
-      }
-      if (maxPricePerUnit != null) {
-        query = query.where(
-          'pricePerUnit',
-          isLessThanOrEqualTo: maxPricePerUnit,
-        );
-      }
+      final snap = await query.get();
+      var props = snap.docs.map((d) => Property.fromMap(d.id, d.data())).toList();
 
-      if (minTotalPrice != null) {
-        query = query.where(
-          'totalPrice',
-          isGreaterThanOrEqualTo: minTotalPrice,
-        );
-      }
-      if (maxTotalPrice != null) {
-        query = query.where(
-          'totalPrice',
-          isLessThanOrEqualTo: maxTotalPrice,
-        );
-      }
-
-      if (minLandArea != null) {
-        query = query.where(
-          'landArea',
-          isGreaterThanOrEqualTo: minLandArea,
-        );
-      }
-      if (maxLandArea != null) {
-        query = query.where(
-          'landArea',
-          isLessThanOrEqualTo: maxLandArea,
-        );
-      }
-
-      // 3️⃣ Fetch once
-      final snapshot = await query.get();
-      var properties =
-      snapshot.docs
-          .map((d) => Property.fromMap(d.id, d.data()))
-          .toList();
-
-      // 4️⃣ Client-side filtering for land area
-      // 🔹 3) In-Dart filter **all** ranges: price, land-area, lat/lon
-      properties = properties.where((p) {
-        final okPrice =
-            (minPricePerUnit == null || p.pricePerUnit >= minPricePerUnit) &&
-                (maxPricePerUnit == null || p.pricePerUnit <= maxPricePerUnit);
-        final okTotal =
-            (minTotalPrice == null || p.pricePerUnit >= minTotalPrice) &&
-                (maxTotalPrice == null || p.pricePerUnit <= maxTotalPrice);
-        final okArea = (minLandArea == null || p.landArea >= minLandArea) &&
-            (maxLandArea == null || p.landArea <= maxLandArea);
-
-        final okLat = (minLat == null || p.latitude >= minLat) &&
-            (maxLat == null || p.latitude <= maxLat);
-        final okLon = (minLon == null || p.longitude >= minLon) &&
-            (maxLon == null || p.longitude <= maxLon);
-        final okBeds  = (bedrooms         == null || p.bedrooms    == bedrooms);
-        final okBaths = (bathrooms        == null || p.bathrooms   == bathrooms);
-
-        return okPrice && okArea && okTotal && okLat && okLon && okBeds && okBaths;
+      // Now do **all** the other ranges in Dart:
+      return props.where((p) {
+        // 3a) area—pick the right field on each property:
+        final double? areaVal = switch (p.propertyType) {
+          pt.PropertyType.apartment => p.carpetArea,
+          pt.PropertyType.house
+          || pt.PropertyType.villa   => p.constructedArea,
+          pt.PropertyType.plot       => p.plotArea,
+          _                          => p.landArea,
+        };
+        // only compare if areaVal itself is non-null
+        final okArea = (minArea == null  || (areaVal != null && areaVal >= minArea))
+            && (maxArea == null  || (areaVal != null && areaVal <= maxArea));
+        final okLat   = (minLat        == null || p.latitude     >= minLat)
+            && (maxLat        == null || p.latitude     <= maxLat);
+        final okLon   = (minLon        == null || p.longitude    >= minLon)
+            && (maxLon        == null || p.longitude    <= maxLon);
+        final okBeds  = bedrooms      == null || p.bedrooms    == bedrooms;
+        final okBaths = bathrooms     == null || p.bathrooms   == bathrooms;
+        // totalPrice already filtered server‐side, no need to re-filter it here.
+        return okArea && okLat && okLon && okBeds && okBaths;
       }).toList();
 
-      return properties;
+      return props;
     } catch (e, st) {
       print('Error fetching properties with filters: $e\n$st');
       throw Exception('Failed to fetch properties with filters');

@@ -107,6 +107,11 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
   void _apply() {
     final config = (_type != null) ? fc.kFilterMap[_type!] : null;
     print('🖨 Applying filters:');
+    print('   • PropertyType = ${_type?.label ?? "any"}');
+    // ← and if you care about dev subtype:
+    if (_type == pt.PropertyType.development) {
+      print('   • DevSubtype      = ${_devSubtype?.label ?? "none"}');
+    }
     print(
         '   • TotalPriceRange = ${_totalPriceRange.start} – ${_totalPriceRange.end}');
     print(

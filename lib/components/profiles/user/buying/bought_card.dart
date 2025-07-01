@@ -14,13 +14,6 @@ class BoughtCard extends StatelessWidget {
     required this.userPhone,
   }) : super(key: key);
 
-  // Buyer? get _thisBuyer {
-  //   return property.buyers.firstWhere(
-  //     (b) => b.phone == userPhone && b.status == 'bought',
-  //     orElse: () => null,
-  //   );
-  // }
-
   Buyer? get _thisBuyer {
     try {
       return property.buyers.firstWhere(

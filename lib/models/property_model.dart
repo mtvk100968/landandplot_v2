@@ -15,6 +15,9 @@ class Property {
   final String landAreaUnitRaw;
   final String? bedrooms;
   final String? bathrooms;
+  final double? carpetArea;
+  final double? constructedArea;
+  final double? plotArea;
   final double landArea;
   final double pricePerUnit;
   final double totalPrice;
@@ -79,6 +82,9 @@ class Property {
     this.reraNo,
     this.bedrooms,
     this.bathrooms,
+    this.carpetArea,
+    this.constructedArea,
+    this.plotArea,
     required this.landArea,
     required this.pricePerUnit,
     required this.totalPrice,
@@ -135,6 +141,9 @@ class Property {
       'reraNo': reraNo,
       'bedrooms': bedrooms,
       'bathrooms': bathrooms,
+      'carpetArea': carpetArea,
+      'constructedArea': constructedArea,
+      'plotArea': plotArea,
       'landArea': landArea,
       'pricePerUnit': pricePerUnit,
       'totalPrice': totalPrice,
@@ -193,7 +202,10 @@ class Property {
       reraNo: m['reraNo'] ?? '',
       bedrooms: m['bedrooms'],
       bathrooms: m['bathrooms'],
-      landArea: (m['landArea'] as num?)?.toDouble() ?? 0.0,
+      carpetArea:      (m['carpetArea']      as num?)?.toDouble(),
+      constructedArea: (m['constructedArea'] as num?)?.toDouble(),
+      plotArea:        (m['plotArea']        as num?)?.toDouble(),
+      landArea:        (m['landArea']        as num?)!.toDouble(),
       pricePerUnit: (m['pricePerUnit'] as num?)?.toDouble() ?? 0.0,
       totalPrice: (m['totalPrice'] as num?)?.toDouble() ?? 0.0,
       surveyNumber: m['surveyNumber'] ?? '',

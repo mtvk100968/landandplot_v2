@@ -68,16 +68,56 @@ class BuyLandScreenState extends State<BuyLandScreen> {
 
   Future<List<Property>>? _propertyFuture;
 
+  // for geo-bounds filtering
+  double? _minLat, _maxLat, _minLon, _maxLon;
+
+  // for text search
+  String? _searchQuery;
+
   @override
   void initState() {
     super.initState();
-    _propertyFuture = fetchPropertiesWithGeo();
+    _propertyFuture = _loadProperties();
   }
 
+  /// Pull-to-refresh just re-invokes the same loader
   Future<void> _refreshProperties() async {
     setState(() {
-      _propertyFuture = fetchPropertiesWithGeo();
+      _propertyFuture = _loadProperties();
     });
+  }
+
+  /// The single place that actually builds your Firestore query
+  Future<List<Property>> _loadProperties() {
+    final field = _useTotalPrice ? 'totalPrice' : 'pricePerUnit';
+    final minP = _useTotalPrice
+        ? _selectedTotalPriceRange.start
+        : _selectedUnitPriceRange.start;
+    final maxP = _useTotalPrice
+        ? _selectedTotalPriceRange.end
+        : _selectedUnitPriceRange.end;
+
+    return PropertyService().getPropertiesWithFilters(
+      propertyTypes: selectedPropertyTypes.isEmpty
+          ? null
+          : selectedPropertyTypes,
+      priceField: field,
+      minPrice:   minP > 0  ? minP : null,
+      maxPrice:   maxP > 0  ? maxP : null,
+      minArea:    _selectedAreaRange.start > 0 ? _selectedAreaRange.start : null,
+      maxArea:    _selectedAreaRange.end   > 0 ? _selectedAreaRange.end   : null,
+      bedrooms:   _selectedBedrooms,
+      bathrooms:  _selectedBathrooms,
+      // — geo bounds & searchQuery elided for now —
+      city:       selectedCity,
+      district:   selectedDistrict,
+      pincode:    selectedPincode,
+      minLat:      _minLat,
+      maxLat:      _maxLat,
+      minLon:      _minLon,
+      maxLon:      _maxLon,
+      searchQuery: _searchQuery,
+    );
   }
 
   @override
@@ -86,169 +126,6 @@ class BuyLandScreenState extends State<BuyLandScreen> {
     super.dispose();
   }
 
-  Future<List<Property>> fetchPropertiesWithGeo({
-    Map<String, dynamic>? place,
-    List<String>? types,
-    RangeValues? priceRange,
-    RangeValues? areaRange,
-    List<int>? beds,
-    List<int>? baths,
-  }) async {
-    final typesForQuery = selectedPropertyTypes
-        .map((label) => pt.PropertyType.fromLabel(label).firestoreKey)
-        .toList();
-
-    // 2️⃣ Compute geo‐bounds (unchanged)
-    double? minLat, maxLat, minLon, maxLon;
-    if (geoSearchType == GeoSearchType.polygon && selectedPolygon != null) {
-      minLat = selectedPolygon!.map((p) => p.latitude).reduce(math.min);
-      maxLat = selectedPolygon!.map((p) => p.latitude).reduce(math.max);
-      minLon = selectedPolygon!.map((p) => p.longitude).reduce(math.min);
-      maxLon = selectedPolygon!.map((p) => p.longitude).reduce(math.max);
-    } else if (selectedPlace != null) {
-      final lat = selectedPlace!['geometry']['location']['lat'] as double;
-      final lon = selectedPlace!['geometry']['location']['lng'] as double;
-      final r = searchRadius / 111.0;
-      minLat = lat - r;
-      maxLat = lat + r;
-      minLon = lon - r;
-      maxLon = lon + r;
-    }
-
-    // ➋ map your sliders to min/max
-    final useTotal = _useTotalPrice;
-
-// instead of `priceRange?.start > 0`, do:
-    final double? minTotal = (useTotal && priceRange != null && priceRange.start > 0)
-        ? priceRange.start
-        : null;
-    final double? maxTotal = (useTotal && priceRange != null && priceRange.end   > 0)
-        ? priceRange.end
-        : null;
-
-    final double? minUnit  = (!useTotal && priceRange != null && priceRange.start > 0)
-        ? priceRange.start
-        : null;
-    final double? maxUnit  = (!useTotal && priceRange != null && priceRange.end   > 0)
-        ? priceRange.end
-        : null;
-
-// same for areaRange:
-    final double? minArea  = (areaRange != null && areaRange.start > 0)
-        ? areaRange.start
-        : null;
-    final double? maxArea  = (areaRange != null && areaRange.end   > 0)
-        ? areaRange.end
-        : null;
-
-    // 4️⃣ Figure out which “area” field to use:
-// …after you compute minTotal/maxTotal, minUnit/maxUnit, minArea/maxArea
-    String fieldArea;
-    switch (_type) {
-      case pt.PropertyType.plot:
-        fieldArea = 'plotArea';
-        break;
-      case pt.PropertyType.farmLand:
-      case pt.PropertyType.agriLand:
-      case pt.PropertyType.commercialSpace:
-        fieldArea = 'landArea';
-        break;
-      case pt.PropertyType.development:
-        fieldArea = (_devSubtype == DevSubtype.plot) ? 'plotArea' : 'landArea';
-        break;
-      case pt.PropertyType.apartment:
-        fieldArea = 'carpetArea';
-        break;
-      case pt.PropertyType.house:
-      case pt.PropertyType.villa:
-        fieldArea = 'constructedArea';
-        break;
-      default:
-        fieldArea = 'landArea';
-    }
-
-    Query<Map<String, dynamic>> query =
-    FirebaseFirestore.instance.collection('properties');
-
-    if (typesForQuery.isNotEmpty)
-      query = query.where('propertyType', whereIn: typesForQuery);
-
-    if (minTotal != null)
-      query = query.where('totalPrice', isGreaterThanOrEqualTo: minTotal);
-    if (maxTotal != null)
-      query = query.where('totalPrice', isLessThanOrEqualTo: maxTotal);
-
-    if (minUnit != null)
-      query = query.where('pricePerUnit', isGreaterThanOrEqualTo: minUnit);
-    if (maxUnit != null)
-      query = query.where('pricePerUnit', isLessThanOrEqualTo: maxUnit);
-
-// ← use fieldArea here instead of hard-coded "landArea"
-    if (minArea != null)
-      query = query.where(fieldArea, isGreaterThanOrEqualTo: minArea);
-    if (maxArea != null)
-      query = query.where(fieldArea, isLessThanOrEqualTo: maxArea);
-
-    if (beds != null && beds.isNotEmpty)
-      query = query.where('bedrooms', whereIn: beds);
-    if (baths != null && baths.isNotEmpty)
-      query = query.where('bathrooms', whereIn: baths);
-
-// …and then your city/district/pincode + geo‐bounds …
-
-
-// …and the rest of your filters…
-
-    if (selectedCity != null)
-      query = query.where('city', isEqualTo: selectedCity);
-    if (selectedDistrict != null)
-      query = query.where('district', isEqualTo: selectedDistrict);
-    if (selectedPincode != null)
-      query = query.where('pincode', isEqualTo: selectedPincode);
-
-    if (minLat != null && maxLat != null) {
-      query = query
-          .where('latitude', isGreaterThanOrEqualTo: minLat)
-          .where('latitude', isLessThanOrEqualTo: maxLat);
-    }
-    if (minLon != null && maxLon != null) {
-      query = query
-          .where('longitude', isGreaterThanOrEqualTo: minLon)
-          .where('longitude', isLessThanOrEqualTo: maxLon);
-    }
-
-
-    // 7️⃣ Execute and (for polygons) do the final in-memory filter:
-    final snap = await query.get();
-
-    var results = snap.docs.map((d) {
-      final prop = Property.fromMap(d.id, d.data());
-
-      // Debug print
-      if ([
-        pt.PropertyType.apartment.firestoreKey,
-        pt.PropertyType.house.firestoreKey,
-        pt.PropertyType.villa.firestoreKey,
-      ].contains(prop.propertyType)) {
-        print(
-            'Fetched ${prop.id}: ${prop.propertyType} has ${prop.bedrooms} bedrooms');
-      }
-      return prop;
-    }).toList();
-
-    if (geoSearchType == GeoSearchType.polygon && selectedPolygon != null) {
-      results = results.where((p) {
-        return isPointInsidePolygon(
-          LatLng(p.latitude, p.longitude),
-          selectedPolygon!,
-        );
-      }).toList();
-    }
-
-    return results;
-  }
-
-  /// Opens the filter bottom sheet and applies or resets filters.
   Future<void> openFilterBottomSheet() async {
     final result = await showModalBottomSheet<Map<String, dynamic>?>(
       context: context,
@@ -304,9 +181,148 @@ class BuyLandScreenState extends State<BuyLandScreen> {
         selectedPropertyTypes = _type != null
             ? [ _type!.firestoreKey ]
             : [];
-        _propertyFuture = fetchPropertiesWithGeo();      });
+        _propertyFuture = _loadProperties();
+      });
     }
   }
+
+//   Future<List<Property>> fetchPropertiesWithGeo({
+//     Map<String, dynamic>? place,
+//     List<String>? types,
+//     RangeValues? priceRange,
+//     RangeValues? areaRange,
+//     List<int>? beds,
+//     List<int>? baths,
+//   }) async {
+//
+//     // 2️⃣ Compute geo‐bounds (unchanged)
+//     double? minLat, maxLat, minLon, maxLon;
+//     if (geoSearchType == GeoSearchType.polygon && selectedPolygon != null) {
+//       minLat = selectedPolygon!.map((p) => p.latitude).reduce(math.min);
+//       maxLat = selectedPolygon!.map((p) => p.latitude).reduce(math.max);
+//       minLon = selectedPolygon!.map((p) => p.longitude).reduce(math.min);
+//       maxLon = selectedPolygon!.map((p) => p.longitude).reduce(math.max);
+//     } else if (selectedPlace != null) {
+//       final lat = selectedPlace!['geometry']['location']['lat'] as double;
+//       final lon = selectedPlace!['geometry']['location']['lng'] as double;
+//       final r = searchRadius / 111.0;
+//       minLat = lat - r;
+//       maxLat = lat + r;
+//       minLon = lon - r;
+//       maxLon = lon + r;
+//     }
+//
+//     final useTotal = _useTotalPrice;
+//     final double? minTotal = (useTotal && priceRange != null && priceRange.start > 0)
+//         ? priceRange.start
+//         : null;
+//     final double? maxTotal = (useTotal && priceRange != null && priceRange.end > 0)
+//         ? priceRange.end
+//         : null;
+//     final double? minUnit = (!useTotal && priceRange != null && priceRange.start > 0)
+//         ? priceRange.start
+//         : null;
+//     final double? maxUnit = (!useTotal && priceRange != null && priceRange.end > 0)
+//         ? priceRange.end
+//         : null;
+//     final double? minArea = (areaRange != null && areaRange.start > 0)
+//         ? areaRange.start
+//         : null;
+//     final double? maxArea = (areaRange != null && areaRange.end > 0)
+//         ? areaRange.end
+//         : null;
+//
+//     // ➋ pick the right “area” field
+//     String areaField;
+//     switch (_type) {
+//       case pt.PropertyType.apartment:
+//         areaField = 'carpetArea';
+//         break;
+//       case pt.PropertyType.house:
+//       case pt.PropertyType.villa:
+//         areaField = 'constructedArea';
+//         break;
+//       case pt.PropertyType.plot:
+//         areaField = 'plotArea';
+//         break;
+//       default:
+//         areaField = 'landArea';
+//     }
+//
+//     // ➌ start a Query<T> (not a CollectionReference)
+//     Query<Map<String, dynamic>> query =
+//     FirebaseFirestore.instance.collection('properties');
+//
+//     // ➍ add filters only if non-null
+//     if (types != null && types.isNotEmpty) {
+//       query = query.where('propertyType', whereIn: types);
+//     }
+//     if (minTotal != null) query = query.where('totalPrice',   isGreaterThanOrEqualTo: minTotal);
+//     if (maxTotal != null) query = query.where('totalPrice',   isLessThanOrEqualTo:    maxTotal);
+//     if (minUnit  != null) query = query.where('pricePerUnit', isGreaterThanOrEqualTo: minUnit);
+//     if (maxUnit  != null) query = query.where('pricePerUnit', isLessThanOrEqualTo:    maxUnit);
+//
+//     // ← use the dynamically chosen field name here
+//     if (minArea != null) query = query.where(areaField, isGreaterThanOrEqualTo: minArea);
+//     if (maxArea != null) query = query.where(areaField, isLessThanOrEqualTo:    maxArea);
+//
+//     if (beds != null && beds.isNotEmpty) query = query.where('bedrooms', whereIn: beds);
+//     if (baths != null && baths.isNotEmpty) query = query.where('bathrooms', whereIn: baths);
+//
+//
+// // …and the rest of your filters…
+//
+//     if (selectedCity != null)
+//       query = query.where('city', isEqualTo: selectedCity);
+//     if (selectedDistrict != null)
+//       query = query.where('district', isEqualTo: selectedDistrict);
+//     if (selectedPincode != null)
+//       query = query.where('pincode', isEqualTo: selectedPincode);
+//
+//     if (minLat != null && maxLat != null) {
+//       query = query
+//           .where('latitude', isGreaterThanOrEqualTo: minLat)
+//           .where('latitude', isLessThanOrEqualTo: maxLat);
+//     }
+//     if (minLon != null && maxLon != null) {
+//       query = query
+//           .where('longitude', isGreaterThanOrEqualTo: minLon)
+//           .where('longitude', isLessThanOrEqualTo: maxLon);
+//     }
+//
+//
+//     // — execute & debug print raw data —
+//     final snap = await query.get();
+//     final props = snap.docs.map((d) => Property.fromMap(d.id, d.data())).toList();
+//     for (var d in snap.docs) {
+//       print('🔍 raw ${d.id} → ${d.data()}');
+//     }
+//
+//     // 5️⃣ Client‐side (Dart) filtering for **area** and any remaining ranges:
+//     return props.where((p) {
+//       // pick the right area value per property
+//       final double? areaVal = {
+//         pt.PropertyType.apartment: p.carpetArea,
+//         pt.PropertyType.house:     p.constructedArea,
+//         pt.PropertyType.villa:     p.constructedArea,
+//         pt.PropertyType.plot:      p.plotArea,
+//       }[_type] ??
+//           p.landArea;
+//
+//       final okArea = (areaRange == null)
+//           ? true
+//           : (areaRange.start <= areaVal! && areaVal <= areaRange.end);
+//
+//       // already did price server‐side, so skip price here
+//
+//       // you can also do geo‐bounds _again_ if you want to double‐check,
+//       // or any other custom Dart filters (beds, baths were server‐side)
+//
+//       return okArea;
+//     }).toList();
+//   }
+
+  /// Opens the filter bottom sheet and applies or resets filters.
 
 
   /// Helper: Check if a point is inside a polygon using the ray-casting algorithm.
@@ -380,7 +396,7 @@ class BuyLandScreenState extends State<BuyLandScreen> {
       // Clear any polygon selection.
       selectedPolygon = null;
 
-      _propertyFuture = fetchPropertiesWithGeo();
+      _propertyFuture = _loadProperties();
     });
   }
 
@@ -557,7 +573,6 @@ class BuyLandScreenState extends State<BuyLandScreen> {
                   ),
                   const SizedBox(height: 2),
                   // Property Listings
-
                   Expanded(
                     child: FutureBuilder<List<Property>>(
                       future: _propertyFuture,
@@ -626,12 +641,10 @@ class BuyLandScreenState extends State<BuyLandScreen> {
                                   );
                           },
                         );
-
                         // Empty-state
                         if (props.isEmpty) {
                           return showMap ? mapView : listView;
                         }
-
                         // Normal
                         return showMap ? mapView : listView;
                       },
