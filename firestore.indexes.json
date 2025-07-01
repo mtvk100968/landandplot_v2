@@ -4,28 +4,104 @@
       "collectionGroup": "properties",
       "queryScope": "COLLECTION",
       "fields": [
-        {
-          "fieldPath": "city",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "latitude",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "longitude",
-          "order": "ASCENDING"
-        }
+        { "fieldPath": "bathrooms",    "order": "ASCENDING" },
+        { "fieldPath": "bedrooms",     "order": "ASCENDING" },
+        { "fieldPath": "propertyType", "order": "ASCENDING" },
+        { "fieldPath": "totalPrice",   "order": "ASCENDING" }
       ]
-    }, 
+    },
     {
       "collectionGroup": "properties",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "userId", "order": "ASCENDING" },
-        { "fieldPath": "stage",  "order": "ASCENDING" }
+        { "fieldPath": "propertyType", "order": "ASCENDING" },
+        { "fieldPath": "totalPrice",   "order": "ASCENDING" },
+        { "fieldPath": "bedrooms",     "order": "ASCENDING" },
+        { "fieldPath": "__name__",     "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "properties",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "bedrooms",     "order": "ASCENDING" },
+        { "fieldPath": "propertyType", "order": "ASCENDING" },
+        { "fieldPath": "pricePerUnit", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "properties",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "propertyType", "order": "ASCENDING" },
+        { "fieldPath": "totalPrice",   "order": "ASCENDING" },
+        { "fieldPath": "bathrooms",    "order": "ASCENDING" },
+        { "fieldPath": "__name__",     "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "properties",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "propertyType",  "order": "ASCENDING" },
+        { "fieldPath": "pricePerUnit",  "order": "ASCENDING" },
+        { "fieldPath": "bedrooms",      "order": "ASCENDING" },
+        { "fieldPath": "__name__",      "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "properties",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "propertyType",  "order": "ASCENDING" },
+        { "fieldPath": "pricePerUnit",  "order": "ASCENDING" },
+        { "fieldPath": "bathrooms",     "order": "ASCENDING" },
+        { "fieldPath": "__name__",      "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "properties",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "propertyType", "order": "ASCENDING" },
+        { "fieldPath": "landArea",     "order": "ASCENDING" },
+        { "fieldPath": "__name__",     "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "properties",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "propertyType",     "order": "ASCENDING" },
+        { "fieldPath": "constructedArea",  "order": "ASCENDING" },
+        { "fieldPath": "__name__",         "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "properties",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "propertyType",     "order": "ASCENDING" },
+        { "fieldPath": "constructedArea",  "order": "ASCENDING" },
+        { "fieldPath": "pricePerUnit",     "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "properties",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "propertyType", "order": "ASCENDING" },
+        { "fieldPath": "carpetArea",   "order": "ASCENDING" },
+        { "fieldPath": "__name__",     "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "properties",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "latitude",  "order": "ASCENDING" },
+        { "fieldPath": "longitude", "order": "ASCENDING" }
       ]
     }
-  ],
-  "fieldOverrides": []
-}
+  ]
+} 
