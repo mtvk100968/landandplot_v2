@@ -20,11 +20,18 @@ class SellLandScreen extends StatelessWidget {
           create: (_) => PropertyService(),
         ),
       ],
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Sell Land'),
-        ),
-        body: const SellLandForm(),
+      child: Consumer<PropertyProvider>(
+        builder: (context, prop, _) {
+          // prop.propertyType is whatever the user has picked so far
+          final title = prop.propertyType.isEmpty
+              ? 'Post Property'
+              : 'Posting – ${prop.propertyType}';
+
+          return Scaffold(
+            appBar: AppBar(title: Text(title)),
+            body: const SellLandForm(),
+          );
+        },
       ),
     );
   }

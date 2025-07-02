@@ -1,19 +1,16 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-import '../../../../providers/property_provider.dart';
-import 'package:provider/provider.dart';
-
 class Step8LandtypeAmenitiesDetails extends StatefulWidget {
   final GlobalKey<FormState> formKey;
   final List<String> selectedAmenities;
-  final ValueChanged<List<String>> onAmenitiesChanged;
+  final ValueChanged<List<String>> onAmenitiesSelected;
 
   const Step8LandtypeAmenitiesDetails({
     Key? key,
     required this.formKey,
     required this.selectedAmenities,
-    required this.onAmenitiesChanged,
+    required this.onAmenitiesSelected,
   }) : super(key: key);
 
   @override
@@ -23,43 +20,45 @@ class Step8LandtypeAmenitiesDetails extends StatefulWidget {
 
 class _Step8LandtypeAmenitiesDetailsState
     extends State<Step8LandtypeAmenitiesDetails> {
+  final List<String> allAgriAmenities = [
+    'Fencing',
+    'Borewell',
+    'Gate',
+    'Electricity',
+    'Plantation',
+    'farm_house_constructed',
+  ];
+
+  late List<String> selected;
+
+  @override
+  void initState() {
+    super.initState();
+    selected = List<String>.from(widget.selectedAmenities);
+  }
+
+  void toggleAmenity(String amenity) {
+    setState(() {
+      if (selected.contains(amenity)) {
+        selected.remove(amenity);
+      } else {
+        selected.add(amenity);
+      }
+    });
+    widget.onAmenitiesSelected(selected);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final propertyProvider = context.watch<PropertyProvider>();
-    final selected = propertyProvider.agriAmenities;
-    final allAgriAmenities = [
-      'Fencing',
-      'Borewell',
-      'Gate',
-      'Electricity',
-      'Plantation',
-      'farm_house_constructed',
-    ];
-
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text("Agricultural Amenities", style: TextStyle(fontWeight: FontWeight.bold)),
-          ...allAgriAmenities.map((amenity) {
-            return CheckboxListTile(
-              title: Text(amenity),
-              value: selected.contains(amenity),
-              onChanged: (_) {
-                if (selected.contains(amenity)) {
-                  propertyProvider.setAgriAmenities(
-                    List.from(selected)..remove(amenity),
-                  );
-                } else {
-                  propertyProvider.setAgriAmenities(
-                    List.from(selected)..add(amenity),
-                  );
-                }
-              },
-            );
-          }),
-        ],
-      ),
+    return ListView(
+      shrinkWrap: true,
+      children: allAgriAmenities.map((amenity) {
+        return CheckboxListTile(
+          title: Text(amenity),
+          value: selected.contains(amenity),
+          onChanged: (_) => toggleAmenity(amenity),
+        );
+      }).toList(),
     );
   }
 }

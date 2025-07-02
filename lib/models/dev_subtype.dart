@@ -1,8 +1,8 @@
 // lib/models/dev_subtype.dart
 
 enum DevSubtype {
-  plot    ('Development Plot', 'development_plot'),
-  land    ('Development Land', 'development_land');
+  plot    ('Development_Plot', 'development_plot'),
+  land    ('Development_Land', 'development_land');
 
   final String label, firestoreKey;
   const DevSubtype(this.label, this.firestoreKey);

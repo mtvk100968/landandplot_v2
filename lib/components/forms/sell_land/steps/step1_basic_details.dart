@@ -127,15 +127,23 @@ class _Step1BasicDetailsState extends State<Step1BasicDetails> {
       spacing: 8.0,
       children: propertyTypeOptions.map((option) {
         final isSelected = (propertyProvider.propertyType == option);
+        // return ChoiceChip(
+        //   label: Text(option),
+        //   selected: isSelected,
+        //   onSelected: (selected) {
+        //     if (selected) {
+        //       propertyProvider.setPropertyType(option);
+        //     }
+        //   },
+        // );
         return ChoiceChip(
           label: Text(option),
-          selected: isSelected,
+          selected: propertyProvider.propertyType == option,
           onSelected: (selected) {
-            if (selected) {
-              propertyProvider.setPropertyType(option);
-            }
+            if (selected) propertyProvider.setPropertyType(option);
           },
         );
+
       }).toList(),
     );
   }

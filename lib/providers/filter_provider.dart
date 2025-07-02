@@ -12,8 +12,8 @@ enum PropertyType {
   house('House'),
   commercial('Commercial'),
   development('Development'),
-  developmentPlot('Development Plot', firestoreKey: 'development_plot'),
-  developmentLand('Development Land', firestoreKey: 'development_land');
+  developmentPlot('Development_Plot', firestoreKey: 'development_plot'),
+  developmentLand('Development_Land', firestoreKey: 'development_land');
 
   /// Display label
   final String label;
@@ -22,14 +22,14 @@ enum PropertyType {
   final String firestoreKey;
 
   const PropertyType(
-      this.label, {
-        String? firestoreKey,
-      }) : firestoreKey = firestoreKey ?? label;
+    this.label, {
+    String? firestoreKey,
+  }) : firestoreKey = firestoreKey ?? label;
 
   /// Lookup by display label (case-insensitive)
   static PropertyType fromLabel(String dbValue) {
     return PropertyType.values.firstWhere(
-          (e) => e.label.toLowerCase() == dbValue.toLowerCase(),
+      (e) => e.label.toLowerCase() == dbValue.toLowerCase(),
       orElse: () => PropertyType.plot,
     );
   }
@@ -67,29 +67,28 @@ class FilterProvider extends ChangeNotifier {
     required RangeValues priceRange,
     required RangeValues areaRange,
   }) {
-    isPlotSelected           = types.contains('Plot');
-    isFarmLandSelected       = types.contains('Farm Land');
-    isAgriLandSelected       = types.contains('Agri Land');
-    isApartmentSelected      = types.contains('Apartment');
-    isVillaSelected          = types.contains('Villa');
-    isHouseSelected          = types.contains('House');
-    isCommercialSelected= types.contains('Commercial');
-    isDevelopmentSelected    = types.contains('Development');
+    isPlotSelected = types.contains('Plot');
+    isFarmLandSelected = types.contains('Farm Land');
+    isAgriLandSelected = types.contains('Agri Land');
+    isApartmentSelected = types.contains('Apartment');
+    isVillaSelected = types.contains('Villa');
+    isHouseSelected = types.contains('House');
+    isCommercialSelected = types.contains('Commercial');
+    isDevelopmentSelected = types.contains('Development');
 
     // turn the incoming Firebase key into our enum, or null if it’s unrecognized
     if (subtype != null) {
-      final matches = PropertyType.values
-          .where((e) => e.firestoreKey == subtype)
-          .toList();
+      final matches =
+          PropertyType.values.where((e) => e.firestoreKey == subtype).toList();
       developmentSubtype = matches.isNotEmpty ? matches.first : null;
     } else {
       developmentSubtype = null;
     }
 
-    selectedPriceRange    = priceRange;
+    selectedPriceRange = priceRange;
     selectedLandAreaRange = areaRange;
-    pricePerUnitUnit      = '';
-    landAreaUnit          = '';
+    pricePerUnitUnit = '';
+    landAreaUnit = '';
 
     notifyListeners();
   }
@@ -97,7 +96,7 @@ class FilterProvider extends ChangeNotifier {
   /// Called when user taps one of the filter buttons
   void updatePropertyTypeSelection(PropertyType type) {
     switch (type) {
-    // ─────────────── Agri Land ───────────────
+      // ─────────────── Agri Land ───────────────
       case PropertyType.agriLand:
         isAgriLandSelected = !isAgriLandSelected;
         if (isAgriLandSelected) {
@@ -115,7 +114,7 @@ class FilterProvider extends ChangeNotifier {
         }
         break;
 
-    // ─────────────── Plot & Farm ───────────────
+      // ─────────────── Plot & Farm ───────────────
       case PropertyType.plot:
       case PropertyType.farmLand:
         if (type == PropertyType.plot) {
@@ -136,20 +135,20 @@ class FilterProvider extends ChangeNotifier {
         }
         break;
 
-    // ─────────────── Development Umbrella ───────────────
+      // ─────────────── Development Umbrella ───────────────
       case PropertyType.development:
         isDevelopmentSelected = !isDevelopmentSelected;
         if (!isDevelopmentSelected) developmentSubtype = null;
         break;
 
-    // ─────────────── Development Subtypes ───────────────
+      // ─────────────── Development Subtypes ───────────────
       case PropertyType.developmentPlot:
       case PropertyType.developmentLand:
         isDevelopmentSelected = true;
         developmentSubtype = type;
         break;
 
-    // ─────────────── Simple Toggles ───────────────
+      // ─────────────── Simple Toggles ───────────────
       case PropertyType.house:
         isHouseSelected = !isHouseSelected;
         break;
@@ -177,23 +176,23 @@ class FilterProvider extends ChangeNotifier {
     required RangeValues priceRange,
     required RangeValues areaRange,
   }) {
-    pricePerUnitUnit      = unit;
-    landAreaUnit          = areaUnit;
-    minPricePerUnit       = priceRange.start;
-    maxPricePerUnit       = priceRange.end;
-    minLandArea           = areaRange.start;
-    maxLandArea           = areaRange.end;
-    selectedPriceRange    = priceRange;
+    pricePerUnitUnit = unit;
+    landAreaUnit = areaUnit;
+    minPricePerUnit = priceRange.start;
+    maxPricePerUnit = priceRange.end;
+    minLandArea = areaRange.start;
+    maxLandArea = areaRange.end;
+    selectedPriceRange = priceRange;
     selectedLandAreaRange = areaRange;
   }
 
   /// Clears all numeric ranges
   void _resetRanges() {
-    pricePerUnitUnit      = '';
-    landAreaUnit          = '';
+    pricePerUnitUnit = '';
+    landAreaUnit = '';
     minPricePerUnit = maxPricePerUnit = 0;
-    minLandArea     = maxLandArea     = 0;
-    selectedPriceRange    = const RangeValues(0, 0);
+    minLandArea = maxLandArea = 0;
+    selectedPriceRange = const RangeValues(0, 0);
     selectedLandAreaRange = const RangeValues(0, 0);
   }
 
@@ -201,12 +200,12 @@ class FilterProvider extends ChangeNotifier {
   List<String> get selectedPropertyTypes {
     final types = <String>[];
 
-    if (isPlotSelected)      types.add(PropertyType.plot.firestoreKey);
-    if (isFarmLandSelected)  types.add(PropertyType.farmLand.firestoreKey);
-    if (isAgriLandSelected)  types.add(PropertyType.agriLand.firestoreKey);
+    if (isPlotSelected) types.add(PropertyType.plot.firestoreKey);
+    if (isFarmLandSelected) types.add(PropertyType.farmLand.firestoreKey);
+    if (isAgriLandSelected) types.add(PropertyType.agriLand.firestoreKey);
     if (isApartmentSelected) types.add(PropertyType.apartment.firestoreKey);
-    if (isVillaSelected)     types.add(PropertyType.villa.firestoreKey);
-    if (isHouseSelected)     types.add(PropertyType.house.firestoreKey);
+    if (isVillaSelected) types.add(PropertyType.villa.firestoreKey);
+    if (isHouseSelected) types.add(PropertyType.house.firestoreKey);
     if (isCommercialSelected) {
       types.add(PropertyType.commercial.firestoreKey);
     }
@@ -229,8 +228,8 @@ class FilterProvider extends ChangeNotifier {
   /// Formats numbers with K / L / C suffixes
   String formatPrice(double v) {
     if (v >= 10000000) return '${(v / 10000000).toStringAsFixed(1)}C';
-    if (v >= 100000)   return '${(v / 100000).toStringAsFixed(1)}L';
-    if (v >= 1000)     return '${(v / 1000).toStringAsFixed(1)}K';
+    if (v >= 100000) return '${(v / 100000).toStringAsFixed(1)}L';
+    if (v >= 1000) return '${(v / 1000).toStringAsFixed(1)}K';
     return v.toStringAsFixed(0);
   }
 }

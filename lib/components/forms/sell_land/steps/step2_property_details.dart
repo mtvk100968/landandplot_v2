@@ -473,11 +473,11 @@ class _Step2PropertyDetailsState extends State<Step2PropertyDetails> {
                   ],
 
                   if ([
-                    'commercial'
+                    'Commercial'
                   ].contains(propertyProvider.propertyType.toLowerCase())) ...[
                     TextFormField(
                       decoration:
-                          const InputDecoration(labelText: 'Plot/Site Number'),
+                          const InputDecoration(labelText: 'shop/Site Number'),
                       validator: Validators.plotNumberValidator,
                       onChanged: (v) => propertyProvider.setPlotNumber(v),
                     ),

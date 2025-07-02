@@ -583,8 +583,32 @@ class PropertyProvider with ChangeNotifier {
   List<String> _agriAmenities = [];
   List<String> get agriAmenities => _agriAmenities;
 
-  void setAgriAmenities(List<String> agri_amenities) {
-    _agriAmenities = agri_amenities;
+  void setAgriAmenities(List<String> chosenAmenities) {
+    _agriAmenities = agriAmenities;
+    notifyListeners();
+  }
+
+  List<String> _residentialAmenities = [];
+  List<String> get residentialAmenities => _residentialAmenities;
+
+  void setResidetialAmenities(List<String> chosenAmenities) {
+    _residentialAmenities = residentialAmenities;
+    notifyListeners();
+  }
+
+  List<String> _commercialAmenities = [];
+  List<String> get commercialAmenities => _commercialAmenities;
+
+  void setCommercialAmenities(List<String> chosenAmenities) {
+    _commercialAmenities = commercialAmenities;
+    notifyListeners();
+  }
+
+  List<String> _developmentAmenities = [];
+  List<String> get developmentAmenities => _developmentAmenities;
+
+  void setDevelopmentAmenities(List<String> chosenAmenities) {
+    _developmentAmenities = developmentAmenities;
     notifyListeners();
   }
 
@@ -694,6 +718,15 @@ class PropertyProvider with ChangeNotifier {
     // Note: The actual upload of media files is handled separately.
     // This method should only convert the non-media fields.
     Timestamp createdAt = getCurrentTimestampInIST();
+    final type = propertyType.toLowerCase();
+
+    final chosenAmenities = switch (type) {
+    'plot' 'agri land' 'farm land'     => agriAmenities,
+    'house' 'villa' 'apartment'        => residentialAmenities,
+    'commercial'                       => commercialAmenities,
+    'development'                      => developmentAmenities,
+    _                                  => <String>[],
+    };
 
     return Property(
       userId: FirebaseAuth.instance.currentUser?.uid ?? 'unknown',
@@ -732,7 +765,7 @@ class PropertyProvider with ChangeNotifier {
       ventureName: _ventureName,
 
       createdAt: Timestamp.now(), // or DateTime.now()
-      amenities: _selectedAmenities,
+      amenities: chosenAmenities,
       // agri_amenities: _agriAmenities,
       fencing: fencing,
       gate: gate,
@@ -774,7 +807,6 @@ class PropertyProvider with ChangeNotifier {
     _address = '';
     _proposedPrices.clear(); // Reset Proposed Prices
     _selectedAmenities.clear();
-    _agriAmenities.clear();
     // ✅ Reset amenities
     notifyListeners();
   }
