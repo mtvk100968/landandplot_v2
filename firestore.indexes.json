@@ -293,6 +293,60 @@
         { "fieldPath": "totalPrice",    "order": "ASCENDING" },
         { "fieldPath": "__name__",      "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "properties",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "propertyType", "order": "ASCENDING" },
+        { "fieldPath": "totalPrice",   "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "properties",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "propertyType", "order": "ASCENDING" },
+        { "fieldPath": "pricePerUnit",   "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "properties",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "propertyType", "order": "ASCENDING" },
+        { "fieldPath": "totalPrice",   "order": "ASCENDING" },
+        { "fieldPath": "landArea",         "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "properties",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "propertyType", "order": "ASCENDING" },
+        { "fieldPath": "pricePerUnit",   "order": "ASCENDING" },
+        { "fieldPath": "landArea",         "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "properties",
+      "queryScope":     "COLLECTION",
+      "fields": [
+        { "fieldPath": "propertyType",       "order": "ASCENDING" },
+        { "fieldPath": "subDevelopmentType", "order": "ASCENDING" },
+        { "fieldPath": "totalPrice",         "order": "ASCENDING" },
+        { "fieldPath": "landArea",         "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "properties",
+      "queryScope":     "COLLECTION",
+      "fields": [
+        { "fieldPath": "propertyType",       "order": "ASCENDING" },
+        { "fieldPath": "subDevelopmentType", "order": "ASCENDING" },
+        { "fieldPath": "pricePerUnit",       "order": "ASCENDING" },
+        { "fieldPath": "landArea",         "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

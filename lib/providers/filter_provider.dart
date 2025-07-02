@@ -10,10 +10,10 @@ enum PropertyType {
   apartment('Apartment'),
   villa('Villa'),
   house('House'),
+  commercial('Commercial'),
   development('Development'),
   developmentPlot('Development Plot', firestoreKey: 'development_plot'),
-  developmentLand('Development Land', firestoreKey: 'development_land'),
-  commercialSpace('Commercial Space');
+  developmentLand('Development Land', firestoreKey: 'development_land');
 
   /// Display label
   final String label;
@@ -43,7 +43,7 @@ class FilterProvider extends ChangeNotifier {
   bool isApartmentSelected = false;
   bool isVillaSelected = false;
   bool isHouseSelected = false;
-  bool isCommercialSpaceSelected = false;
+  bool isCommercialSelected = false;
 
   /// Master toggle for “Development”
   bool isDevelopmentSelected = false;
@@ -73,7 +73,7 @@ class FilterProvider extends ChangeNotifier {
     isApartmentSelected      = types.contains('Apartment');
     isVillaSelected          = types.contains('Villa');
     isHouseSelected          = types.contains('House');
-    isCommercialSpaceSelected= types.contains('Commercial Space');
+    isCommercialSelected= types.contains('Commercial');
     isDevelopmentSelected    = types.contains('Development');
 
     // turn the incoming Firebase key into our enum, or null if it’s unrecognized
@@ -159,8 +159,8 @@ class FilterProvider extends ChangeNotifier {
       case PropertyType.apartment:
         isApartmentSelected = !isApartmentSelected;
         break;
-      case PropertyType.commercialSpace:
-        isCommercialSpaceSelected = !isCommercialSpaceSelected;
+      case PropertyType.commercial:
+        isCommercialSelected = !isCommercialSelected;
         break;
 
       default:
@@ -207,8 +207,8 @@ class FilterProvider extends ChangeNotifier {
     if (isApartmentSelected) types.add(PropertyType.apartment.firestoreKey);
     if (isVillaSelected)     types.add(PropertyType.villa.firestoreKey);
     if (isHouseSelected)     types.add(PropertyType.house.firestoreKey);
-    if (isCommercialSpaceSelected) {
-      types.add(PropertyType.commercialSpace.firestoreKey);
+    if (isCommercialSelected) {
+      types.add(PropertyType.commercial.firestoreKey);
     }
 
     if (isDevelopmentSelected) {

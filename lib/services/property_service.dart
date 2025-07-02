@@ -346,15 +346,18 @@ class PropertyService {
       var props = snap.docs.map((d) => Property.fromMap(d.id, d.data())).toList();
 
       // Now do **all** the other ranges in Dart:
+      // 3️⃣ Apply “remaining” filters in Dart
       return props.where((p) {
-        // 3a) area—pick the right field on each property:
+        // Pick the right “area” field for each type:
         final double? areaVal = switch (p.propertyType) {
-          pt.PropertyType.apartment => p.carpetArea,
-          pt.PropertyType.house
-          || pt.PropertyType.villa   => p.constructedArea,
-          pt.PropertyType.plot       => p.plotArea,
-          _                          => p.landArea,
+          pt.PropertyType.apartment                     => p.carpetArea,
+          pt.PropertyType.house  || pt.PropertyType.villa => p.constructedArea,
+          pt.PropertyType.plot                           => p.plotArea,
+          pt.PropertyType.commercial
+                                                          => p.landArea,
+          _                                              => p.landArea,
         };
+
         // only compare if areaVal itself is non-null
         final okArea = (minArea == null  || (areaVal != null && areaVal >= minArea))
             && (maxArea == null  || (areaVal != null && areaVal <= maxArea));

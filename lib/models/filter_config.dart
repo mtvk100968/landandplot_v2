@@ -194,6 +194,26 @@ const Map<PropertyType, FilterConfig> kFilterMap = {
     plotAreaMax: 5000,
   ),
 
+  PropertyType.commercial: FilterConfig(
+    // 1. unit-price per sqft
+    unitPriceLabel:      '₹ per sqft',
+    unitPriceMin:        2000,
+    unitPriceMax:        200000,
+
+    // 2. total-price for the whole property
+    totalPriceLabel: '₹ total price Sqft',
+    totalPriceMin:   500000,
+    totalPriceMax:   50000000,
+
+    // 3. plot area in sqft
+    areaLabel:       'Sqft',
+    areaMin:         100,
+    areaMax:         10000,
+
+    // no beds/baths filter for comm-space
+    needsBedsBaths:  false,
+  ),
+
   /// For “development” itself, we’ll show a generic placeholder.
   /// You’ll swap to one of the two special configs at runtime in your sheet.
   PropertyType.development: FilterConfig(
@@ -207,25 +227,5 @@ const Map<PropertyType, FilterConfig> kFilterMap = {
     areaMin: 1,
     areaMax: 5000,
     needsBedsBaths: false,
-  ),
-
-  PropertyType.commercialSpace: FilterConfig(
-    // 1. unit-price per sqft
-    unitPriceLabel:      '₹ per sqft',
-    unitPriceMin:        2000,
-    unitPriceMax:        200000,
-
-    // 2. total-price for the whole property
-    totalPriceLabel: '₹ total price',
-    totalPriceMin:   500000,
-    totalPriceMax:   50000000,
-
-    // 3. plot area in sqft
-    areaLabel:       'sqft',
-    areaMin:         100,
-    areaMax:         10000,
-
-    // no beds/baths filter for comm-space
-    needsBedsBaths:  false,
   ),
 };

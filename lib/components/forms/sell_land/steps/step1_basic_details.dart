@@ -46,7 +46,7 @@ class _Step1BasicDetailsState extends State<Step1BasicDetails> {
     'Apartment',
     'House',
     'Villa',
-    'Commercial Space',
+    'Commercial',
     'Development',
   ];
 
@@ -114,13 +114,13 @@ class _Step1BasicDetailsState extends State<Step1BasicDetails> {
     final propertyProvider = Provider.of<PropertyProvider>(context);
     final propertyTypeOptions = [
       'Plot',
-      'Farm Land',
       'Agri Land',
+      'Farm Land',
+      'Apartment',
       'House',
       'Villa',
-      'Apartment',
+      'Commercial',
       'Development',
-      'Commercial Space',
     ];
 
     return Wrap(

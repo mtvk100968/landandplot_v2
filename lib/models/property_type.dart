@@ -5,10 +5,10 @@ enum PropertyType {
   apartment('Apartment'),
   villa('Villa'),
   house('House'),
-  development('Development'),
+  commercial('Commercial'),
+  development('Development');
   // developmentPlot('Development Plot'),
   // developmentLand('Development Land'),
-  commercialSpace('Commercial Space');
 
   final String label;
   const PropertyType(this.label);
@@ -40,10 +40,10 @@ enum PropertyType {
       case PropertyType.apartment:      return 'Apartment';
       case PropertyType.villa:          return 'Villa';
       case PropertyType.house:          return 'House';
+      case PropertyType.commercial:     return 'Commercial';
       case PropertyType.development:    return 'Development';
     // case PropertyType.developmentPlot:return 'development_plot';
     // case PropertyType.developmentLand:return 'development_land';
-      case PropertyType.commercialSpace:return 'Commercial Space';
     }
   }
 }

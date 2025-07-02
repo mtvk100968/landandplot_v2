@@ -473,7 +473,7 @@ class _Step2PropertyDetailsState extends State<Step2PropertyDetails> {
                   ],
 
                   if ([
-                    'commercial space'
+                    'commercial'
                   ].contains(propertyProvider.propertyType.toLowerCase())) ...[
                     TextFormField(
                       decoration:
