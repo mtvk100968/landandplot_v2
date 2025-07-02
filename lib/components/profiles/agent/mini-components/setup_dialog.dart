@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../../../../models/user_model.dart';
 import '../../../../services/user_service.dart';
 import '../../../../services/places_service.dart';
@@ -20,7 +21,7 @@ class _AgentProfileSetupDialogState extends State<AgentProfileSetupDialog> {
   final _areaController = TextEditingController();
   final List<String> _areas = [];
   final PlacesService _placesService =
-     PlacesService(apiKey: 'AIzaSyC9TbKldN2qRj91FxHl1KC3r7KjUlBXOSk');
+      PlacesService(apiKey: dotenv.env['GOOGLE_MAPS_API_KEY']!);
 
   List<dynamic> _suggestions = [];
   bool _isSaving = false;

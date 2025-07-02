@@ -73,6 +73,7 @@ dependencies:
   dotted_border: ^2.1.0
   google_maps_flutter_platform_interface: ^2.11.1
   cloud_functions: ^5.5.1
+  firebase_analytics: ^11.5.1
 
 dev_dependencies:
   flutter_test:

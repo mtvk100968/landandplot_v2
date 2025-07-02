@@ -26,10 +26,10 @@ Future<void> main() async {
   // 2️⃣ Check that the key is in memory
   // sanity-check that you actually got a key
   assert(
-  dotenv.env['GOOGLE_MAPS_API_KEY']?.isNotEmpty == true,
-  'You must define GOOGLE_MAPS_API_KEY in .env',
+    dotenv.env['GOOGLE_MAPS_API_KEY']?.isNotEmpty == true,
+    'You must define GOOGLE_MAPS_API_KEY in .env',
   );
-  print('Maps key: ${dotenv.env['GOOGLE_MAPS_API_KEY']}');
+  print('Maps key loaded'); // silently confirm in dev
 
   await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform);

@@ -297,56 +297,14 @@ class PropertyMapViewState extends State<PropertyMapView> {
     );
   }
 
-  // OPTION 2 _moveToInitialLocation this will also works
-  // void _moveToInitialLocation() {
-  //   if (widget.center != null) {
-  //     // 1° of latitude ≈ 111 km. For longitude, divide by cos(lat).
-  //     final center = widget.center!;
-  //     const double radiusKm = 111.0;
-  //     final double dLat = radiusKm / 111.0;
-  //     final double latRad = center.latitude * math.pi / 180;
-  //     final double dLng = radiusKm / (111.0 * math.cos(latRad));
-  //
-  //     final southwest = LatLng(
-  //       center.latitude  - dLat,
-  //       center.longitude - dLng,
-  //     );
-  //     final northeast = LatLng(
-  //       center.latitude  + dLat,
-  //       center.longitude + dLng,
-  //     );
-  //
-  //     print("🔍 Zooming to ~111 km around $center");
-  //     _mapController.animateCamera(
-  //       CameraUpdate.newLatLngBounds(
-  //         LatLngBounds(southwest: southwest, northeast: northeast),
-  //         50, // padding
-  //       ),
-  //     );
-  //   }
-  //   else if (_markers.isNotEmpty) {
-  //     // If you do have filtered markers, zoom to their bounds
-  //     final bounds = _getBoundsForMarkers(_markers);
-  //     _mapController.animateCamera(
-  //       CameraUpdate.newLatLngBounds(bounds, 50),
-  //     );
-  //   }
-  //   else {
-  //     // No center & no markers → empty map, but still center on last-known area
-  //     // (you can choose to keep your India default here if you really want,
-  //     //  or just leave the camera wherever it was).
-  //     print("⚠️ No center or markers – leaving camera as-is (or fallback).");
-  //   }
-  // }
-
   void _moveToInitialLocation() {
     if (widget.center != null) {
       final c = widget.center!;
       // ~111 km in latitude is about 1°; for longitude we divide by cos(lat)
-      final km = 111.0;
-      final dLat = km/111.0;
+      final km = 90.0;
+      final dLat = km/90.0;
       final rad = c.latitude * math.pi/180;
-      final dLng = km/(111.0 * math.cos(rad));
+      final dLng = km/(90.0 * math.cos(rad));
       final sw = LatLng(c.latitude - dLat, c.longitude - dLng);
       final ne = LatLng(c.latitude + dLat, c.longitude + dLng);
 

@@ -12,7 +12,7 @@ import FirebaseAuth
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
     FirebaseApp.configure()
-    GMSServices.provideAPIKey("AIzaSyA5Dqm48zEoIY_KSx1aHGCETkUXKh48OqA")  // your key
+    GMSServices.provideAPIKey("AIzaSyC9TbKldN2qRj91FxHl1KC3r7KjUlBXOSk")
     GeneratedPluginRegistrant.register(with: self)
 
     // Ask for and register remote notifications

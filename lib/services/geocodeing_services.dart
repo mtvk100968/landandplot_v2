@@ -1,10 +1,11 @@
 import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 
 class GeocodingService {
   static Future<Map<String, String>?> getLocationFromPincode(String pincode) async {
     // If your API key is in the AndroidManifest, you can store it here or retrieve from propertyProvider
-    const String apiKey = 'AIzaSyA5Dqm48zEoIY_KSx1aHGCETkUXKh48OqA';
+    final String apiKey = dotenv.env['GOOGLE_MAPS_API_KEY']!;
 
     final url = Uri.parse(
         'https://maps.googleapis.com/maps/api/geocode/json'

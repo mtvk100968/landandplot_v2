@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'log_api_usage.dart';  // ✅ Import here
 
 class PlacesService {
   final String apiKey;
@@ -12,6 +13,7 @@ class PlacesService {
     final response = await http.get(Uri.parse(url));
     final json = jsonDecode(response.body);
     if (json['status'] == 'OK') {
+      await LogApiUsage.log('places_autocomplete');  // ✅ Track usage
       return json['predictions'];
     } else {
       throw Exception('Failed to fetch suggestions');
@@ -24,6 +26,7 @@ class PlacesService {
     final response = await http.get(Uri.parse(url));
     final json = jsonDecode(response.body);
     if (json['status'] == 'OK') {
+      await LogApiUsage.log('places_details');  // ✅ Track usage
       return json['result'];
     } else {
       throw Exception('Failed to fetch place details');
