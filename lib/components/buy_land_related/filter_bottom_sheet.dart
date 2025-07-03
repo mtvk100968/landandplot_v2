@@ -54,6 +54,9 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
 
   _ActiveSlider _activeSlider = _ActiveSlider.none; // ← start with both active
 
+  pt.PropertyType? _selectedType;
+  String _selectedDevSubtype = ''; // or make it nullable if needed
+
   @override
   void initState() {
     super.initState();
@@ -63,7 +66,8 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
 
 // … all of your existing initState code …
     _place = widget.initialPlace;
-    _type = widget.initialType;
+    // _type = widget.initialType;
+    _type = pt.PropertyType.development;
     _config = _type == null ? null : fc.kFilterMap[_type!];
     // _devSubtype = widget.initialDevSubtype as DevSubtype?; // 🆕
     _devSubtype = widget.initialDevSubtype;
@@ -96,9 +100,9 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
   /// Recomputes _config based on current _type and _devSubtype.
   void _recalcConfig() {
     if (_type == pt.PropertyType.development) {
-      _config = _devSubtype == DevSubtype.plot
+      _config = _devSubtype == DevSubtype.developmentPlot
           ? fc.developmentPlotConfig
-          : _devSubtype == DevSubtype.land
+          : _devSubtype == DevSubtype.developmentLand
           ? fc.developmentLandConfig
           : fc.kFilterMap[pt.PropertyType.development];
     } else if (_type != null) {
@@ -112,20 +116,20 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
     final config = (_type != null) ? fc.kFilterMap[_type!] : null;
     print('🖨 Applying filters:');
     print('   • PropertyType = ${_type?.label ?? "any"}');
-    // ← and if you care about dev subtype:
-    if (_type == pt.PropertyType.development) {
-      print('   • DevSubtype      = ${_devSubtype?.label ?? "none"}');
-    }
+    print('   • PropertyType = $_selectedType');
+    print('   • DevSubtype  = $_selectedDevSubtype');
     print(
         '   • TotalPriceRange = ${_totalPriceRange.start} – ${_totalPriceRange.end}');
     print(
         '   • UnitPriceRange  = ${_unitPriceRange.start} – ${_unitPriceRange.end}');
     print('   • AreaRange       = ${_areaRange.start} – ${_areaRange.end}');
+    final subtype = DevSubtype.fromLabel(_selectedDevSubtype);
+    print('   • subtypeKey  = ${subtype?.firestoreKey}');
 
     Navigator.of(context).pop({
       'place': _place,
       'type': _type,
-      'devSubtypes': _selectedDevSubtypes,
+      'devSubtypes': _selectedDevSubtypes.map((d) => d.firestoreKey).toList(), // ✅ fixed
       'unitPrice': _unitPriceRange,
       'totalPrice': _totalPriceRange, // ← add this
       'area': _areaRange,
@@ -139,6 +143,8 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
   @override
   Widget build(BuildContext context) {
     final config = (_type != null) ? fc.kFilterMap[_type!] : null;
+    print('🧪 Current selected PropertyType: $_type');
+    print('🧪 Should show subtype list: ${_type == pt.PropertyType.development}');
 
 // clamp our ranges to the current config’s bounds
     final clampedUnitPrice = config == null
@@ -222,30 +228,6 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                   },
                 ),
                 const SizedBox(height: 8),
-
-// 🔹 Dev subtype selector only for Development
-//                 if (_type == pt.PropertyType.development) ...[
-//                   const SizedBox(height: 8),
-//                   DropdownButton<DevSubtype>(
-//                       isExpanded: true,
-//                       hint: const Text('Select development subtype'),
-//                       value: _devSubtype,
-//                       items: DevSubtype.values.map((d) {
-//                         return DropdownMenuItem(value: d, child: Text(d.label));
-//                       }).toList(),
-//                       onChanged: (d) {
-//                         setState(() {
-//                           _devSubtype = d;
-//                           _recalcConfig(); // <-- swap in the plot vs land config
-//                           _totalPriceRange = RangeValues(
-//                               _config!.totalPriceMin, _config!.totalPriceMax);
-//                           _unitPriceRange = RangeValues(
-//                               _config!.unitPriceMin, _config!.unitPriceMax);
-//                           _areaRange =
-//                               RangeValues(_config!.areaMin, _config!.areaMax);
-//                         });
-//                       }),
-//                 ],
                 if (_type == pt.PropertyType.development) ...[
                   const SizedBox(height: 8),
                   const Text('Select Development Subtypes'),
@@ -317,45 +299,6 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                         onChanged: (r) => setState(() {
                           _activeSlider = _ActiveSlider.total;
                           _totalPriceRange = r;
-                        }),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 8),
-// Price Slider
-                  Text('Price (${config.unitPriceLabel})'),
-                  Padding(
-                    padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(_indianFormat
-                            .format(clampedUnitPrice.start.round())),
-                        Text(
-                            _indianFormat.format(clampedUnitPrice.end.round())),
-                      ],
-                    ),
-                  ),
-
-                  IgnorePointer(
-// ignoring: _useTotalPrice,              // disabled when total is active
-                    ignoring: _activeSlider == _ActiveSlider.total,
-                    child: Opacity(
-                      opacity: _activeSlider == _ActiveSlider.total ? 0.5 : 1.0,
-                      child: RangeSlider(
-                        activeColor: Colors.green,
-                        min: config.unitPriceMin,
-                        max: config.unitPriceMax,
-                        values: clampedUnitPrice,
-                        labels: RangeLabels(
-                          _indianFormat.format(clampedUnitPrice.start.round()),
-                          _indianFormat.format(clampedUnitPrice.end.round()),
-                        ),
-                        onChanged: (r) => setState(() {
-                          _activeSlider = _ActiveSlider.unit;
-                          _unitPriceRange = r;
                         }),
                       ),
                     ),

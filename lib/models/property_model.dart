@@ -193,14 +193,16 @@ class Property {
 
   /// Deserialize from Firestore map
   factory Property.fromMap(String id, Map<String, dynamic> m) {
+    print('🔥 Raw Firestore doc: $m');  // Add this line
+
     return Property(
       id: id,
       userId: m['userId'] ?? '',
       name: m['name'] ?? '',
       mobileNumber: m['mobileNumber'] ?? '',
       propertyType: m['propertyType'] ?? '',
-      devSubtype: m['subtype'] != null
-          ? DevSubtype.fromKey(m['subtype'])
+      devSubtype: m['devSubtype'] != null
+          ? DevSubtype.fromKey(m['devSubtype'])
           : null,
       landAreaUnitRaw: m['landAreaUnitRaw'] as String? ?? 'sqyd',
       reraNo: m['reraNo'] ?? '',

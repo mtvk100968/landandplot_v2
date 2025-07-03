@@ -127,15 +127,6 @@ class _Step1BasicDetailsState extends State<Step1BasicDetails> {
       spacing: 8.0,
       children: propertyTypeOptions.map((option) {
         final isSelected = (propertyProvider.propertyType == option);
-        // return ChoiceChip(
-        //   label: Text(option),
-        //   selected: isSelected,
-        //   onSelected: (selected) {
-        //     if (selected) {
-        //       propertyProvider.setPropertyType(option);
-        //     }
-        //   },
-        // );
         return ChoiceChip(
           label: Text(option),
           selected: propertyProvider.propertyType == option,
@@ -161,9 +152,7 @@ class _Step1BasicDetailsState extends State<Step1BasicDetails> {
             TextFormField(
               controller: _phoneController,
               keyboardType: TextInputType.number,
-              // initialValue: propertyProvider.phoneNumber.startsWith('+91')
-              //     ? propertyProvider.phoneNumber.substring(3)
-              //     : '',
+
               decoration: const InputDecoration(
                 labelText: 'Phone',
                 prefixText: '+91 ', // ← fixed, non‐editable prefix
@@ -194,16 +183,6 @@ class _Step1BasicDetailsState extends State<Step1BasicDetails> {
               ],
             ),
             SizedBox(height: 20),
-            // TextFormField(
-            //   decoration: InputDecoration(labelText: 'Property Owner Name'),
-            //   initialValue: propertyProvider.propertyOwnerName,
-            //   validator: Validators.requiredValidator,
-            //   onChanged: (value) =>
-            //       propertyProvider.setPropertyOwnerName(value),
-            //   inputFormatters: [
-            //     capitalizeWordsInputFormatter(),
-            //   ],
-            // ),
 
             TextFormField(
               decoration: InputDecoration(

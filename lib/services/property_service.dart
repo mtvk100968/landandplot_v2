@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../models/dev_subtype.dart';
 import '../models/property_model.dart';
 import '../models/property_type.dart' as pt;
 import 'user_service.dart';
@@ -285,24 +286,6 @@ class PropertyService {
     }
   }
 
-  // print('getPropertiesWithFilters called with:');
-  // print('  propertyTypes: $propertyTypes');
-  // print('  minPricePerUnit: $priceField');
-  // print('  minLandArea: $minArea');
-  // print('  maxLandArea: $maxArea');
-  // print('  minTotalPrice: $minPrice');
-  // print('  maxTotalPrice: $maxPrice');
-  // print('  minLat: $bedrooms');
-  // print('  maxLat: $bathrooms');
-  // print('  minLat: $minLat');
-  // print('  maxLat: $maxLat');
-  // print('  minLon: $minLon');
-  // print('  maxLon: $maxLon');
-  // print('  city: $city');
-  // print('  district: $district');
-  // print('  pincode: $pincode');
-  // print('  searchQuery: $searchQuery');
-
   Future<List<Property>> getPropertiesWithFilters({
     List<String>? propertyTypes,
     required String priceField,
@@ -328,10 +311,19 @@ class PropertyService {
       // Start building Firestore query
       var query = _firestore.collection(collectionPath) as Query<Map<String,dynamic>>;
 
-      // Equality filters
+      // PropertyType filter
       if (propertyTypes != null && propertyTypes.isNotEmpty) {
         query = query.where('propertyType', whereIn: propertyTypes);
       }
+
+      // Subtype filter for development subtypes
+
+      final subtypeKeys = selectedDevSubtypes;
+      if (selectedDevSubtypes.isNotEmpty) {
+        query = query.where('subtype', whereIn: selectedDevSubtypes);
+      }
+      print('🎯 subtypeKeys sent to Firestore: $subtypeKeys');
+
       if (city      != null) query = query.where('city',     isEqualTo: city);
       if (district  != null) query = query.where('district', isEqualTo: district);
       if (pincode   != null) query = query.where('pincode',  isEqualTo: pincode);
@@ -345,22 +337,18 @@ class PropertyService {
       if (minPrice != null) query = query.where(priceField, isGreaterThanOrEqualTo: minPrice);
       if (maxPrice != null) query = query.where(priceField, isLessThanOrEqualTo:    maxPrice);
 
+      print('📤 Firestore filters:');
+      print('• propertyTypes: $propertyTypes');
+      print('• selectedDevSubtypes: $selectedDevSubtypes');
+      print('• priceField: $priceField');
+      print('• minPrice: $minPrice, maxPrice: $maxPrice');
+      print('• minArea: $minArea, maxArea: $maxArea');
+
       final snap = await query.get();
       var props = snap.docs.map((d) => Property.fromMap(d.id, d.data())).toList();
 
       // Now do **all** the other ranges in Dart:
-      // 3️⃣ Apply “remaining” filters in Dart
       return props.where((p) {
-        // Pick the right “area” field for each type:
-        // final double? areaVal = switch (p.propertyType) {
-        //   pt.PropertyType.apartment                     => p.carpetArea,
-        //   pt.PropertyType.house  || pt.PropertyType.villa => p.constructedArea,
-        //   pt.PropertyType.plot                           => p.plotArea,
-        //   pt.PropertyType.commercial
-        //                                                   => p.landArea,
-        //   _                                              => p.landArea,
-        // };
-
         double areaVal;
         if (p.propertyType == pt.PropertyType.apartment) {
           areaVal = p.carpetArea ?? 0;
@@ -370,18 +358,8 @@ class PropertyService {
           areaVal = p.landArea;
         }
 
-        if (p.propertyType == 'Development') {
-          if (selectedDevSubtypes.isNotEmpty &&
-              !selectedDevSubtypes.contains(p.devSubtype)) {
-            return false;
-          }
-        }
-
         // ✅ Log for debugging
         print('👀 propertyType: ${p.propertyType}, area: $areaVal');
-
-
-
         // ✅ Add this here:
         print('👀 propertyType: ${p.propertyType}, area: $areaVal');
 

@@ -214,29 +214,6 @@ class _Step2PropertyDetailsState extends State<Step2PropertyDetails> {
                   ),
                   const SizedBox(height: 20),
                 ],
-                // TextFormField(
-                //   controller: _areaController,
-                //   decoration: InputDecoration(
-                //     labelText: isDevelopmentLand || isAgri
-                //         ? 'Area (in acres)'
-                //         : 'Area (in sqyds)',
-                //   ),
-                //   keyboardType:
-                //       const TextInputType.numberWithOptions(decimal: true),
-                //   validator: Validators.areaValidator,
-                //   onChanged: (value) {
-                //     String formattedValue = _formatToIndianSystem(value);
-                //     _areaController.value = TextEditingValue(
-                //       text: formattedValue,
-                //       selection: TextSelection.collapsed(
-                //           offset: formattedValue.length),
-                //     );
-                //     double? parsedValue =
-                //         double.tryParse(value.replaceAll(',', ''));
-                //     propertyProvider.setArea(parsedValue ?? 0.0);
-                //   },
-                // ),
-
                 TextFormField(
                   controller: _areaController,
                   decoration: InputDecoration(
@@ -244,7 +221,8 @@ class _Step2PropertyDetailsState extends State<Step2PropertyDetails> {
                         ? 'Area (in acres)'
                         : 'Area (in sqyds)',
                   ),
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
                   inputFormatters: [
                     // 1) allow only digits and at most one decimal point:
                     FilteringTextInputFormatter.allow(RegExp(r'\d+\.?\d*')),
@@ -260,7 +238,8 @@ class _Step2PropertyDetailsState extends State<Step2PropertyDetails> {
                     // update the field, keeping the cursor at the end
                     _areaController.value = TextEditingValue(
                       text: formatted,
-                      selection: TextSelection.collapsed(offset: formatted.length),
+                      selection:
+                          TextSelection.collapsed(offset: formatted.length),
                     );
                     // commit the numeric value to your provider
                     propertyProvider.setArea(double.tryParse(raw) ?? 0.0);
@@ -343,7 +322,8 @@ class _Step2PropertyDetailsState extends State<Step2PropertyDetails> {
                     decoration: InputDecoration(
                       labelText: isAgri ? 'Price per acre' : 'Price per sqyd',
                     ),
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
                     inputFormatters: [
                       // 1) only digits and an optional dot:
                       FilteringTextInputFormatter.allow(RegExp(r'\d+\.?\d*')),
@@ -359,10 +339,12 @@ class _Step2PropertyDetailsState extends State<Step2PropertyDetails> {
                       // update the text field (and keep cursor at the end)
                       _pricePerUnitController.value = TextEditingValue(
                         text: formatted,
-                        selection: TextSelection.collapsed(offset: formatted.length),
+                        selection:
+                            TextSelection.collapsed(offset: formatted.length),
                       );
                       // parse the raw (un‐comma’d) number into your provider
-                      propertyProvider.setPricePerUnit(double.tryParse(raw) ?? 0.0);
+                      propertyProvider
+                          .setPricePerUnit(double.tryParse(raw) ?? 0.0);
                     },
                   ),
 
