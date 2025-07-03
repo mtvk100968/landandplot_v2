@@ -18,6 +18,7 @@ class FilterBottomSheet extends StatefulWidget {
   final int? initialBeds, initialBaths;
   // final String? initialDevSubtype; // 🆕
   final DevSubtype? initialDevSubtype;
+  final List<DevSubtype> selectedDevSubtypes;
 
   const FilterBottomSheet({
     Key? key,
@@ -32,6 +33,7 @@ class FilterBottomSheet extends StatefulWidget {
     this.initialBeds,
     this.initialBaths,
     this.initialDevSubtype, // 🆕
+    required this.selectedDevSubtypes,
   }) : super(key: key);
 
   @override
@@ -48,6 +50,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
   DevSubtype? _devSubtype;
   fc.FilterConfig? _config;
   late NumberFormat _indianFormat;
+  late List<DevSubtype> _selectedDevSubtypes;
 
   _ActiveSlider _activeSlider = _ActiveSlider.none; // ← start with both active
 
@@ -65,6 +68,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
     // _devSubtype = widget.initialDevSubtype as DevSubtype?; // 🆕
     _devSubtype = widget.initialDevSubtype;
     _recalcConfig();
+    _selectedDevSubtypes = List.of(widget.selectedDevSubtypes); // ✅ COPY
 
     if (_config != null) {
       _unitPriceRange  = RangeValues(
@@ -121,7 +125,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
     Navigator.of(context).pop({
       'place': _place,
       'type': _type,
-      'devSubtype': _devSubtype, // 🆕
+      'devSubtypes': _selectedDevSubtypes,
       'unitPrice': _unitPriceRange,
       'totalPrice': _totalPriceRange, // ← add this
       'area': _areaRange,
@@ -220,27 +224,50 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                 const SizedBox(height: 8),
 
 // 🔹 Dev subtype selector only for Development
+//                 if (_type == pt.PropertyType.development) ...[
+//                   const SizedBox(height: 8),
+//                   DropdownButton<DevSubtype>(
+//                       isExpanded: true,
+//                       hint: const Text('Select development subtype'),
+//                       value: _devSubtype,
+//                       items: DevSubtype.values.map((d) {
+//                         return DropdownMenuItem(value: d, child: Text(d.label));
+//                       }).toList(),
+//                       onChanged: (d) {
+//                         setState(() {
+//                           _devSubtype = d;
+//                           _recalcConfig(); // <-- swap in the plot vs land config
+//                           _totalPriceRange = RangeValues(
+//                               _config!.totalPriceMin, _config!.totalPriceMax);
+//                           _unitPriceRange = RangeValues(
+//                               _config!.unitPriceMin, _config!.unitPriceMax);
+//                           _areaRange =
+//                               RangeValues(_config!.areaMin, _config!.areaMax);
+//                         });
+//                       }),
+//                 ],
                 if (_type == pt.PropertyType.development) ...[
                   const SizedBox(height: 8),
-                  DropdownButton<DevSubtype>(
-                      isExpanded: true,
-                      hint: const Text('Select development subtype'),
-                      value: _devSubtype,
-                      items: DevSubtype.values.map((d) {
-                        return DropdownMenuItem(value: d, child: Text(d.label));
-                      }).toList(),
-                      onChanged: (d) {
+                  const Text('Select Development Subtypes'),
+                  ...DevSubtype.values.map((subtype) {
+                    return CheckboxListTile(
+                      title: Text(subtype.label),
+                      value: _selectedDevSubtypes.contains(subtype),
+                      onChanged: (bool? value) {
                         setState(() {
-                          _devSubtype = d;
-                          _recalcConfig(); // <-- swap in the plot vs land config
-                          _totalPriceRange = RangeValues(
-                              _config!.totalPriceMin, _config!.totalPriceMax);
-                          _unitPriceRange = RangeValues(
-                              _config!.unitPriceMin, _config!.unitPriceMax);
-                          _areaRange =
-                              RangeValues(_config!.areaMin, _config!.areaMax);
+                          if (value == true) {
+                            _selectedDevSubtypes.add(subtype);
+                          } else {
+                            _selectedDevSubtypes.remove(subtype);
+                          }
+                          _devSubtype = _selectedDevSubtypes.isNotEmpty
+                              ? _selectedDevSubtypes.first
+                              : null;
+                          _recalcConfig();
                         });
-                      }),
+                      },
+                    );
+                  }).toList(),
                 ],
 
                 const SizedBox(height: 8),

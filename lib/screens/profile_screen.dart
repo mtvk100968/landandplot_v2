@@ -209,12 +209,18 @@ class ProfileScreenState extends State<ProfileScreen>
                 ),
               ),
               const SizedBox(height: 20),
+              // ElevatedButton(
+              //   onPressed: () {
+              //     debugPrint('ProfileScreen: Verify OTP button pressed');
+              //     _verifyOtp();
+              //   },
+              //   child: const Text('Verify OTP'),
+              // ),
               ElevatedButton(
-                onPressed: () {
-                  debugPrint('ProfileScreen: Verify OTP button pressed');
-                  _verifyOtp();
-                },
-                child: const Text('Verify OTP'),
+                onPressed: _isProcessing ? null : _verifyOtp,
+                child: _isProcessing
+                    ? CircularProgressIndicator()
+                    : Text('Verify OTP'),
               ),
             ],
             if (_isProcessing)

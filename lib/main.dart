@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -45,6 +46,11 @@ Future<void> main() async {
     sound: true,
   );
 
+  final user = FirebaseAuth.instance.currentUser;
+  if (user != null && user.phoneNumber == '+919999888877') {
+    await fixCommercialSpaceProperties();
+  }
+
   runApp(
     MultiProvider(
       providers: [
@@ -78,4 +84,19 @@ class MyApp extends StatelessWidget {
       home: BottomNavBar(key: bottomNavBarKey),
     );
   }
+}
+
+
+Future<void> fixCommercialSpaceProperties() async {
+  final query = await FirebaseFirestore.instance
+      .collection('properties')
+      .where('propertyType', isEqualTo: 'Commercial Space')
+      .get();
+
+  for (final doc in query.docs) {
+    await doc.reference.update({'propertyType': 'Commercial'});
+    print('✅ Updated property: ${doc.id}');
+  }
+
+  print('🎉 Done updating all Commercial Space entries');
 }

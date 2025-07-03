@@ -17,10 +17,7 @@ import 'package:flutter/foundation.dart'
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
-      throw UnsupportedError(
-        'DefaultFirebaseOptions have not been configured for web - '
-        'you can reconfigure this by running the FlutterFire CLI again.',
-      );
+      return web;
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
@@ -28,15 +25,9 @@ class DefaultFirebaseOptions {
       case TargetPlatform.iOS:
         return ios;
       case TargetPlatform.macOS:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for macos - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return macos;
       case TargetPlatform.windows:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for windows - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return windows;
       case TargetPlatform.linux:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for linux - '
@@ -50,22 +41,58 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyASN9fWXsjJ0hewpo0CpUSLdK0CZ2ceCko',
+    apiKey: 'AIzaSyDYqMOw0elIMX0fTx1Dso7TT3GRWiVa3B4',
     appId: '1:423847166550:android:5014d53e9a0c80b39531f7',
     messagingSenderId: '423847166550',
     projectId: 'landandplot-v2',
+    databaseURL: 'https://landandplot-v2-default-rtdb.asia-southeast1.firebasedatabase.app',
     storageBucket: 'landandplot-v2.appspot.com',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyC0VpWnObFi5_vD3qDb5DCOW-HL1mfoRss',
-    appId: '1:423847166550:ios:b648167e1eaaa2349531f7',
+    appId: '1:423847166550:ios:4647dfcb2fbf23fd9531f7',
     messagingSenderId: '423847166550',
     projectId: 'landandplot-v2',
+    databaseURL: 'https://landandplot-v2-default-rtdb.asia-southeast1.firebasedatabase.app',
+    storageBucket: 'landandplot-v2.appspot.com',
+    androidClientId: '423847166550-06umbqp3nen07e50a88nhis2hiqhk1io.apps.googleusercontent.com',
+    iosClientId: '423847166550-jf8gb1o8cbojo5ccladh3e8eqv32vhnf.apps.googleusercontent.com',
+    iosBundleId: 'com.lumpsumify.landandplot',
+  );
+
+  static const FirebaseOptions web = FirebaseOptions(
+    apiKey: 'AIzaSyDwYBlWYHIUFX-ySYEcx94TMSjFvZIu0Uc',
+    appId: '1:423847166550:web:b02b15f529ca1c0b9531f7',
+    messagingSenderId: '423847166550',
+    projectId: 'landandplot-v2',
+    authDomain: 'landandplot-v2.firebaseapp.com',
+    databaseURL: 'https://landandplot-v2-default-rtdb.asia-southeast1.firebasedatabase.app',
+    storageBucket: 'landandplot-v2.appspot.com',
+    measurementId: 'G-LQCWHYXM7S',
+  );
+
+  static const FirebaseOptions macos = FirebaseOptions(
+    apiKey: 'AIzaSyC0VpWnObFi5_vD3qDb5DCOW-HL1mfoRss',
+    appId: '1:423847166550:ios:6b5605241bbe38f89531f7',
+    messagingSenderId: '423847166550',
+    projectId: 'landandplot-v2',
+    databaseURL: 'https://landandplot-v2-default-rtdb.asia-southeast1.firebasedatabase.app',
     storageBucket: 'landandplot-v2.appspot.com',
     androidClientId: '423847166550-06umbqp3nen07e50a88nhis2hiqhk1io.apps.googleusercontent.com',
     iosClientId: '423847166550-sddpkmpf1knger600lq2c8m04p336kr7.apps.googleusercontent.com',
     iosBundleId: 'com.example.landandplot',
+  );
+
+  static const FirebaseOptions windows = FirebaseOptions(
+    apiKey: 'AIzaSyDwYBlWYHIUFX-ySYEcx94TMSjFvZIu0Uc',
+    appId: '1:423847166550:web:17709fcdc2efa08b9531f7',
+    messagingSenderId: '423847166550',
+    projectId: 'landandplot-v2',
+    authDomain: 'landandplot-v2.firebaseapp.com',
+    databaseURL: 'https://landandplot-v2-default-rtdb.asia-southeast1.firebasedatabase.app',
+    storageBucket: 'landandplot-v2.appspot.com',
+    measurementId: 'G-J9TCSGMCD5',
   );
 
 }

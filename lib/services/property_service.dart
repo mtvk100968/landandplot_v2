@@ -285,9 +285,28 @@ class PropertyService {
     }
   }
 
+  // print('getPropertiesWithFilters called with:');
+  // print('  propertyTypes: $propertyTypes');
+  // print('  minPricePerUnit: $priceField');
+  // print('  minLandArea: $minArea');
+  // print('  maxLandArea: $maxArea');
+  // print('  minTotalPrice: $minPrice');
+  // print('  maxTotalPrice: $maxPrice');
+  // print('  minLat: $bedrooms');
+  // print('  maxLat: $bathrooms');
+  // print('  minLat: $minLat');
+  // print('  maxLat: $maxLat');
+  // print('  minLon: $minLon');
+  // print('  maxLon: $maxLon');
+  // print('  city: $city');
+  // print('  district: $district');
+  // print('  pincode: $pincode');
+  // print('  searchQuery: $searchQuery');
+
   Future<List<Property>> getPropertiesWithFilters({
     List<String>? propertyTypes,
     required String priceField,
+    List<String> selectedDevSubtypes = const [], // ✅ ADD THIS
     double? minPrice,
     double? maxPrice,
     double? minArea,
@@ -304,23 +323,7 @@ class PropertyService {
     String? searchQuery,
   }) async {
     try {
-      print('getPropertiesWithFilters called with:');
-      print('  propertyTypes: $propertyTypes');
-      print('  minPricePerUnit: $priceField');
-      print('  minLandArea: $minArea');
-      print('  maxLandArea: $maxArea');
-      print('  minTotalPrice: $minPrice');
-      print('  maxTotalPrice: $maxPrice');
-      print('  minLat: $bedrooms');
-      print('  maxLat: $bathrooms');
-      print('  minLat: $minLat');
-      print('  maxLat: $maxLat');
-      print('  minLon: $minLon');
-      print('  maxLon: $maxLon');
-      print('  city: $city');
-      print('  district: $district');
-      print('  pincode: $pincode');
-      print('  searchQuery: $searchQuery');
+      // Add commented Print code
 
       // Start building Firestore query
       var query = _firestore.collection(collectionPath) as Query<Map<String,dynamic>>;
@@ -349,14 +352,38 @@ class PropertyService {
       // 3️⃣ Apply “remaining” filters in Dart
       return props.where((p) {
         // Pick the right “area” field for each type:
-        final double? areaVal = switch (p.propertyType) {
-          pt.PropertyType.apartment                     => p.carpetArea,
-          pt.PropertyType.house  || pt.PropertyType.villa => p.constructedArea,
-          pt.PropertyType.plot                           => p.plotArea,
-          pt.PropertyType.commercial
-                                                          => p.landArea,
-          _                                              => p.landArea,
-        };
+        // final double? areaVal = switch (p.propertyType) {
+        //   pt.PropertyType.apartment                     => p.carpetArea,
+        //   pt.PropertyType.house  || pt.PropertyType.villa => p.constructedArea,
+        //   pt.PropertyType.plot                           => p.plotArea,
+        //   pt.PropertyType.commercial
+        //                                                   => p.landArea,
+        //   _                                              => p.landArea,
+        // };
+
+        double areaVal;
+        if (p.propertyType == pt.PropertyType.apartment) {
+          areaVal = p.carpetArea ?? 0;
+        } else if (p.propertyType == pt.PropertyType.villa || p.propertyType == pt.PropertyType.house) {
+          areaVal = p.constructedArea ?? 0;
+        } else {
+          areaVal = p.landArea;
+        }
+
+        if (p.propertyType == 'Development') {
+          if (selectedDevSubtypes.isNotEmpty &&
+              !selectedDevSubtypes.contains(p.devSubtype)) {
+            return false;
+          }
+        }
+
+        // ✅ Log for debugging
+        print('👀 propertyType: ${p.propertyType}, area: $areaVal');
+
+
+
+        // ✅ Add this here:
+        print('👀 propertyType: ${p.propertyType}, area: $areaVal');
 
         // only compare if areaVal itself is non-null
         final okArea = (minArea == null  || (areaVal != null && areaVal >= minArea))

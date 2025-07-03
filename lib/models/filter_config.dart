@@ -198,16 +198,16 @@ const Map<PropertyType, FilterConfig> kFilterMap = {
     // 1. unit-price per sqft
     unitPriceLabel:      '₹ per sqft',
     unitPriceMin:        2000,
-    unitPriceMax:        200000,
+    unitPriceMax:        20000000,
 
     // 2. total-price for the whole property
     totalPriceLabel: '₹ total price Sqft',
-    totalPriceMin:   500000,
-    totalPriceMax:   50000000,
+    totalPriceMin:   50000,
+    totalPriceMax:   500000000,
 
     // 3. plot area in sqft
     areaLabel:       'Sqft',
-    areaMin:         100,
+    areaMin:         1,
     areaMax:         10000,
 
     // no beds/baths filter for comm-space

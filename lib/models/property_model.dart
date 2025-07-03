@@ -3,6 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import './buyer_model.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
+import 'dev_subtype.dart';
+
 /// Real estate property, now with unified buyers list & sale-stage
 class Property {
   final String id;
@@ -10,7 +12,7 @@ class Property {
   final String name;
   final String mobileNumber;
   final String propertyType;
-  final String? subtype;         // ← NEW
+  final DevSubtype? devSubtype;
   final String? reraNo; // NEW: optional RERA number
   final String landAreaUnitRaw;
   final String? bedrooms;
@@ -77,7 +79,7 @@ class Property {
     required this.name,
     required this.mobileNumber,
     required this.propertyType,
-    this.subtype,                // ← NEW
+    this.devSubtype,                // ← NEW
     required this.landAreaUnitRaw,
     this.reraNo,
     this.bedrooms,
@@ -136,7 +138,7 @@ class Property {
       'name': name,
       'mobileNumber': mobileNumber,
       'propertyType': propertyType,
-      'subtype': subtype,         // ← NEW
+      'devSubtype': devSubtype?.firestoreKey,
       'landAreaUnitRaw': landAreaUnitRaw,         // ← NEW
       'reraNo': reraNo,
       'bedrooms': bedrooms,
@@ -197,7 +199,9 @@ class Property {
       name: m['name'] ?? '',
       mobileNumber: m['mobileNumber'] ?? '',
       propertyType: m['propertyType'] ?? '',
-      subtype: m['subtype'] as String?,  // ← NEW
+      devSubtype: m['subtype'] != null
+          ? DevSubtype.fromKey(m['subtype'])
+          : null,
       landAreaUnitRaw: m['landAreaUnitRaw'] as String? ?? 'sqyd',
       reraNo: m['reraNo'] ?? '',
       bedrooms: m['bedrooms'],
@@ -302,5 +306,5 @@ extension PropertyFiltering on Property {
 
   /// Used by your client‐side filter to compare against the
   /// Firestore subtype field.
-  String? get subtypeKey => subtype;
+  String? get subtypeKey => devSubtype?.firestoreKey;
 }

@@ -44,6 +44,7 @@ class BuyLandScreenState extends State<BuyLandScreen> {
   RangeValues _selectedTotalPriceRange = const RangeValues(0, 0);
   RangeValues _selectedUnitPriceRange = const RangeValues(0, 0);
   bool _useTotalPrice = false;
+  List<DevSubtype> _selectedDevSubtypes = []; // ✅ Add this here
 
   String pricePerUnitUnit = '';
   String landAreaUnit = '';
@@ -133,8 +134,6 @@ class BuyLandScreenState extends State<BuyLandScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
       builder: (ctx) {
-        // 1) Add bottom padding equal to the keyboard inset
-        // 2) Let the FilterBottomSheet be the only child
         return Padding(
           padding: EdgeInsets.only(
             bottom: MediaQuery.of(ctx).viewInsets.bottom,
@@ -149,6 +148,7 @@ class BuyLandScreenState extends State<BuyLandScreen> {
               child: FilterBottomSheet(
                 initialType: _type,
                 initialDevSubtype: _devSubtype,
+                selectedDevSubtypes: _selectedDevSubtypes, // ✅ PASS THIS
                 initialPlace: selectedPlace,
                 initialMinArea: _selectedAreaRange.start,
                 initialMaxArea: _selectedAreaRange.end,
@@ -177,7 +177,12 @@ class BuyLandScreenState extends State<BuyLandScreen> {
         _selectedBathrooms = result['baths'] as int?;
         selectedPlace = result['place'] as Map<String, dynamic>?;
 
+        // ✅ ADD THIS:
+        _selectedDevSubtypes = result['devSubtypes']?.cast<DevSubtype>() ?? [];
+
         selectedPropertyTypes = _type != null ? [_type!.firestoreKey] : [];
+
+        // 🔁 Reload properties after filter
         _propertyFuture = _loadProperties();
       });
     }
