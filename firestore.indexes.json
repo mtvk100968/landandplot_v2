@@ -843,6 +843,42 @@
           "order": "ASCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "properties",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "propertyType", "order": "ASCENDING" },
+        { "fieldPath": "subtype",      "order": "ASCENDING" },
+        { "fieldPath": "totalPrice",   "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "properties",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "propertyType", "order": "ASCENDING" },
+        { "fieldPath": "subtype",      "order": "ASCENDING" },
+        { "fieldPath": "landArea",     "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "properties",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "propertyType", "order": "ASCENDING" },
+        { "fieldPath": "subtype",      "order": "ASCENDING" },
+        { "fieldPath": "totalPrice",   "order": "ASCENDING" },
+        { "fieldPath": "landArea",     "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "properties",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "propertyType", "order": "ASCENDING" },
+        { "fieldPath": "subtype", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

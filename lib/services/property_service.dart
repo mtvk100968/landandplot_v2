@@ -289,7 +289,7 @@ class PropertyService {
   Future<List<Property>> getPropertiesWithFilters({
     List<String>? propertyTypes,
     required String priceField,
-    List<String> selectedDevSubtypes = const [], // ✅ ADD THIS
+    List<String>? devSubtypes,
     double? minPrice,
     double? maxPrice,
     double? minArea,
@@ -306,10 +306,18 @@ class PropertyService {
     String? searchQuery,
   }) async {
     try {
-      // Add commented Print code
+
+      // 🔍 DEBUG: Check what subtypes actually exist in Firestore for 'Development'
+      final allSnap = await FirebaseFirestore.instance.collection('properties').get();
+      for (var d in allSnap.docs) {
+        final data = d.data();
+        if (data.containsKey('propertyType')) {
+          print('🧾 DEV PROPERTY: id=${d.id}, ${data['propertyType']}, subtype: ${data['subtype']}');
+        }
+      }
 
       // Start building Firestore query
-      var query = _firestore.collection(collectionPath) as Query<Map<String,dynamic>>;
+      var query = _firestore.collection(collectionPath) as Query<Map<String, dynamic>>;
 
       // PropertyType filter
       if (propertyTypes != null && propertyTypes.isNotEmpty) {
@@ -318,9 +326,9 @@ class PropertyService {
 
       // Subtype filter for development subtypes
 
-      final subtypeKeys = selectedDevSubtypes;
-      if (selectedDevSubtypes.isNotEmpty) {
-        query = query.where('subtype', whereIn: selectedDevSubtypes);
+      final subtypeKeys = devSubtypes ?? [];
+      if (devSubtypes != null && devSubtypes.isNotEmpty) {
+        query = query.where('subtype', whereIn: devSubtypes);
       }
       print('🎯 subtypeKeys sent to Firestore: $subtypeKeys');
 
@@ -333,13 +341,29 @@ class PropertyService {
             .where('name', isGreaterThanOrEqualTo: searchQuery)
             .where('name', isLessThanOrEqualTo: '$searchQuery\uf8ff');
       }
-      // *** exactly one **inequality**:
-      if (minPrice != null) query = query.where(priceField, isGreaterThanOrEqualTo: minPrice);
-      if (maxPrice != null) query = query.where(priceField, isLessThanOrEqualTo:    maxPrice);
+      // // *** exactly one **inequality**:
+      // if (minPrice != null) query = query.where(priceField, isGreaterThanOrEqualTo: minPrice);
+      // if (maxPrice != null) query = query.where(priceField, isLessThanOrEqualTo:    maxPrice);
+
+      // Only apply price filtering if priceField is valid and not for Development
+      if (priceField == 'pricePerUnit' &&
+          propertyTypes != null &&
+          propertyTypes.contains('Development')) {
+        print('⛔ Skipping pricePerUnit filtering for Development properties');
+      } else {
+        if (minPrice != null) {
+          query = query.where(priceField, isGreaterThanOrEqualTo: minPrice);
+        }
+        if (maxPrice != null) {
+          query = query.where(priceField, isLessThanOrEqualTo: maxPrice);
+        }
+      }
 
       print('📤 Firestore filters:');
       print('• propertyTypes: $propertyTypes');
-      print('• selectedDevSubtypes: $selectedDevSubtypes');
+      print('• selectedDevSubtypes: $devSubtypes');
+      print("🧾 Filtering for subtype keys: $subtypeKeys");
+      // print("📄 Property Firestore subtype: ${p.subtype}");
       print('• priceField: $priceField');
       print('• minPrice: $minPrice, maxPrice: $maxPrice');
       print('• minArea: $minArea, maxArea: $maxArea');
@@ -349,6 +373,7 @@ class PropertyService {
 
       // Now do **all** the other ranges in Dart:
       return props.where((p) {
+        print("📄 Property DevSubtype: ${p.devSubtype?.firestoreKey}");
         double areaVal;
         if (p.propertyType == pt.PropertyType.apartment) {
           areaVal = p.carpetArea ?? 0;
@@ -357,7 +382,7 @@ class PropertyService {
         } else {
           areaVal = p.landArea;
         }
-
+        print("🧾 Filtering for subtype keys: $subtypeKeys");
         // ✅ Log for debugging
         print('👀 propertyType: ${p.propertyType}, area: $areaVal');
         // ✅ Add this here:

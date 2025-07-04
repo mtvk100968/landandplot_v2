@@ -1,6 +1,6 @@
 enum DevSubtype {
-  developmentPlot(label: 'Development Plot', firestoreKey: 'development plot'),
-  developmentLand(label: 'Development Land', firestoreKey: 'development land');
+  developmentPlot(label: 'Development Plot', firestoreKey: 'Development Plot'),
+  developmentLand(label: 'Development Land', firestoreKey: 'Development Land'); // ✅ FIXED CASE HERE
 
   final String label;
   final String firestoreKey;
@@ -8,10 +8,11 @@ enum DevSubtype {
   const DevSubtype({required this.label, required this.firestoreKey});
 
   static DevSubtype? fromKey(String key) {
-    return DevSubtype.values.firstWhere(
-          (e) => e.firestoreKey == key,
-      orElse: () => DevSubtype.developmentPlot,
-    );
+    try {
+      return DevSubtype.values.firstWhere((e) => e.firestoreKey == key);
+    } catch (_) {
+      return null;
+    }
   }
 
   static DevSubtype fromLabel(String label) {
@@ -20,29 +21,7 @@ enum DevSubtype {
       orElse: () => DevSubtype.developmentPlot,
     );
   }
+
+  @override
+  String toString() => label;
 }
-
-
-// enum DevSubtype {
-//   developmentPlot('Development Plot', 'development plot'),
-//   developmentLand('Development Land', 'development land');
-//
-//   final String label;
-//   final String firestoreKey;
-//
-//   const DevSubtype(this.label, this.firestoreKey);
-//
-//   static DevSubtype? fromKey(String key) {
-//     return DevSubtype.values.firstWhere(
-//           (e) => e.firestoreKey == key,
-//       orElse: () => DevSubtype.developmentPlot,
-//     );
-//   }
-//
-//   static DevSubtype fromLabel(String label) {
-//     return DevSubtype.values.firstWhere(
-//           (e) => e.label == label,
-//       orElse: () => DevSubtype.developmentPlot,
-//     );
-//   }
-// }

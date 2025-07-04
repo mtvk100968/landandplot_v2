@@ -35,8 +35,16 @@ class _SignInBottomSheetState extends State<SignInBottomSheet> {
 
   Future<void> _sendOtp() async {
     final phone = _phoneController.text.trim();
-    final userType = _selectedLoginType == UserLoginType.agent ? 'agent' : 'user';
 
+    // ✅ Basic phone number validation
+    if (phone.length < 13 || !phone.startsWith('+91')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a valid Indian phone number')),
+      );
+      return;
+    }
+
+    final userType = _selectedLoginType == UserLoginType.agent ? 'agent' : 'user';
     debugPrint("▶️ _sendOtp() starting for $phone as $userType");
     setState(() => _isProcessing = true);
 
@@ -46,19 +54,33 @@ class _SignInBottomSheetState extends State<SignInBottomSheet> {
         phoneNumber: phone,                             // ← use `phone`, not `phoneNumber`
         timeout: const Duration(seconds: 60),
 
-        verificationCompleted: (cred) {
-          debugPrint("🔑 verificationCompleted: $cred");
-          // … auto‐sign‐in logic …
+        verificationCompleted: (PhoneAuthCredential credential) async {
+          try {
+            // final userType = _selectedLoginType == UserLoginType.agent ? 'agent' : 'user';
+            await _authService.signInWithPhoneAuthCredential(credential, userType);
+            Navigator.pop(context, true); // Auto-signed in
+          } catch (e) {
+            debugPrint("❌ Auto-sign-in failed: $e");
+          }
         },
+
+        // verificationFailed: (FirebaseAuthException e) {
+        //   debugPrint("❌ verificationFailed: ${e.code} ${e.message}");
+        //   print('Full exception: $e');
+        //   // ScaffoldMessenger.of(context).showSnackBar(
+        //   //     SnackBar(content: Text('Verification failed: ${e.code} — ${e.message}'))
+        //   // );
+        //   // setState(() => _isProcessing = false);
+        // },
 
         verificationFailed: (FirebaseAuthException e) {
           debugPrint("❌ verificationFailed: ${e.code} ${e.message}");
-          print('Full exception: $e');
-          // ScaffoldMessenger.of(context).showSnackBar(
-          //     SnackBar(content: Text('Verification failed: ${e.code} — ${e.message}'))
-          // );
-          // setState(() => _isProcessing = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Verification failed: ${e.message ?? 'Unknown error'}')),
+          );
+          setState(() => _isProcessing = false);
         },
+
 
         codeSent: (verificationId, resendToken) {
           debugPrint("✉️ codeSent: id=$verificationId, token=$resendToken");
@@ -86,6 +108,16 @@ class _SignInBottomSheetState extends State<SignInBottomSheet> {
   }
 
   Future<void> _verifyOtp() async {
+    final otp = _otpController.text.trim();
+
+    // ✅ Basic OTP validation
+    if (otp.length != 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a 6-digit OTP')),
+      );
+      return;
+    }
+
     setState(() => _isProcessing = true);
 
     try {

@@ -297,40 +297,101 @@ class PropertyMapViewState extends State<PropertyMapView> {
     );
   }
 
-  void _moveToInitialLocation() {
+  // void _moveToInitialLocation() {
+  //   if (widget.center != null) {
+  //     final c = widget.center!;
+  //     // ~111 km in latitude is about 1°; for longitude we divide by cos(lat)
+  //     final km = 90.0;
+  //     final dLat = km/90.0;
+  //     final rad = c.latitude * math.pi/180;
+  //     final dLng = km/(90.0 * math.cos(rad));
+  //     final sw = LatLng(c.latitude - dLat, c.longitude - dLng);
+  //     final ne = LatLng(c.latitude + dLat, c.longitude + dLng);
+  //
+  //     _mapController.animateCamera(
+  //       CameraUpdate.newLatLngBounds(
+  //         LatLngBounds(southwest: sw, northeast: ne),
+  //         50, // padding
+  //       ),
+  //     );
+  //   }
+  //   else if (_markers.isNotEmpty) {
+  //     // If you do have filtered markers, zoom to their bounds
+  //     final bounds = _getBoundsForMarkers(_markers);
+  //     _mapController.animateCamera(
+  //       CameraUpdate.newLatLngBounds(bounds, 50),
+  //     );
+  //   }
+  //   else {
+  //     // you can still keep your India default if you really want:
+  //     _mapController.animateCamera(
+  //       CameraUpdate.newLatLngZoom(
+  //         LatLng(20.5937, 78.9629),
+  //         8,
+  //       ),
+  //     );
+  //     print("⚠️ No center or markers – leaving camera as-is (or fallback).");
+  //   }
+  // }
+
+  Future<void> _moveToInitialLocation() async {
     if (widget.center != null) {
       final c = widget.center!;
-      // ~111 km in latitude is about 1°; for longitude we divide by cos(lat)
       final km = 90.0;
-      final dLat = km/90.0;
-      final rad = c.latitude * math.pi/180;
-      final dLng = km/(90.0 * math.cos(rad));
+      final dLat = km / 90.0;
+      final rad = c.latitude * math.pi / 180;
+      final dLng = km / (90.0 * math.cos(rad));
       final sw = LatLng(c.latitude - dLat, c.longitude - dLng);
       final ne = LatLng(c.latitude + dLat, c.longitude + dLng);
 
       _mapController.animateCamera(
         CameraUpdate.newLatLngBounds(
           LatLngBounds(southwest: sw, northeast: ne),
-          50, // padding
+          50,
         ),
       );
-    }
-    else if (_markers.isNotEmpty) {
-      // If you do have filtered markers, zoom to their bounds
+    } else if (_markers.isNotEmpty) {
       final bounds = _getBoundsForMarkers(_markers);
       _mapController.animateCamera(
         CameraUpdate.newLatLngBounds(bounds, 50),
       );
+    } else {
+      final currentLoc = await _getCurrentLocation();
+      if (currentLoc != null) {
+        _mapController.animateCamera(
+          CameraUpdate.newLatLngZoom(currentLoc, 12),
+        );
+        print("📍 Fallback: moved to user's current location");
+      } else {
+        _mapController.animateCamera(
+          CameraUpdate.newLatLngZoom(
+            LatLng(20.5937, 78.9629),
+            8,
+          ),
+        );
+        print("⚠️ No location found – fallback to India default.");
+      }
     }
-    else {
-      // you can still keep your India default if you really want:
-      _mapController.animateCamera(
-        CameraUpdate.newLatLngZoom(
-          LatLng(20.5937, 78.9629),
-          8,
-        ),
+  }
+
+  Future<LatLng?> _getCurrentLocation() async {
+    try {
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          print('❌ Location permission denied.');
+          return null;
+        }
+      }
+
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
       );
-      print("⚠️ No center or markers – leaving camera as-is (or fallback).");
+      return LatLng(position.latitude, position.longitude);
+    } catch (e) {
+      print('❌ Error fetching current location: $e');
+      return null;
     }
   }
 

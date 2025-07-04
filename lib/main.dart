@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:landandplot/providers/otp_auth_provider.dart';
 import 'package:provider/provider.dart';
 
 import 'firebase_options.dart';
@@ -59,6 +60,9 @@ Future<void> main() async {
         ),
         ChangeNotifierProvider<FilterProvider>(          // ← register it here
           create: (_) => FilterProvider(),
+        ),
+        ChangeNotifierProvider<OtpAuthProvider>(
+            create: (_) => OtpAuthProvider(),
         ),
         Provider<PropertyService>(
           create: (_) => PropertyService(),

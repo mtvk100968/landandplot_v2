@@ -97,10 +97,14 @@ class BuyLandScreenState extends State<BuyLandScreen> {
     final maxP = _useTotalPrice
         ? _selectedTotalPriceRange.end
         : _selectedUnitPriceRange.end;
+    print('🔥 Final selectedDevSubtypes: ${_selectedDevSubtypes.map((e) => e.firestoreKey).toList()}');
 
     return PropertyService().getPropertiesWithFilters(
       propertyTypes:
           selectedPropertyTypes.isEmpty ? null : selectedPropertyTypes,
+      devSubtypes: _selectedDevSubtypes.isNotEmpty
+          ? _selectedDevSubtypes.map((e) => e.firestoreKey).toList()
+          : null,
       priceField: field,
       minPrice: minP > 0 ? minP : null,
       maxPrice: maxP > 0 ? maxP : null,
@@ -178,7 +182,11 @@ class BuyLandScreenState extends State<BuyLandScreen> {
         selectedPlace = result['place'] as Map<String, dynamic>?;
 
         // ✅ ADD THIS:
-        _selectedDevSubtypes = result['devSubtypes']?.cast<DevSubtype>() ?? [];
+        // _selectedDevSubtypes = result['devSubtypes']?.cast<DevSubtype>() ?? [];
+        _selectedDevSubtypes = (result['devSubtypes'] as List<dynamic>?)
+            ?.map((s) => DevSubtype.fromKey(s.toString()))
+            .whereType<DevSubtype>() // filters out nulls
+            .toList() ?? [];
 
         selectedPropertyTypes = _type != null ? [_type!.firestoreKey] : [];
 
@@ -403,6 +411,7 @@ class BuyLandScreenState extends State<BuyLandScreen> {
                         // Location Search Bar
                         Expanded(
                           child: LocationSearchBar(
+                            initialPlace: selectedPlace,
                             onPlaceSelected: _handlePlaceSelected,
                           ),
                         ),
@@ -443,9 +452,10 @@ class BuyLandScreenState extends State<BuyLandScreen> {
                       future: _propertyFuture,
                       builder: (context, propertySnapshot) {
                         if (propertySnapshot.connectionState ==
-                            ConnectionState.waiting)
+                            ConnectionState.waiting) {
                           return const Center(
                               child: CircularProgressIndicator());
+                        }
                         final props = propertySnapshot.data ?? [];
 
                         // build both views up front

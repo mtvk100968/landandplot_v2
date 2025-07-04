@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:open_file/open_file.dart';
 import 'package:provider/provider.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:image_picker/image_picker.dart';
@@ -12,7 +13,7 @@ import '../../../../providers/property_provider.dart';
 class Step6MediaUpload extends StatefulWidget {
   final GlobalKey<FormState> formKey;
 
-  const Step6MediaUpload({Key? key, required this.formKey}) : super(key: key);
+  const Step6MediaUpload({super.key, required this.formKey});
 
   @override
   _Step6MediaUploadState createState() => _Step6MediaUploadState();
@@ -22,6 +23,18 @@ class _Step6MediaUploadState extends State<Step6MediaUpload> {
   final Map<String, VideoPlayerController> _videoControllers = {};
   final ImagePicker _picker = ImagePicker();
   final Map<String, Future<String?>> _videoThumbnails = {};
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Safely access provider once without listening to it
+    final propertyProvider = Provider.of<PropertyProvider>(context, listen: false);
+
+    for (var file in propertyProvider.videoFiles) {
+      _generateVideoThumbnail(file.path);
+    }
+  }
 
   @override
   void dispose() {
@@ -81,19 +94,61 @@ class _Step6MediaUploadState extends State<Step6MediaUpload> {
     );
   }
 
-  /// Method to pick images either from gallery or camera
   Future<void> _pickImages(
       BuildContext context, PropertyProvider propertyProvider) async {
     final ImageSource? source = await _showImageSourceActionSheet(context);
     if (source == null) return;
 
+    const maxImageSizeMB = 20;
+    const maxImageCount = 20;
+    const maxCombinedSizeMB = 250;
+
+    double currentTotalSize =
+        propertyProvider.imageFiles.fold(0.0, (sum, f) => sum + f.lengthSync()) +
+            propertyProvider.videoFiles.fold(0.0, (sum, f) => sum + f.lengthSync()) +
+            propertyProvider.documentFiles.fold(0.0, (sum, f) => sum + f.lengthSync());
+
+    currentTotalSize /= (1024 * 1024); // Convert to MB
+
     if (source == ImageSource.camera) {
       final XFile? photo = await _picker.pickImage(
         source: ImageSource.camera,
-        imageQuality: 100, // Ensures high quality
+        imageQuality: 100,
       );
+
       if (photo != null) {
-        propertyProvider.addImageFile(File(photo.path));
+        final file = File(photo.path);
+        final fileSizeInMB = file.lengthSync() / (1024 * 1024);
+
+        if (fileSizeInMB > maxImageSizeMB) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Image is over $maxImageSizeMB MB and was skipped.')),
+          );
+          return;
+        }
+
+        if (propertyProvider.imageFiles.length >= maxImageCount) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('You can upload a maximum of 20 images.')),
+          );
+          return;
+        }
+
+        if (currentTotalSize + fileSizeInMB > maxCombinedSizeMB) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Adding this file exceeds total size limit (250 MB).')),
+          );
+          return;
+        }
+
+        if (propertyProvider.imageFiles.any((f) => f.path == file.path)) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('This image is already added.')),
+          );
+          return;
+        }
+
+        propertyProvider.addImageFile(file);
         setState(() {});
       }
     } else {
@@ -103,17 +158,49 @@ class _Step6MediaUploadState extends State<Step6MediaUpload> {
       );
 
       if (result != null) {
+        if (propertyProvider.imageFiles.length + result.files.length > maxImageCount) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('You can upload a maximum of 20 images.')),
+          );
+          return;
+        }
+
         for (var file in result.files) {
           if (file.path != null) {
-            propertyProvider.addImageFile(File(file.path!));
+            final fileObj = File(file.path!);
+            final fileSizeInMB = fileObj.lengthSync() / (1024 * 1024);
+
+            if (fileSizeInMB > maxImageSizeMB) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('${file.name} is over $maxImageSizeMB MB and was skipped.')),
+              );
+              continue;
+            }
+
+            if (currentTotalSize + fileSizeInMB > maxCombinedSizeMB) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('${file.name} exceeds total upload limit (250 MB). Skipped.')),
+              );
+              continue;
+            }
+
+            if (propertyProvider.imageFiles.any((f) => f.path == file.path)) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('${file.name} is already added. Skipped.')),
+              );
+              continue;
+            }
+
+            propertyProvider.addImageFile(fileObj);
+            currentTotalSize += fileSizeInMB;
           }
         }
-        setState(() {}); // Refresh UI after adding images
+
+        setState(() {});
       }
     }
   }
 
-  /// Method to pick videos either from gallery or camera
   Future<void> _pickVideos(
       BuildContext context, PropertyProvider propertyProvider) async {
     final ImageSource? source = await _showVideoSourceActionSheet(context);
@@ -122,11 +209,28 @@ class _Step6MediaUploadState extends State<Step6MediaUpload> {
     if (source == ImageSource.camera) {
       final XFile? video = await _picker.pickVideo(
         source: ImageSource.camera,
-        maxDuration: Duration(minutes: 10), // Adjust as needed
+        maxDuration: const Duration(minutes: 10),
       );
       if (video != null) {
-        propertyProvider.addVideoFile(File(video.path));
-        _generateVideoThumbnail(video.path!);
+        final file = File(video.path);
+        final fileSizeInMB = file.lengthSync() / (1024 * 1024);
+
+        if (fileSizeInMB > 75) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Captured video is over 50 MB and was skipped.')),
+          );
+          return;
+        }
+
+        if (propertyProvider.videoFiles.length >= 5) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('You can upload a maximum of 5 videos.')),
+          );
+          return;
+        }
+
+        propertyProvider.addVideoFile(file);
+        _generateVideoThumbnail(file.path);
         setState(() {});
       }
     } else {
@@ -136,13 +240,32 @@ class _Step6MediaUploadState extends State<Step6MediaUpload> {
       );
 
       if (result != null) {
+        // Check for max file count before processing
+        if (propertyProvider.videoFiles.length + result.files.length > 5) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('You can upload a maximum of 5 videos.')),
+          );
+          return;
+        }
+
         for (var file in result.files) {
           if (file.path != null) {
-            propertyProvider.addVideoFile(File(file.path!));
+            final fileObj = File(file.path!);
+            final fileSizeInMB = fileObj.lengthSync() / (1024 * 1024);
+
+            if (fileSizeInMB > 75) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('${file.name} is over 50 MB and was skipped.')),
+              );
+              continue;
+            }
+
+            propertyProvider.addVideoFile(fileObj);
             _generateVideoThumbnail(file.path!);
           }
         }
-        setState(() {}); // Refresh UI after adding videos
+
+        setState(() {});
       }
     }
   }
@@ -150,34 +273,86 @@ class _Step6MediaUploadState extends State<Step6MediaUpload> {
   /// Method to pick documents from the device
   Future<void> _pickDocuments(
       BuildContext context, PropertyProvider propertyProvider) async {
+    const maxFileSizeMB = 50;
+    const maxTotalDocs = 10;
+    const maxCombinedSizeMB = 500;
+
+    // Calculate current total size (images + videos + docs)
+    double currentTotalSize =
+        propertyProvider.imageFiles.fold(0.0, (sum, f) => sum + f.lengthSync()) +
+            propertyProvider.videoFiles.fold(0.0, (sum, f) => sum + f.lengthSync()) +
+            propertyProvider.documentFiles.fold(0.0, (sum, f) => sum + f.lengthSync());
+    currentTotalSize /= (1024 * 1024); // Convert to MB
+
     FilePickerResult? result = await FilePicker.platform.pickFiles(
       allowMultiple: true,
-      type: FileType.any,
+      type: FileType.custom,
+      allowedExtensions: ['pdf', 'doc', 'docx', 'ppt', 'pptx'],
     );
 
     if (result != null) {
+      // Check document count limit
+      if (propertyProvider.documentFiles.length + result.files.length > maxTotalDocs) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('You can upload a maximum of 10 documents.')),
+        );
+        return;
+      }
+
       for (var file in result.files) {
         if (file.path != null) {
-          propertyProvider.addDocumentFile(File(file.path!));
+          final fileObj = File(file.path!);
+          final fileSizeMB = fileObj.lengthSync() / (1024 * 1024);
+
+          // Skip if single file > 50 MB
+          if (fileSizeMB > maxFileSizeMB) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('${file.name} is over $maxFileSizeMB MB. Skipped.')),
+            );
+            continue;
+          }
+
+          // Skip if file already added
+          if (propertyProvider.documentFiles.any((f) => f.path == file.path)) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('${file.name} is already added. Skipped.')),
+            );
+            continue;
+          }
+
+          // Skip if total combined size exceeds 250 MB
+          if (currentTotalSize + fileSizeMB > maxCombinedSizeMB) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('${file.name} exceeds total 250 MB limit. Skipped.')),
+            );
+            continue;
+          }
+
+          propertyProvider.addDocumentFile(fileObj);
+          currentTotalSize += fileSizeMB;
         }
       }
-      setState(() {}); // Refresh UI after adding documents
+
+      setState(() {}); // Refresh UI
     }
   }
 
   /// Generate a thumbnail for the video
-  Future<void> _generateVideoThumbnail(String videoPath) async {
+  Future<void> _generateVideoThumbnail(String videoPath, {bool force = false}) async {
+    if (!force && _videoThumbnails.containsKey(videoPath)) return;
+
     final Directory tempDir = await getTemporaryDirectory();
+    final String thumbPath = '${tempDir.path}/${videoPath.hashCode}.png';
+
     final String? thumbnail = await VideoThumbnail.thumbnailFile(
       video: videoPath,
-      thumbnailPath: tempDir.path,
+      thumbnailPath: thumbPath,
       imageFormat: ImageFormat.PNG,
-      maxWidth:
-          128, // specify the width of the thumbnail, let the height auto-scaled to keep the source aspect ratio
+      maxWidth: 128,
       quality: 25,
     );
 
-    if (thumbnail != null) {
+    if (thumbnail != null && !_videoThumbnails.containsKey(videoPath)) {
       _videoThumbnails[videoPath] = Future.value(thumbnail);
     }
   }
@@ -213,7 +388,7 @@ class _Step6MediaUploadState extends State<Step6MediaUpload> {
             width: 100,
             height: 100,
             color: Colors.black12,
-            child: Center(child: CircularProgressIndicator()),
+            child: Center(child: Icon(Icons.videocam, size: 30, color: Colors.grey)),
           );
         }
 
@@ -416,8 +591,13 @@ class _Step6MediaUploadState extends State<Step6MediaUpload> {
                             setState(() {}); // Refresh UI after removal
                           },
                         ),
-                        onTap: () {
-                          // Optionally, implement document preview or opening
+                        onTap: () async {
+                          final result = await OpenFile.open(file.path);
+                          if (result.type != ResultType.done) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Could not open file: ${result.message}')),
+                            );
+                          }
                         },
                       );
                     }).toList(),

@@ -57,14 +57,20 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
   pt.PropertyType? _selectedType;
   String _selectedDevSubtype = ''; // or make it nullable if needed
 
+  void _updateState(VoidCallback fn) {
+    if (mounted) {
+      setState(fn);
+    }
+  }
+
   @override
   void initState() {
     super.initState();
 
-// Initialize your Indian number formatter
+    // Initialize your Indian number formatter
     _indianFormat = NumberFormat.decimalPattern('en_IN');
 
-// … all of your existing initState code …
+    // … all of your existing initState code …
     _place = widget.initialPlace;
     // _type = widget.initialType;
     _type = pt.PropertyType.development;
@@ -211,7 +217,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                   }).toList(),
                   onChanged: (newType) {
                     if (newType == null) return;
-                    setState(() {
+                    _updateState(() {
                       _type = newType;
                       _devSubtype = null;
                       _config = fc.kFilterMap[newType]!;
@@ -236,7 +242,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
                       title: Text(subtype.label),
                       value: _selectedDevSubtypes.contains(subtype),
                       onChanged: (bool? value) {
-                        setState(() {
+                        _updateState(() {
                           if (value == true) {
                             _selectedDevSubtypes.add(subtype);
                           } else {
