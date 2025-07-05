@@ -51,7 +51,7 @@ class BuyLandScreenState extends State<BuyLandScreen> {
 
   // Variables for location search
   Map<String, dynamic>? selectedPlace;
-  double searchRadius = 50; // in kilometers
+  double searchRadius = 90; // in kilometers
 
   // Administrative area filters
   String? selectedCity;
@@ -101,7 +101,7 @@ class BuyLandScreenState extends State<BuyLandScreen> {
 
     return PropertyService().getPropertiesWithFilters(
       propertyTypes:
-          selectedPropertyTypes.isEmpty ? null : selectedPropertyTypes,
+      selectedPropertyTypes.isEmpty ? null : selectedPropertyTypes,
       devSubtypes: _selectedDevSubtypes.isNotEmpty
           ? _selectedDevSubtypes.map((e) => e.firestoreKey).toList()
           : null,
@@ -112,7 +112,6 @@ class BuyLandScreenState extends State<BuyLandScreen> {
       maxArea: _selectedAreaRange.end > 0 ? _selectedAreaRange.end : null,
       bedrooms: _selectedBedrooms,
       bathrooms: _selectedBathrooms,
-      // — geo bounds & searchQuery elided for now —
       city: selectedCity,
       district: selectedDistrict,
       pincode: selectedPincode,

@@ -36,6 +36,7 @@ class PropertyMapViewState extends State<PropertyMapView> {
   LatLng? _initialPosition;
   List<String> _favoritedIds = [];
   late final String _currentUid;
+  final Map<String, BitmapDescriptor> _markerCache = {};
 
   // Create a ClusterManagerId
   final ClusterManagerId _clusterManagerId = const ClusterManagerId(
@@ -43,17 +44,33 @@ class PropertyMapViewState extends State<PropertyMapView> {
   );
   late ClusterManager _clusterManager;
 
+  // @override
+  // void initState() {
+  //   super.initState();
+  //
+  //   // Initialize ClusterManager
+  //   _clusterManager = ClusterManager(
+  //     clusterManagerId: _clusterManagerId,
+  //     onClusterTap: _onClusterTap,
+  //   );
+  //
+  //   // _setInitialLocation();
+  // }
+
   @override
   void initState() {
     super.initState();
 
-    // Initialize ClusterManager
+    // ✅ Initialize ClusterManager (required for clusters to work)
     _clusterManager = ClusterManager(
       clusterManagerId: _clusterManagerId,
       onClusterTap: _onClusterTap,
     );
 
-    // _setInitialLocation();
+    // ✅ Delay marker generation until after first frame to avoid blocking UI
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _addCustomMarkers().then((_) => _moveToInitialLocation());
+    });
   }
 
   void _onClusterTap(Cluster cluster) async {
@@ -209,56 +226,66 @@ class PropertyMapViewState extends State<PropertyMapView> {
     }
 
     final seenIds = <String>{};
-    final uniqueProps =
-    widget.properties.where((p) => seenIds.add(p.id)).toList();
+    final uniqueProps = widget.properties.where((p) => seenIds.add(p.id)).toList();
 
-    Set<Marker> markers = {};
-    print("Number of properties: ${widget.properties.length}");
-    print("Number of unique properties: ${uniqueProps.length}");
+    print("📦 Total properties: ${widget.properties.length}");
+    print("🧹 Unique properties: ${uniqueProps.length}");
 
     if (uniqueProps.isEmpty) {
       if (mounted) {
         setState(() {
-          _markers = {};           // empty map
+          _markers = {};
           _markersInitialized = true;
         });
-        // then move camera to the search‐area bounds:
-        _moveToInitialLocation();
+        await _moveToInitialLocation();
       }
       return;
     }
 
-    for (Property property in uniqueProps) {
-      print(
-        "📍 Processing property: ${property.id}, ${property.propertyType}, ${property.totalPrice}, ${property.pricePerUnit},, (${property.latitude}, ${property.longitude})",
-      );
-
-      if (property.latitude == 0 || property.longitude == 0) {
-        print("⚠️ Skipping property with invalid coordinates: ${property.id}");
-        continue;
-      }
-
-      final String priceText = formatPrice(property.totalPrice ?? 0.0);
-      final BitmapDescriptor customIcon =
-      await CustomMarker.createMarker(priceText);
-
-      markers.add(
-        Marker(
-          markerId: MarkerId(property.id),
-          position: LatLng(property.latitude, property.longitude),
-          icon: customIcon,
-          onTap: () => _showPropertyCard(property),
-        ),
-      );
-    }
+    // ✅ Move heavy async work off UI thread
+    final generatedMarkers = await _generateMarkers(uniqueProps);
 
     if (mounted) {
       setState(() {
-        _markers = markers;
+        _markers = generatedMarkers;
         _markersInitialized = true;
         print("✅ Markers added: ${_markers.length}");
       });
     }
+  }
+
+  Future<Set<Marker>> _generateMarkers(List<Property> props) async {
+    final markers = <Marker>{};
+
+    for (Property p in props) {
+      if (p.latitude == 0 || p.longitude == 0) {
+        print("⚠️ Skipping property with invalid coordinates: ${p.id}");
+        continue;
+      }
+
+      final priceText = formatPrice(p.totalPrice ?? 0.0);
+      final icon = await _getOrCreateIcon(priceText);
+
+      markers.add(
+        Marker(
+          markerId: MarkerId(p.id),
+          position: LatLng(p.latitude, p.longitude),
+          icon: icon,
+          onTap: () => _showPropertyCard(p),
+        ),
+      );
+    }
+
+    return markers;
+  }
+
+  Future<BitmapDescriptor> _getOrCreateIcon(String priceText) async {
+    if (_markerCache.containsKey(priceText)) {
+      return _markerCache[priceText]!;
+    }
+    final icon = await CustomMarker.createMarker(priceText);
+    _markerCache[priceText] = icon;
+    return icon;
   }
 
   void _onMapCreated(GoogleMapController controller) {
@@ -296,43 +323,6 @@ class PropertyMapViewState extends State<PropertyMapView> {
       ),
     );
   }
-
-  // void _moveToInitialLocation() {
-  //   if (widget.center != null) {
-  //     final c = widget.center!;
-  //     // ~111 km in latitude is about 1°; for longitude we divide by cos(lat)
-  //     final km = 90.0;
-  //     final dLat = km/90.0;
-  //     final rad = c.latitude * math.pi/180;
-  //     final dLng = km/(90.0 * math.cos(rad));
-  //     final sw = LatLng(c.latitude - dLat, c.longitude - dLng);
-  //     final ne = LatLng(c.latitude + dLat, c.longitude + dLng);
-  //
-  //     _mapController.animateCamera(
-  //       CameraUpdate.newLatLngBounds(
-  //         LatLngBounds(southwest: sw, northeast: ne),
-  //         50, // padding
-  //       ),
-  //     );
-  //   }
-  //   else if (_markers.isNotEmpty) {
-  //     // If you do have filtered markers, zoom to their bounds
-  //     final bounds = _getBoundsForMarkers(_markers);
-  //     _mapController.animateCamera(
-  //       CameraUpdate.newLatLngBounds(bounds, 50),
-  //     );
-  //   }
-  //   else {
-  //     // you can still keep your India default if you really want:
-  //     _mapController.animateCamera(
-  //       CameraUpdate.newLatLngZoom(
-  //         LatLng(20.5937, 78.9629),
-  //         8,
-  //       ),
-  //     );
-  //     print("⚠️ No center or markers – leaving camera as-is (or fallback).");
-  //   }
-  // }
 
   Future<void> _moveToInitialLocation() async {
     if (widget.center != null) {
