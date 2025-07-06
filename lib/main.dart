@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:landandplot/providers/otp_auth_provider.dart';
 import 'package:provider/provider.dart';
 
 import 'firebase_options.dart';
@@ -12,7 +11,7 @@ import './components/bottom_nav_bar.dart';
 import './utils/keys.dart';
 
 import './providers/property_provider.dart';
-import './providers/filter_provider.dart';        // ← add this
+import './providers/filter_provider.dart'; // ← add this
 import './services/property_service.dart';
 
 @pragma('vm:entry-point')
@@ -33,8 +32,7 @@ Future<void> main() async {
   );
   print('Maps key loaded'); // silently confirm in dev
 
-  await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform);
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await FirebaseAuth.instance.setSettings(
     appVerificationDisabledForTesting: false,
   );
@@ -58,11 +56,9 @@ Future<void> main() async {
         ChangeNotifierProvider<PropertyProvider>(
           create: (_) => PropertyProvider(),
         ),
-        ChangeNotifierProvider<FilterProvider>(          // ← register it here
+        ChangeNotifierProvider<FilterProvider>(
+          // ← register it here
           create: (_) => FilterProvider(),
-        ),
-        ChangeNotifierProvider<OtpAuthProvider>(
-            create: (_) => OtpAuthProvider(),
         ),
         Provider<PropertyService>(
           create: (_) => PropertyService(),
@@ -89,7 +85,6 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-
 
 Future<void> fixCommercialSpaceProperties() async {
   final query = await FirebaseFirestore.instance

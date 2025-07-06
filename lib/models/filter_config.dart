@@ -1,10 +1,10 @@
-// // lib/models/filter_config.dart
+// lib/models/filter_config.dart
 
 import 'package:landandplot/models/property_type.dart';
 
-/// Special configs for the two sub-types of “Development”
+// Special configs for the two sub-types of “Development”
 const FilterConfig developmentPlotConfig = FilterConfig(
-  unitPriceLabel:      '₹ per sqft',
+  unitPriceLabel: '₹ per sqft',
   unitPriceMin: 10000,
   unitPriceMax: 200000,
   totalPriceLabel: '₹ total property price',
@@ -17,10 +17,10 @@ const FilterConfig developmentPlotConfig = FilterConfig(
 );
 
 const FilterConfig developmentLandConfig = FilterConfig(
-  unitPriceLabel:      '₹ per sqft',
+  unitPriceLabel: '₹ per sqft',
   unitPriceMin: 250000,
   unitPriceMax: 500000000,
-  totalPriceLabel:  '₹ total property price',
+  totalPriceLabel: '₹ total property price',
   totalPriceMin: 300000,
   totalPriceMax: 2000000000,
   areaLabel: 'acres',
@@ -32,19 +32,19 @@ const FilterConfig developmentLandConfig = FilterConfig(
 class FilterConfig {
   // universal
   // 2️⃣ total-price slider
-  final String  totalPriceLabel;
-  final double  totalPriceMin;
-  final double  totalPriceMax;
+  final String totalPriceLabel;
+  final double totalPriceMin;
+  final double totalPriceMax;
 
   // 1️⃣ unit-price slider
-  final String  unitPriceLabel;
-  final double  unitPriceMin;
-  final double  unitPriceMax;
+  final String unitPriceLabel;
+  final double unitPriceMin;
+  final double unitPriceMax;
 
   // 3️⃣ area slider
-  final String  areaLabel;
-  final double  areaMin;
-  final double  areaMax;
+  final String areaLabel;
+  final double areaMin;
+  final double areaMax;
 
   // final String priceLabel;
   final bool needsBedsBaths;
@@ -73,14 +73,12 @@ class FilterConfig {
     required this.unitPriceLabel,
     required this.unitPriceMin,
     required this.unitPriceMax,
-
     required this.totalPriceLabel,
     required this.areaLabel,
     required this.totalPriceMin,
     required this.totalPriceMax,
     required this.areaMin,
     required this.areaMax,
-
     this.needsBedsBaths = false,
 
     // apartment
@@ -143,7 +141,7 @@ const Map<PropertyType, FilterConfig> kFilterMap = {
   ),
 
   PropertyType.apartment: FilterConfig(
-    unitPriceLabel:      '₹ per sqft',
+    unitPriceLabel: '₹ per sqft',
     totalPriceLabel: 'Property price',
     areaLabel: 'sqft',
     totalPriceMin: 1000000,
@@ -158,7 +156,7 @@ const Map<PropertyType, FilterConfig> kFilterMap = {
   ),
 
   PropertyType.house: FilterConfig(
-    unitPriceLabel:      '₹ per sqft',
+    unitPriceLabel: '₹ per sqft',
     totalPriceLabel: '₹ total price',
     areaLabel: 'sqft',
     totalPriceMin: 2000000,
@@ -177,7 +175,7 @@ const Map<PropertyType, FilterConfig> kFilterMap = {
   ),
 
   PropertyType.villa: FilterConfig(
-    unitPriceLabel:      '₹ per sqft',
+    unitPriceLabel: '₹ per sqft',
     totalPriceLabel: '₹ total price',
     areaLabel: 'sqft',
     unitPriceMin: 2500,
@@ -196,28 +194,28 @@ const Map<PropertyType, FilterConfig> kFilterMap = {
 
   PropertyType.commercial: FilterConfig(
     // 1. unit-price per sqft
-    unitPriceLabel:      '₹ per sqft',
-    unitPriceMin:        2000,
-    unitPriceMax:        20000000,
+    unitPriceLabel: '₹ per sqft',
+    unitPriceMin: 2000,
+    unitPriceMax: 20000000,
 
     // 2. total-price for the whole property
     totalPriceLabel: '₹ total price Sqft',
-    totalPriceMin:   50000,
-    totalPriceMax:   500000000,
+    totalPriceMin: 50000,
+    totalPriceMax: 500000000,
 
     // 3. plot area in sqft
-    areaLabel:       'Sqft',
-    areaMin:         1,
-    areaMax:         10000,
+    areaLabel: 'Sqft',
+    areaMin: 1,
+    areaMax: 10000,
 
     // no beds/baths filter for comm-space
-    needsBedsBaths:  false,
+    needsBedsBaths: false,
   ),
 
   /// For “development” itself, we’ll show a generic placeholder.
   /// You’ll swap to one of the two special configs at runtime in your sheet.
   PropertyType.development: FilterConfig(
-    unitPriceLabel:      '₹ per sqft',
+    unitPriceLabel: '₹ per sqft',
     totalPriceLabel: '₹ total price for sqyd /acres',
     areaLabel: 'yards / acres',
     unitPriceMin: 2500,

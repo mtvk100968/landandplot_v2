@@ -7,7 +7,6 @@ import 'package:provider/provider.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../models/dev_subtype.dart';
-import '../models/filter_config.dart' as fc;
 import '../models/property_type.dart' as pt;
 import '../services/property_service.dart';
 import '../models/property_model.dart';
@@ -97,11 +96,12 @@ class BuyLandScreenState extends State<BuyLandScreen> {
     final maxP = _useTotalPrice
         ? _selectedTotalPriceRange.end
         : _selectedUnitPriceRange.end;
-    print('🔥 Final selectedDevSubtypes: ${_selectedDevSubtypes.map((e) => e.firestoreKey).toList()}');
+    print(
+        '🔥 Final selectedDevSubtypes: ${_selectedDevSubtypes.map((e) => e.firestoreKey).toList()}');
 
     return PropertyService().getPropertiesWithFilters(
       propertyTypes:
-      selectedPropertyTypes.isEmpty ? null : selectedPropertyTypes,
+          selectedPropertyTypes.isEmpty ? null : selectedPropertyTypes,
       devSubtypes: _selectedDevSubtypes.isNotEmpty
           ? _selectedDevSubtypes.map((e) => e.firestoreKey).toList()
           : null,
@@ -183,9 +183,10 @@ class BuyLandScreenState extends State<BuyLandScreen> {
         // ✅ ADD THIS:
         // _selectedDevSubtypes = result['devSubtypes']?.cast<DevSubtype>() ?? [];
         _selectedDevSubtypes = (result['devSubtypes'] as List<dynamic>?)
-            ?.map((s) => DevSubtype.fromKey(s.toString()))
-            .whereType<DevSubtype>() // filters out nulls
-            .toList() ?? [];
+                ?.map((s) => DevSubtype.fromKey(s.toString()))
+                .whereType<DevSubtype>() // filters out nulls
+                .toList() ??
+            [];
 
         selectedPropertyTypes = _type != null ? [_type!.firestoreKey] : [];
 
