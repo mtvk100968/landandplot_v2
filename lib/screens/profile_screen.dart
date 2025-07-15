@@ -1,5 +1,4 @@
-/// lib/screens/profile_screen.dart
-
+// lib/screens/profile_screen.dart
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/auth_service.dart';
@@ -14,7 +13,7 @@ import '../components/profiles/user/user_profile.dart';
 enum UserLoginType { agent, user }
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key});
+  const ProfileScreen({Key? key}) : super(key: key);
 
   @override
   ProfileScreenState createState() => ProfileScreenState();
@@ -23,7 +22,7 @@ class ProfileScreen extends StatefulWidget {
 class ProfileScreenState extends State<ProfileScreen>
     with SingleTickerProviderStateMixin {
   final TextEditingController _phoneController =
-  TextEditingController(text: '+91');
+      TextEditingController(text: '+91');
   final TextEditingController _otpController = TextEditingController();
 
   UserLoginType _selectedLoginType = UserLoginType.user;
@@ -35,27 +34,25 @@ class ProfileScreenState extends State<ProfileScreen>
   final AuthService _authService = AuthService();
 
   Future<void> _sendOtp() async {
-    debugPrint('ProfileScreen: >>> Entering _sendOtp()');
-    setState(() => _isProcessing = true);
     final phone = _phoneController.text.trim();
+    debugPrint('🔔 _sendOtp() for $phone');
+    setState(() => _isProcessing = true);
 
     try {
+      // Optional: verify userType against Firestore
       AppUser? existingUser = await UserService().getUserByPhoneNumber(phone);
-      debugPrint('ProfileScreen: getUserByPhoneNumber returned $existingUser');
+      debugPrint('👤 existingUser: $existingUser');
 
-      // skip type-mismatch check for the admin number
       if (phone != '9959788005' && existingUser != null) {
         String expectedType =
-        _selectedLoginType == UserLoginType.agent ? 'agent' : 'user';
-        debugPrint(
-            'ProfileScreen: existingUser.userType=${existingUser.userType}, expected=$expectedType');
+            _selectedLoginType == UserLoginType.agent ? 'agent' : 'user';
         if (existingUser.userType != expectedType) {
-          debugPrint('ProfileScreen: wrong userType, showing snackbar');
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                  'You are already registered as ${existingUser.userType}. '
-                      'Please sign in as ${existingUser.userType}.'),
+                'You are registered as ${existingUser.userType}. '
+                'Please sign in as ${existingUser.userType}.',
+              ),
             ),
           );
           setState(() => _isProcessing = false);
@@ -63,42 +60,33 @@ class ProfileScreenState extends State<ProfileScreen>
         }
       }
 
-      debugPrint('ProfileScreen: calling signInWithPhoneNumber()');
-      await _authService.signInWithPhoneNumber(phone, (verId) {
-        debugPrint('ProfileScreen: OTP sent callback, verId=$verId');
-        setState(() {
-          _verificationId = verId;
-          _isOtpSent = true;
-          _isProcessing = false;
-        });
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('OTP sent')));
-      },
-          // (e) {
-          //   debugPrint(
-          //       'ProfileScreen: OTP send failed callback, error=${e.message}');
-          //   setState(() => _isProcessing = false);
-          //   ScaffoldMessenger.of(context).showSnackBar(
-          //       SnackBar(content: Text(e.message ?? 'Failed sending OTP')));
-          // },
-              (FirebaseAuthException e) {
-            debugPrint('❌ OTP send failed');
-            debugPrint('Code: ${e.code}');
-            debugPrint('Message: ${e.message}');
-            debugPrint('Details: ${e.toString()}');
-            if (e.stackTrace != null) {
-              debugPrint('StackTrace: ${e.stackTrace}');
-            }
-
-            setState(() => _isProcessing = false);
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(e.message ?? 'Failed sending OTP')),
-            );
+      debugPrint('🔔 calling verifyPhoneNumber()');
+      await _authService.signInWithPhoneNumber(
+        phone,
+        // codeSent
+        (String verId) {
+          debugPrint('✉️ codeSent callback: verId=$verId');
+          setState(() {
+            _verificationId = verId;
+            _isOtpSent = true;
+            _isProcessing = false;
           });
-      debugPrint('ProfileScreen: signInWithPhoneNumber() returned');
+          ScaffoldMessenger.of(context)
+              .showSnackBar(const SnackBar(content: Text('OTP sent')));
+        },
+        // verificationFailed
+        (FirebaseAuthException e) {
+          debugPrint('🔴 verificationFailed: code=${e.code}; msg=${e.message}');
+          if (e.stackTrace != null) debugPrintStack(stackTrace: e.stackTrace);
+          setState(() => _isProcessing = false);
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text(e.message ?? e.code)));
+        },
+      );
+      debugPrint('🔔 verifyPhoneNumber() call complete');
     } catch (e, st) {
-      debugPrint('ProfileScreen: Exception in _sendOtp(): $e');
-      debugPrint('$st');
+      debugPrint('⚠️ Exception in _sendOtp(): $e');
+      debugPrintStack(stackTrace: st);
       setState(() => _isProcessing = false);
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text('Error: $e')));
@@ -106,49 +94,45 @@ class ProfileScreenState extends State<ProfileScreen>
   }
 
   Future<void> _verifyOtp() async {
-    debugPrint('ProfileScreen: >>> Entering _verifyOtp()');
+    final smsCode = _otpController.text.trim();
+    debugPrint('🔔 _verifyOtp() with code=$smsCode, verId=$_verificationId');
     setState(() => _isProcessing = true);
-    debugPrint(
-        'ProfileScreen: Verifying OTP ${_otpController.text.trim()} with verificationId=$_verificationId');
+
     try {
       final cred = PhoneAuthProvider.credential(
         verificationId: _verificationId,
-        smsCode: _otpController.text.trim(),
+        smsCode: smsCode,
       );
       String userType = _phoneController.text.trim() == '9959788005'
           ? 'admin'
-          : _selectedLoginType == UserLoginType.agent
-          ? 'agent'
-          : 'user';
-      debugPrint('ProfileScreen: Signing in with userType=$userType');
+          : (_selectedLoginType == UserLoginType.agent ? 'agent' : 'user');
+      debugPrint('🔑 signing in with userType=$userType');
       await _authService.signInWithPhoneAuthCredential(cred, userType);
-      debugPrint('ProfileScreen: signInWithPhoneAuthCredential completed');
-    } catch (err) {
-      debugPrint('ProfileScreen: OTP verification failed, exception=$err');
+      debugPrint('✅ signInWithPhoneAuthCredential succeeded');
+    } catch (err, st) {
+      debugPrint('⚠️ OTP verification failed: $err');
+      debugPrintStack(stackTrace: st);
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text('Verification failed')));
     } finally {
       setState(() => _isProcessing = false);
-      debugPrint('ProfileScreen: _verifyOtp() finished');
     }
   }
 
   Future<void> _signOut() async {
-    debugPrint('ProfileScreen: >>> Entering _signOut()');
+    debugPrint('🔔 _signOut()');
     await _authService.signOut();
-    debugPrint('ProfileScreen: signOut() completed');
-    _phoneController.text      = '+91';
+    _phoneController.text = '+91';
     _otpController.clear();
     setState(() {
-      _isOtpSent            = false;
-      _verificationId       = '';
-      _selectedLoginType    = UserLoginType.user;
-      _isProcessing         = false;
+      _isOtpSent = false;
+      _verificationId = '';
+      _selectedLoginType = UserLoginType.user;
+      _isProcessing = false;
     });
   }
 
   Widget _buildLoginComponent() {
-    debugPrint('ProfileScreen: >>> Building login component');
     return Center(
       child: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 32),
@@ -177,22 +161,19 @@ class ProfileScreenState extends State<ProfileScreen>
                   _selectedLoginType == UserLoginType.user,
                 ],
                 onPressed: (i) {
-                  debugPrint('ProfileScreen: ToggleButtons onPressed index=$i');
                   final phone = _phoneController.text.trim();
                   if (!RegExp(r'^\+91\d{10}$').hasMatch(phone)) {
-                    debugPrint('ProfileScreen: Invalid phone format');
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                          content: Text('Enter a valid +91 10-digit number')),
+                        content: Text('Enter a valid +91 10-digit number'),
+                      ),
                     );
                     return;
                   }
                   setState(() {
                     _selectedLoginType =
-                    i == 0 ? UserLoginType.agent : UserLoginType.user;
+                        i == 0 ? UserLoginType.agent : UserLoginType.user;
                   });
-                  debugPrint(
-                      'ProfileScreen: _selectedLoginType=$_selectedLoginType');
                   _sendOtp();
                 },
                 constraints: const BoxConstraints(minWidth: 120, minHeight: 40),
@@ -209,18 +190,15 @@ class ProfileScreenState extends State<ProfileScreen>
                 ),
               ),
               const SizedBox(height: 20),
-              // ElevatedButton(
-              //   onPressed: () {
-              //     debugPrint('ProfileScreen: Verify OTP button pressed');
-              //     _verifyOtp();
-              //   },
-              //   child: const Text('Verify OTP'),
-              // ),
               ElevatedButton(
                 onPressed: _isProcessing ? null : _verifyOtp,
                 child: _isProcessing
-                    ? CircularProgressIndicator()
-                    : Text('Verify OTP'),
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Verify OTP'),
               ),
             ],
             if (_isProcessing)
@@ -235,13 +213,10 @@ class ProfileScreenState extends State<ProfileScreen>
   }
 
   Widget _buildProfileComponent(AppUser appUser) {
-    debugPrint(
-        'ProfileScreen: >>> Building profile component for userType=${appUser.userType}');
     _tabController ??= TabController(
       length: appUser.userType == 'admin' ? 3 : 2,
       vsync: this,
     );
-
     switch (appUser.userType) {
       case 'admin':
         return AdminProfile(
@@ -256,35 +231,26 @@ class ProfileScreenState extends State<ProfileScreen>
           onSignOut: _signOut,
         );
       default:
-        return UserProfile(
-          initialUser: appUser,
-        );
+        return UserProfile(initialUser: appUser);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    debugPrint('ProfileScreen: >>> build() called');
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (ctx, authSnap) {
-        debugPrint(
-            'ProfileScreen: authStateChanges snapshot: state=${authSnap.connectionState}, data=${authSnap.data}');
         if (authSnap.connectionState == ConnectionState.waiting) {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
         }
         if (authSnap.data == null) {
-          debugPrint('ProfileScreen: no Firebase user found');
           return Scaffold(body: _buildLoginComponent());
         }
-        debugPrint('ProfileScreen: Firebase user UID = ${authSnap.data!.uid}');
         return StreamBuilder<AppUser?>(
           stream: UserService().getUserStream(authSnap.data!.uid),
           builder: (ctx, profileSnap) {
-            debugPrint(
-                'ProfileScreen: getUserStream snapshot: state=${profileSnap.connectionState}, data=${profileSnap.data}');
             if (profileSnap.connectionState == ConnectionState.waiting) {
               return const Scaffold(
                 body: Center(child: CircularProgressIndicator()),
@@ -292,7 +258,6 @@ class ProfileScreenState extends State<ProfileScreen>
             }
             final appUser = profileSnap.data;
             if (appUser == null) {
-              debugPrint('ProfileScreen: AppUser is null');
               return Scaffold(
                 body: Center(
                   child: Column(

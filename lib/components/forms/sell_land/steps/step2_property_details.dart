@@ -201,10 +201,12 @@ class _Step2PropertyDetailsState extends State<Step2PropertyDetails> {
                     items: const [
                       DropdownMenuItem(
                           value: 'development_plot',
-                          child: Text('Development Plot')),
+                          child: Text('Development Plot'),
+                      ),
                       DropdownMenuItem(
                           value: 'development_land',
-                          child: Text('Development Land')),
+                          child: Text('Development Land'),
+                      ),
                     ],
                     onChanged: (value) {
                       if (value != null) {

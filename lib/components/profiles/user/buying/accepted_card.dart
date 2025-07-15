@@ -1,30 +1,25 @@
-// lib/components/profiles/user/buying/bought_card.dart
+// lib/components/profiles/user/buying/accepted_card.dart
 
 import 'package:flutter/material.dart';
 import '../../../../models/property_model.dart';
 import '../../../../models/buyer_model.dart';
-import '../common/custom_timeline_view.dart';
+import '../selling/user_timeline_view.dart';
 
-class BoughtCard extends StatelessWidget {
+class AcceptedCard extends StatelessWidget {
   final Property property;
   final String userPhone; // matches Buyer.phone
-  const BoughtCard({
-    Key? key,
+  const AcceptedCard({
+    super.key,
     required this.property,
     required this.userPhone,
-  }) : super(key: key);
+  });
 
-  // Buyer? get _thisBuyer {
-  //   return property.buyers.firstWhere(
-  //     (b) => b.phone == userPhone && b.status == 'bought',
-  //     orElse: () => null,
-  //   );
-  // }
+  // inside AcceptedCard
 
   Buyer? get _thisBuyer {
     try {
       return property.buyers.firstWhere(
-            (b) => b.phone == userPhone && b.status == 'bought',
+            (b) => b.phone == userPhone && b.status == 'accepted',
       );
     } catch (_) {
       return null;
@@ -36,19 +31,8 @@ class BoughtCard extends StatelessWidget {
     final buyer = _thisBuyer;
     if (buyer == null) return const SizedBox.shrink();
 
-    // only show if the property is sold
-    if (property.stage != 'sold') return const SizedBox.shrink();
-
-    // map each step to its list of document URLs
-    final docsMap = <String, List<String>>{
-      'Interest': buyer.interestDocs,
-      'Document Verification': buyer.docVerifyDocs,
-      'Legal Due Diligence': buyer.legalCheckDocs,
-      'Sale Agreement': buyer.agreementDocs,
-      'Stamp Duty & Registration': buyer.registrationDocs,
-      'Mutation': buyer.mutationDocs,
-      'Possession': buyer.possessionDocs,
-    };
+    // only show if the property is in saleInProgress stage
+    if (property.stage != 'saleInProgress') return const SizedBox.shrink();
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
@@ -82,42 +66,11 @@ class BoughtCard extends StatelessWidget {
             Text('${buyer.name} — ${buyer.phone}'),
             const SizedBox(height: 16),
 
-            // Read-only Timeline View
-            const Text('Completed Timeline:',
+            // Timeline View (read-only)
+            const Text('Sale In Progress Timeline:',
                 style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
-            CustomTimelineView(buyer: buyer),
-            const SizedBox(height: 16),
-
-            // Final Documents Section
-            const Text('All Documents:',
-                style: TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            ...docsMap.entries
-                .where((entry) => entry.value.isNotEmpty)
-                .map((entry) => Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(entry.key,
-                            style:
-                                const TextStyle(fontWeight: FontWeight.w600)),
-                        const SizedBox(height: 4),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: entry.value
-                              .map((url) => GestureDetector(
-                                    onTap: () {
-                                      // TODO: open URL
-                                    },
-                                    child: const Chip(label: Text('View')),
-                                  ))
-                              .toList(),
-                        ),
-                        const SizedBox(height: 12),
-                      ],
-                    ))
-                .toList(),
+            UserTimelineView(buyer: buyer),
           ],
         ),
       ),

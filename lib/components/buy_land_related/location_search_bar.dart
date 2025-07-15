@@ -10,12 +10,11 @@ import '../../services/places_service.dart';
 /// A [LocationSearchBar] that lets the user type multiple places.
 /// Each selected place becomes a chip, and the user can remove chips.
 class LocationSearchBar extends StatefulWidget {
-  final Map<String,dynamic>? initialPlace;    // ← new
+  final Map<String, dynamic>? initialPlace; // ← new
   final Function(Map<String, dynamic> place) onPlaceSelected;
 
-  const LocationSearchBar({Key? key,
-    this.initialPlace,
-    required this.onPlaceSelected})
+  const LocationSearchBar(
+      {Key? key, this.initialPlace, required this.onPlaceSelected})
       : super(key: key);
 
   @override
@@ -58,7 +57,7 @@ class _LocationSearchBarState extends State<LocationSearchBar> {
   /// Measures the text field so we know how far to offset the suggestion overlay.
   void _measureTextField() {
     final renderBox =
-    _textFieldKey.currentContext?.findRenderObject() as RenderBox?;
+        _textFieldKey.currentContext?.findRenderObject() as RenderBox?;
     if (renderBox != null && mounted) {
       setState(() {
         _textFieldHeight = renderBox.size.height;
@@ -141,30 +140,30 @@ class _LocationSearchBarState extends State<LocationSearchBar> {
         itemBuilder: (context, index) {
           final suggestion = _suggestions[index];
           return ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-            title: Text(suggestion['description']),
-            onTap: () async {
-              // Get detailed info from place_id
-              final placeId = suggestion['place_id'];
-              final placeDetails =
-              await _placesService.getPlaceDetails(placeId);
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+              title: Text(suggestion['description']),
+              onTap: () async {
+                try {
+                  final placeId = suggestion['place_id'];
+                  final placeDetails =
+                      await _placesService.getPlaceDetails(placeId);
 
-              // Split the suggestion to get just the first chunk (e.g. store name, apartment name, etc.)
-              final shortLabel =
-              suggestion['description'].split(',').first.trim();
+                  final shortLabel =
+                      suggestion['description'].split(',').first.trim();
+                  final newChip = {
+                    'description': shortLabel,
+                    'place_id': placeId,
+                    'fullDetails': placeDetails,
+                  };
 
-              // Construct a map to store in the chip
-              final newChip = {
-                'description': shortLabel, // e.g. "Apartment XYZ"
-                'place_id': placeId, // useful for lat/long lookups
-                'fullDetails':
-                placeDetails, // entire place details if needed later
-              };
+                  _addChip(newChip);
 
-              // Add a chip for that place
-              _addChip(newChip);
-            },
-          );
+                  print('✅ Place selected: $shortLabel');
+                  print('🗺️ LatLng: ${placeDetails['geometry']['location']}');
+                } catch (e) {
+                  print('❌ Error selecting place: $e');
+                }
+              });
         },
       ),
     );
@@ -175,7 +174,8 @@ class _LocationSearchBarState extends State<LocationSearchBar> {
     setState(() {
       _chipPlaces.add(newPlace);
     });
-    // If you want to inform the parent each time a place is selected:
+    print('📍 Added chip: ${newPlace['description']}');
+// If you want to inform the parent each time a place is selected:
     widget.onPlaceSelected(newPlace['fullDetails'] ?? newPlace);
 
     // Clear text and suggestions
@@ -264,7 +264,7 @@ class _LocationSearchBarState extends State<LocationSearchBar> {
                   child: Chip(
                     label: Text(_chipPlaces[i]['description']),
                     padding:
-                    const EdgeInsets.symmetric(vertical: 0, horizontal: 4),
+                        const EdgeInsets.symmetric(vertical: 0, horizontal: 4),
                     visualDensity: VisualDensity.compact,
                     materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     onDeleted: () => _removeChip(i), // ✅ Correct index passed
@@ -282,7 +282,7 @@ class _LocationSearchBarState extends State<LocationSearchBar> {
                     hintText: 'Search locations...',
                     isDense: true, // 👈 Makes the field compact
                     contentPadding:
-                    EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                        EdgeInsets.symmetric(vertical: 8, horizontal: 8),
                     border: InputBorder.none,
                   ),
                 ),
