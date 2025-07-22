@@ -63,17 +63,18 @@
     }
   ],
   "hosting": {
-    "public": "public",
+    "public": "build/web",
     "ignore": [
       "firebase.json",
       "**/.*",
       "**/node_modules/**"
     ],
     "rewrites": [
-      {
-        "source": "**",
-        "destination": "/index.html"
-      }
+      { "source": "/terms",              "destination": "/legal/terms.html" },
+      { "source": "/privacy-policy",     "destination": "/legal/privacy.html" },
+      { "source": "/refund-policy","destination": "/legal/refund.html" },
+
+      { "source": "**", "destination": "/index.html" }
     ]
   }
 }

@@ -12,7 +12,7 @@
     This is a placeholder for base href that will be replaced by the value of
     the `--base-href` argument provided to `flutter build`.
   -->
-  <base href="$FLUTTER_BASE_HREF">
+  <base href="/">
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
@@ -155,5 +155,19 @@
   
   <script src="flutter_bootstrap.js" async=""></script>
 
+<!-- Legal links -->
+<style>
+  #legal-links{
+    position:fixed;bottom:12px;left:0;right:0;text-align:center;
+    font:12px/1.4 sans-serif;color:#9aa;
+  }
+  #legal-links a{color:#9aa;margin:0 8px;text-decoration:none}
+  #legal-links a:hover{text-decoration:underline;color:#ccc}
+</style>
 
+<div id="legal-links">
+  <a href="/legal/terms.html">Terms & Conditions</a> •
+  <a href="/legal/privacy.html">Privacy Policy</a> •
+  <a href="/legal/refund.html">Refund Policy</a>
+</div>
 </body></html>
