@@ -7,7 +7,7 @@ buildscript {
         classpath 'com.android.tools.build:gradle:8.1.4'
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.20") // ✅ Updated Kotlin plugin
         // add the Google services plugin
-        classpath "com.google.gms:google-services:4.4.2"
+        classpath "com.google.gms:google-services:4.4.3"
     }
 }
 
@@ -15,19 +15,7 @@ allprojects {
     repositories {
         google()
         mavenCentral()
-        maven {
-            // Attempt to load the Flutter SDK path from local.properties.
-            def localPropertiesFile = file("$rootDir/local.properties")
-            def flutterSdkPath = ""
-            if (localPropertiesFile.exists()) {
-                def props = new Properties()
-                localPropertiesFile.withInputStream { props.load(it) }
-                flutterSdkPath = props.getProperty("flutter.sdk")
-            }
-            if (flutterSdkPath != null && flutterSdkPath.trim().length() > 0) {
-                url "$flutterSdkPath/bin/cache/artifacts/engine/android"
-            }
-        }
+        maven { url 'https://storage.googleapis.com/download.flutter.io' }
     }
 }
 
@@ -36,8 +24,6 @@ rootProject.layout.buildDirectory.set(newBuildDir)
 
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
-}
-subprojects {
     project.evaluationDependsOn(":app")
 }
 
