@@ -1590,6 +1590,10 @@ PODS:
     - FlutterMacOS
   - permission_handler_apple (9.3.0):
     - Flutter
+  - phonepe_payment_sdk (3.0.0):
+    - Flutter
+    - PhonePePayment (= 4.0.0)
+  - PhonePePayment (4.0.0)
   - PromisesObjC (2.4.0)
   - RecaptchaInterop (101.0.0)
   - SDWebImage (5.21.1):
@@ -1638,6 +1642,7 @@ DEPENDENCIES:
   - open_file_ios (from `.symlinks/plugins/open_file_ios/ios`)
   - path_provider_foundation (from `.symlinks/plugins/path_provider_foundation/darwin`)
   - permission_handler_apple (from `.symlinks/plugins/permission_handler_apple/ios`)
+  - phonepe_payment_sdk (from `.symlinks/plugins/phonepe_payment_sdk/ios`)
   - share_plus (from `.symlinks/plugins/share_plus/ios`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
   - sqflite_darwin (from `.symlinks/plugins/sqflite_darwin/darwin`)
@@ -1683,6 +1688,7 @@ SPEC REPOS:
     - leveldb-library
     - libwebp
     - nanopb
+    - PhonePePayment
     - PromisesObjC
     - RecaptchaInterop
     - SDWebImage
@@ -1727,6 +1733,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/path_provider_foundation/darwin"
   permission_handler_apple:
     :path: ".symlinks/plugins/permission_handler_apple/ios"
+  phonepe_payment_sdk:
+    :path: ".symlinks/plugins/phonepe_payment_sdk/ios"
   share_plus:
     :path: ".symlinks/plugins/share_plus/ios"
   shared_preferences_foundation:
@@ -1796,6 +1804,8 @@ SPEC CHECKSUMS:
   open_file_ios: 5ff7526df64e4394b4fe207636b67a95e83078bb
   path_provider_foundation: 080d55be775b7414fd5a5ef3ac137b97b097e564
   permission_handler_apple: 4ed2196e43d0651e8ff7ca3483a069d469701f2d
+  phonepe_payment_sdk: c733c9863edff3fc3586d9da88f7c12e8dadb540
+  PhonePePayment: c720ada91c0976d6888a44571ced348ed8cd7d83
   PromisesObjC: f5707f49cb48b9636751c5b2e7d227e43fba9f47
   RecaptchaInterop: 11e0b637842dfb48308d242afc3f448062325aba
   SDWebImage: f29024626962457f3470184232766516dee8dfea

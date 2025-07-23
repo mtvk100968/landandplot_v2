@@ -2,7 +2,6 @@ platform :ios, '14.0'
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
 
 def flutter_root
-  # points at ios/Flutter/Generated.xcconfig
   generated = File.expand_path('Flutter/Generated.xcconfig', __dir__)
   unless File.exist?(generated)
     raise "Run `flutter pub get` first: missing #{generated}"
@@ -21,6 +20,7 @@ flutter_ios_podfile_setup
 
 target 'Runner' do
   use_frameworks! :linkage => :static
+
   flutter_install_all_ios_pods File.dirname(__FILE__)
 
   # your additional pods

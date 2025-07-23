@@ -1,60 +1,56 @@
 plugins {
     id "com.android.application"
-    id "com.google.gms.google-services" version "4.4.2"
     id "org.jetbrains.kotlin.android"
     id "dev.flutter.flutter-gradle-plugin"
+    id "com.google.gms.google-services"
 }
 
 android {
-    namespace = "com.landandplotv2.app"
-    compileSdk = 35 // ✅ Update to latest version
+    namespace "com.landandplotv2.app"
+    compileSdk 35
 
     defaultConfig {
-        applicationId = "com.landandplotv2.app"
-        minSdk = 23
-        targetSdk = 33 // ✅ Match compileSdk
-        versionCode = 1
-        versionName = "1.0"
+        applicationId "com.landandplotv2.app"
+        minSdk 21
+        targetSdk 35
+        versionCode 1
+        versionName "1.0"
+    }
+
+    buildTypes {
+        release {
+            // TODO: replace with your real signing config
+            signingConfig signingConfigs.debug
+            minifyEnabled false
+            shrinkResources false
+        }
+        debug {
+            // nothing special
+        }
     }
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
-        coreLibraryDesugaringEnabled true  // Enable desugaring
+        coreLibraryDesugaringEnabled true
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_1_8
-    }
-
-    buildTypes {
-        release {
-            signingConfig = signingConfigs.getByName("debug")
-        }
+        jvmTarget = "1.8"
     }
 }
 
 flutter {
-    source = "../.."
+    source "../.."
 }
 
 dependencies {
-//    implementation 'androidx.appcompat:appcompat:1.7.1'
-//    implementation "com.google.android.gms:play-services-auth:21.3.0"
-//    implementation "com.google.android.gms:play-services-safetynet:18.1.0"
+    implementation platform("com.google.firebase:firebase-bom:33.15.0")
+    implementation "com.google.firebase:firebase-auth"
+    implementation "com.google.firebase:firebase-firestore"
+    implementation "com.google.firebase:firebase-messaging"
+    // Add any other firebase-* you use without versions
 
-    // ✅ Import the Firebase BoM — it will manage all your Firebase SDK versions
-    implementation platform('com.google.firebase:firebase-bom:33.15.0')
-
-    // Then list your Firebase libraries *without* explicit versions:
-    implementation 'com.google.firebase:firebase-auth'
-    implementation 'com.google.firebase:firebase-firestore'
-    implementation 'com.google.firebase:firebase-messaging'
-// …any other Firebase libs you use…
-
-    // (If you need Java 8 desugaring)
-    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
+    coreLibraryDesugaring "com.android.tools:desugar_jdk_libs:2.1.5"
+    // No need to add PhonePe dependency manually; the plugin pulls it via repo
 }
-
-// At the very bottom of the file, make sure you apply the Google services plugin:
-apply plugin: 'com.google.gms.google-services'
