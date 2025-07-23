@@ -128,15 +128,18 @@ class AuthService {
     final existing = await _userService.getUserById(user.uid);
     final phone = user.phoneNumber ?? '';
 
-    String role;
-    if (_adminPhones.contains(phone)) {
-      role = 'admin'; // ALWAYS admin for these phones
-    } else if (existing != null) {
-      role = existing.userType; // keep whatever they already are
-    } else {
-      role = 'user'; // default new users
+    if (existing != null) {
+      // Just ensure role (admins list) if needed, but DON'T blank fields
+      final forcedRole =
+          _adminPhones.contains(phone) ? 'admin' : existing.userType;
+      if (forcedRole != existing.userType) {
+        await _userService.updateUser(existing.copyWith(userType: forcedRole));
+      }
+      return; // ← stop here, do NOT re-save with nulls
     }
 
+    // New user: create
+    final role = _adminPhones.contains(phone) ? 'admin' : 'user';
     await _userService.saveUser(AppUser(
       uid: user.uid,
       name: user.displayName,

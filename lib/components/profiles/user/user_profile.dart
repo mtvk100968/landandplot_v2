@@ -1,10 +1,10 @@
-// lib/components/profiles/user/user_profile.dart
 import 'package:flutter/material.dart';
-import '../../../services/auth_service.dart'; // ← for signOut()
+import '../../../services/auth_service.dart';
 import '../../../models/user_model.dart';
 import './common/edit_profile_dialog.dart';
 import 'common/user_detail_card.dart';
 import 'selling/selling_tab.dart';
+import 'buying/buying_tab.dart';
 
 class UserProfile extends StatefulWidget {
   final AppUser initialUser;
@@ -16,43 +16,49 @@ class UserProfile extends StatefulWidget {
 
 class _UserProfileState extends State<UserProfile>
     with SingleTickerProviderStateMixin {
-  late TabController _tabController;
   late AppUser _user;
+  late TabController _tabController;
   final _authService = AuthService();
+
+  bool get _needsProfile => !_user.profileComplete;
 
   @override
   void initState() {
     super.initState();
     _user = widget.initialUser;
-    _tabController = TabController(length: 2, vsync: this);
 
-    // only show setup dialog for plain “user” with no name
-    if (_user.userType == 'user' && (_user.name?.isEmpty ?? true)) {
-      // When you show the dialog:
-      WidgetsBinding.instance.addPostFrameCallback((_) async {
-        final updatedUser = await showDialog<AppUser>(
+    _tabController = TabController(length: 2, vsync: this, initialIndex: 1);
+
+    // Show dialog once if profile incomplete
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (_needsProfile) {
+        final updated = await showDialog<AppUser>(
           context: context,
           barrierDismissible: false,
           builder: (_) => EditProfileDialog(user: _user),
         );
-        if (updatedUser != null && mounted) {
-          setState(() => _user = updatedUser);
-        }
-      });
-    }
+        if (updated != null && mounted) setState(() => _user = updated);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final buyerId = _user.phoneNumber ?? _user.uid;
+
     return Scaffold(
       appBar: AppBar(
-        title: Text('My Profile'),
+        title: const Text('My Profile'),
         actions: [
           TextButton(
-            onPressed: () async {
-              await _authService.signOut();
-            },
-            child: Text(
+            onPressed: () async => _authService.signOut(),
+            child: const Text(
               'Logout',
               style: TextStyle(
                 color: Colors.blue,
@@ -64,10 +70,7 @@ class _UserProfileState extends State<UserProfile>
       ),
       body: Column(
         children: [
-          // 1) user details always at top
           UserDetailCard(user: _user),
-
-          // 2) then the two tabs
           TabBar(
             controller: _tabController,
             labelColor: Theme.of(context).primaryColor,
@@ -77,14 +80,12 @@ class _UserProfileState extends State<UserProfile>
               Tab(text: 'Buying'),
             ],
           ),
-
-          // 3) tab content
           Expanded(
             child: TabBarView(
               controller: _tabController,
               children: [
                 SellingTab(user: _user),
-                Center(child: Text('Buying tab coming soon')),
+                BuyingTab(userId: buyerId),
               ],
             ),
           ),

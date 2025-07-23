@@ -1,22 +1,20 @@
-// lib/services/user_service.dart
-
+import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+
 import '../models/user_model.dart';
 import '../models/property_model.dart';
 import '../models/buyer_model.dart';
-import 'package:firebase_storage/firebase_storage.dart';
-import 'dart:io';
 
 class UserService {
-  // Reference to the 'users' collection
   final CollectionReference<Map<String, dynamic>> _usersCollection =
       FirebaseFirestore.instance.collection('users');
 
-  // **Add this**: reference to the 'properties' collection
   final CollectionReference<Map<String, dynamic>> _propertiesCollection =
-  FirebaseFirestore.instance.collection('properties');
+      FirebaseFirestore.instance.collection('properties');
 
-  /// Fetch a user by their UID
+  // -------- USERS --------
+
   Future<AppUser?> getUserById(String userId) async {
     try {
       final doc = await _usersCollection.doc(userId).get();
@@ -30,7 +28,6 @@ class UserService {
     }
   }
 
-  /// Listen to real-time updates of a user by their UID
   Stream<AppUser?> getUserStream(String userId) {
     return _usersCollection.doc(userId).snapshots().map((doc) {
       if (doc.exists && doc.data() != null) {
@@ -40,20 +37,63 @@ class UserService {
     });
   }
 
-  /// Create or update a user in Firestore
+  /// Create or merge-update a user.
+  /// Does NOT overwrite existing non-empty fields with null/empty.
   Future<void> saveUser(AppUser user) async {
+    final ref = _usersCollection.doc(user.uid);
+    final snap = await ref.get();
+
+    if (snap.exists && snap.data() != null) {
+      final current = AppUser.fromDocument(snap.data()!);
+
+      final map = <String, dynamic>{
+        if (user.name != null && user.name!.trim().isNotEmpty)
+          'name': user.name,
+        if (user.email != null && user.email!.trim().isNotEmpty)
+          'email': user.email,
+        if (user.phoneNumber != null && user.phoneNumber!.trim().isNotEmpty)
+          'phoneNumber': user.phoneNumber,
+        // never downgrade role
+        'userType': user.userType.isNotEmpty ? user.userType : current.userType,
+        // profileComplete only flips to true; never force false if current is true
+        'profileComplete':
+            current.profileComplete || user.profileComplete ? true : false,
+        if (user.photoUrl != null && user.photoUrl!.isNotEmpty)
+          'photoUrl': user.photoUrl,
+        if (user.postedPropertyIds.isNotEmpty)
+          'postedPropertyIds': user.postedPropertyIds,
+        if (user.favoritedPropertyIds.isNotEmpty)
+          'favoritedPropertyIds': user.favoritedPropertyIds,
+        if (user.boughtPropertyIds.isNotEmpty)
+          'boughtPropertyIds': user.boughtPropertyIds,
+        if (user.interestedPropertyIds.isNotEmpty)
+          'interestedPropertyIds': user.interestedPropertyIds,
+        if (user.assignedPropertyIds.isNotEmpty)
+          'assignedPropertyIds': user.assignedPropertyIds,
+        if (user.agentAreas.isNotEmpty) 'agentAreas': user.agentAreas,
+        if (user.fcmTokens.isNotEmpty) 'fcmTokens': user.fcmTokens,
+        if (user.searchedAreas.isNotEmpty) 'searchedAreas': user.searchedAreas,
+      };
+
+      await ref.set(map, SetOptions(merge: true));
+    } else {
+      await ref.set(user.toMap());
+    }
+  }
+
+  /// Merge-safe update using full model (skips null/empty inside toMap anyway)
+  Future<void> updateUser(AppUser user) async {
     try {
       await _usersCollection.doc(user.uid).set(
             user.toMap(),
             SetOptions(merge: true),
           );
     } catch (e) {
-      print('UserService.saveUser ERROR: $e');
-      throw Exception('Failed to save user');
+      print('UserService.updateUser ERROR: $e');
+      throw Exception('Failed to update user');
     }
   }
 
-  /// Delete a user from Firestore
   Future<void> deleteUser(String userId) async {
     try {
       await _usersCollection.doc(userId).delete();
@@ -63,194 +103,11 @@ class UserService {
     }
   }
 
-  /// Update user information
-  Future<void> updateUser(AppUser user) async {
-    try {
-      await _usersCollection.doc(user.uid).update(user.toMap());
-    } catch (e) {
-      print('UserService.updateUser ERROR: $e');
-      throw Exception('Failed to update user');
-    }
-  }
-
-  /// Add a property to the user's favorites
-  Future<void> addFavoriteProperty(String userId, String propertyId) async {
-    try {
-      await _usersCollection.doc(userId).set({
-        'favoritedPropertyIds': FieldValue.arrayUnion([propertyId]),
-      }, SetOptions(merge: true));
-    } catch (e) {
-      print('UserService.addFavoriteProperty ERROR: $e');
-      throw Exception('Failed to add favorite property');
-    }
-  }
-
-  /// Remove a property from the user's favorites
-  Future<void> removeFavoriteProperty(String userId, String propertyId) async {
-    try {
-      await _usersCollection.doc(userId).set({
-        'favoritedPropertyIds': FieldValue.arrayRemove([propertyId]),
-      }, SetOptions(merge: true));
-    } catch (e) {
-      print('UserService.removeFavoriteProperty ERROR: $e');
-      throw Exception('Failed to remove favorite property');
-    }
-  }
-
-  /// Add a property to the user's posted properties
-  Future<void> addPropertyToUser(String userId, String propertyId) async {
-    try {
-      await _usersCollection.doc(userId).update({
-        'postedPropertyIds': FieldValue.arrayUnion([propertyId]),
-      });
-    } catch (e) {
-      print('UserService.addPropertyToUser ERROR: $e');
-      throw Exception('Failed to add property to user');
-    }
-  }
-
-  /// Add a property to the user's in-talks (interested) properties
-  Future<void> addInTalksProperty(String userId, String propertyId) async {
-    try {
-      await _usersCollection.doc(userId).update({
-        'interestedPropertyIds': FieldValue.arrayUnion([propertyId]),
-      });
-    } catch (e) {
-      print('UserService.addInTalksProperty ERROR: $e');
-      throw Exception('Failed to add in-talks property');
-    }
-  }
-
-  /// Add a property to the user's bought properties
-  Future<void> addBoughtProperty(String userId, String propertyId) async {
-    try {
-      await _usersCollection.doc(userId).update({
-        'boughtPropertyIds': FieldValue.arrayUnion([propertyId]),
-      });
-    } catch (e) {
-      print('UserService.addBoughtProperty ERROR: $e');
-      throw Exception('Failed to add bought property');
-    }
-  }
-
-  /// Fetch all properties this user has posted by looking at postedPropertyIds
-  Future<List<Property>> getSellerProperties(String userId) async {
-    try {
-      final user = await getUserById(userId);
-      if (user == null) {
-        print('getSellerProperties: no user found for userId=$userId');
-        return [];
-      }
-      if (user.postedPropertyIds.isEmpty) {
-        print(
-            'getSellerProperties: postedPropertyIds is empty for userId=$userId');
-        return [];
-      }
-      final props = await getPropertiesByIds(user.postedPropertyIds);
-      print(
-          'getSellerProperties: retrieved ${props.length} properties for userId=$userId');
-      return props;
-    } catch (e) {
-      print('UserService.getSellerProperties ERROR: $e');
-      return [];
-    }
-  }
-
-  /// Fetch only the properties this user has posted in a given stage
-  Future<List<Property>> getSellerPropertiesByStage(
-      String userId, String stage) async {
-    try {
-      final user = await getUserById(userId);
-      if (user == null) {
-        print('getSellerPropertiesByStage: no user found for userId=$userId');
-        return [];
-      }
-      if (user.postedPropertyIds.isEmpty) {
-        print(
-            'getSellerPropertiesByStage: postedPropertyIds is empty for userId=$userId');
-        return [];
-      }
-
-      final allProps = await getPropertiesByIds(user.postedPropertyIds);
-      final filtered = allProps.where((p) => p.stage == stage).toList();
-
-      print(
-          'getSellerPropertiesByStage: userId=$userId, stage=$stage, totalPosted=${allProps.length}, matched=${filtered.length}');
-
-      return filtered;
-    } catch (e) {
-      print('UserService.getSellerPropertiesByStage ERROR: $e');
-      return [];
-    }
-  }
-
-  /// Fetch properties this user is interested in (in-talks)
-  Future<List<Property>> getInTalksProperties(String userId) async {
-    try {
-      final user = await getUserById(userId);
-      if (user == null || user.interestedPropertyIds.isEmpty) {
-        print(
-            'getInTalksProperties: no user or no interestedPropertyIds for userId=$userId');
-        return [];
-      }
-      final props = await getPropertiesByIds(user.interestedPropertyIds);
-      print(
-          'getInTalksProperties: retrieved ${props.length} properties for userId=$userId');
-      return props;
-    } catch (e) {
-      print('UserService.getInTalksProperties ERROR: $e');
-      return [];
-    }
-  }
-
-  /// Fetch properties this user has bought
-  Future<List<Property>> getBoughtProperties2(String userId) async {
-    try {
-      final user = await getUserById(userId);
-      if (user == null || user.boughtPropertyIds.isEmpty) {
-        print(
-            'getBoughtProperties: no user or no boughtPropertyIds for userId=$userId');
-        return [];
-      }
-      final props = await getPropertiesByIds(user.boughtPropertyIds);
-      print(
-          'getBoughtProperties: retrieved ${props.length} properties for userId=$userId');
-      return props;
-    } catch (e) {
-      print('UserService.getBoughtProperties ERROR: $e');
-      return [];
-    }
-  }
-
-  /// Fetch multiple Property documents by their IDs
-  Future<List<Property>> getPropertiesByIds(List<String> propertyIds) async {
-    try {
-      if (propertyIds.isEmpty) return [];
-      List<Property> all = [];
-      const batchSize = 10;
-      for (var i = 0; i < propertyIds.length; i += batchSize) {
-        final end = (i + batchSize < propertyIds.length)
-            ? i + batchSize
-            : propertyIds.length;
-        final batch = propertyIds.sublist(i, end);
-        final snap = await _propertiesCollection
-            .where(FieldPath.documentId, whereIn: batch)
-            .get();
-        all.addAll(snap.docs.map((d) => Property.fromDocument(d)));
-      }
-      print('getPropertiesByIds: retrieved ${all.length} properties by IDs');
-      return all;
-    } catch (e) {
-      print('UserService.getPropertiesByIds ERROR: $e');
-      return [];
-    }
-  }
-
-  /// Fetch a user by their phone number
   Future<AppUser?> getUserByPhoneNumber(String phoneNumber) async {
     try {
       final snap = await _usersCollection
           .where('phoneNumber', isEqualTo: phoneNumber)
+          .limit(1)
           .get();
       if (snap.docs.isNotEmpty) {
         return AppUser.fromDocument(snap.docs.first.data());
@@ -262,29 +119,23 @@ class UserService {
     }
   }
 
-  /// Uploads a new profile image for [uid], updates Firestore, and returns the download URL.
   Future<String> uploadProfileImage({
     required String uid,
     required File file,
   }) async {
     try {
-      // 1. Upload file to Firebase Storage under "profile_photos/{uid}.jpg"
       final storageRef = FirebaseStorage.instance
           .ref()
           .child('profile_photos')
           .child('$uid.jpg');
 
-      final uploadTask = storageRef.putFile(file);
-      final snapshot = await uploadTask.whenComplete(() {});
-
-      // 2. Get the download URL of the uploaded image
+      final snapshot = await storageRef.putFile(file).whenComplete(() {});
       final downloadUrl = await snapshot.ref.getDownloadURL();
 
-      // 3. Update the user's Firestore document with the new photoUrl
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(uid)
-          .update({'photoUrl': downloadUrl});
+      await _usersCollection.doc(uid).set(
+        {'photoUrl': downloadUrl},
+        SetOptions(merge: true),
+      );
 
       return downloadUrl;
     } catch (e) {
@@ -293,29 +144,148 @@ class UserService {
     }
   }
 
-  /// 1. Interested properties (buyer.status == 'visitPending')
-  ///    Uses AppUser.interestedPropertyIds
+  // -------- FAVORITES / PROPERTY LISTS --------
+
+  Future<void> addFavoriteProperty(String userId, String propertyId) async {
+    try {
+      await _usersCollection.doc(userId).set({
+        'favoritedPropertyIds': FieldValue.arrayUnion([propertyId]),
+      }, SetOptions(merge: true));
+    } catch (e) {
+      print('UserService.addFavoriteProperty ERROR: $e');
+      throw Exception('Failed to add favorite property');
+    }
+  }
+
+  Future<void> removeFavoriteProperty(String userId, String propertyId) async {
+    try {
+      await _usersCollection.doc(userId).set({
+        'favoritedPropertyIds': FieldValue.arrayRemove([propertyId]),
+      }, SetOptions(merge: true));
+    } catch (e) {
+      print('UserService.removeFavoriteProperty ERROR: $e');
+      throw Exception('Failed to remove favorite property');
+    }
+  }
+
+  Future<void> addPropertyToUser(String userId, String propertyId) async {
+    try {
+      await _usersCollection.doc(userId).update({
+        'postedPropertyIds': FieldValue.arrayUnion([propertyId]),
+      });
+    } catch (e) {
+      print('UserService.addPropertyToUser ERROR: $e');
+      throw Exception('Failed to add property to user');
+    }
+  }
+
+  Future<void> addInTalksProperty(String userId, String propertyId) async {
+    try {
+      await _usersCollection.doc(userId).update({
+        'interestedPropertyIds': FieldValue.arrayUnion([propertyId]),
+      });
+    } catch (e) {
+      print('UserService.addInTalksProperty ERROR: $e');
+      throw Exception('Failed to add in-talks property');
+    }
+  }
+
+  Future<void> addBoughtProperty(String userId, String propertyId) async {
+    try {
+      await _usersCollection.doc(userId).update({
+        'boughtPropertyIds': FieldValue.arrayUnion([propertyId]),
+      });
+    } catch (e) {
+      print('UserService.addBoughtProperty ERROR: $e');
+      throw Exception('Failed to add bought property');
+    }
+  }
+
+  // -------- PROPERTY FETCH HELPERS --------
+
+  Future<List<Property>> getSellerProperties(String userId) async {
+    try {
+      final user = await getUserById(userId);
+      if (user == null || user.postedPropertyIds.isEmpty) return [];
+      return getPropertiesByIds(user.postedPropertyIds);
+    } catch (e) {
+      print('UserService.getSellerProperties ERROR: $e');
+      return [];
+    }
+  }
+
+  Future<List<Property>> getSellerPropertiesByStage(
+      String userId, String stage) async {
+    try {
+      final user = await getUserById(userId);
+      if (user == null || user.postedPropertyIds.isEmpty) return [];
+      final allProps = await getPropertiesByIds(user.postedPropertyIds);
+      return allProps.where((p) => p.stage == stage).toList();
+    } catch (e) {
+      print('UserService.getSellerPropertiesByStage ERROR: $e');
+      return [];
+    }
+  }
+
+  Future<List<Property>> getInTalksProperties(String userId) async {
+    try {
+      final user = await getUserById(userId);
+      if (user == null || user.interestedPropertyIds.isEmpty) return [];
+      return getPropertiesByIds(user.interestedPropertyIds);
+    } catch (e) {
+      print('UserService.getInTalksProperties ERROR: $e');
+      return [];
+    }
+  }
+
+  Future<List<Property>> getBoughtProperties2(String userId) async {
+    try {
+      final user = await getUserById(userId);
+      if (user == null || user.boughtPropertyIds.isEmpty) return [];
+      return getPropertiesByIds(user.boughtPropertyIds);
+    } catch (e) {
+      print('UserService.getBoughtProperties ERROR: $e');
+      return [];
+    }
+  }
+
+  Future<List<Property>> getPropertiesByIds(List<String> propertyIds) async {
+    try {
+      if (propertyIds.isEmpty) return [];
+      final List<Property> all = [];
+      const batchSize = 10;
+      for (var i = 0; i < propertyIds.length; i += batchSize) {
+        final end = (i + batchSize < propertyIds.length)
+            ? i + batchSize
+            : propertyIds.length;
+        final batch = propertyIds.sublist(i, end);
+        final snap = await _propertiesCollection
+            .where(FieldPath.documentId, whereIn: batch)
+            .get();
+        all.addAll(snap.docs.map((d) => Property.fromDocument(d)));
+      }
+      return all;
+    } catch (e) {
+      print('UserService.getPropertiesByIds ERROR: $e');
+      return [];
+    }
+  }
+
   Future<List<Property>> getInterestedProperties(String userId) async {
     final user = await getUserById(userId);
     if (user == null || user.interestedPropertyIds.isEmpty) return [];
     return getPropertiesByIds(user.interestedPropertyIds);
   }
 
-  /// 2. Bought properties (buyer.status == 'bought' && property.stage == 'sold')
-  ///    Uses AppUser.boughtPropertyIds
   Future<List<Property>> getBoughtProperties(String userId) async {
     final user = await getUserById(userId);
     if (user == null || user.boughtPropertyIds.isEmpty) return [];
     return getPropertiesByIds(user.boughtPropertyIds);
   }
 
-  /// 3. Visited properties:
-  ///    Those which were in interestedPropertyIds or boughtPropertyIds, but now
-  ///    buyer.status != 'visitPending' and != 'bought'
   Future<List<Property>> getVisitedProperties(String userId) async {
     final user = await getUserById(userId);
     if (user == null) return [];
-    // combine interested and bought IDs
     final combinedIds = {
       ...user.interestedPropertyIds,
       ...user.boughtPropertyIds,
@@ -331,7 +301,6 @@ class UserService {
     }).toList();
   }
 
-  /// 4. Accepted properties (buyer.status == 'accepted' && property.stage == 'saleInProgress')
   Future<List<Property>> getAcceptedProperties(String userId) async {
     final user = await getUserById(userId);
     if (user == null || user.interestedPropertyIds.isEmpty) return [];
@@ -345,7 +314,6 @@ class UserService {
     }).toList();
   }
 
-  /// 5. Rejected properties (buyer.status == 'rejected')
   Future<List<Property>> getRejectedProperties(String userId) async {
     final user = await getUserById(userId);
     if (user == null || user.interestedPropertyIds.isEmpty) return [];
@@ -359,25 +327,18 @@ class UserService {
     }).toList();
   }
 
-  /// Fetch all Property documents in which this user appears as a buyer,
-  /// by combining their interestedPropertyIds and boughtPropertyIds.
   Future<List<Property>> getBuyerProperties(String userId) async {
-    // 1. Load the AppUser record.
     final userDoc = await _usersCollection.doc(userId).get();
-    if (!userDoc.exists || userDoc.data() == null) {
-      return [];
-    }
+    if (!userDoc.exists || userDoc.data() == null) return [];
     final user = AppUser.fromDocument(userDoc.data()!);
 
-    // 2. Combine the two lists (avoid duplicates).
     final idsSet = <String>{
       ...user.interestedPropertyIds,
       ...user.boughtPropertyIds,
     };
-    final allIds = idsSet.toList();
-    if (allIds.isEmpty) return [];
+    if (idsSet.isEmpty) return [];
 
-    // 3. Fetch those Property documents in batches of 10.
+    final allIds = idsSet.toList();
     List<Property> result = [];
     const batchSize = 10;
     for (var i = 0; i < allIds.length; i += batchSize) {

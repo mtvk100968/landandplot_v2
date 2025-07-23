@@ -6,9 +6,12 @@ import '../../../../models/buyer_model.dart';
 import '../../../../services/user_service.dart';
 import 'interested_card.dart';
 import 'visited_card.dart';
+import 'accepted_card.dart';
+import 'bought_card.dart';
+import 'rejected_card.dart';
 
 class BuyingTab extends StatefulWidget {
-  final String userId;
+  final String userId; // this is the buyer’s phone number
   const BuyingTab({Key? key, required this.userId}) : super(key: key);
 
   @override
@@ -21,7 +24,7 @@ class _BuyingTabState extends State<BuyingTab> {
   @override
   void initState() {
     super.initState();
-    // fetch all properties in which this user is a buyer
+    // load all properties where this user appears as a buyer
     _allPropertiesFuture = UserService().getBuyerProperties(widget.userId);
   }
 
@@ -33,9 +36,13 @@ class _BuyingTabState extends State<BuyingTab> {
         if (snapshot.connectionState != ConnectionState.done) {
           return const Center(child: CircularProgressIndicator());
         }
+        if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        }
 
         final props = snapshot.data ?? [];
-        // filter into groups by buyer status
+
+        // bucket them by status/stage
         final interested = <Property>[];
         final visited = <Property>[];
         final accepted = <Property>[];
@@ -43,24 +50,34 @@ class _BuyingTabState extends State<BuyingTab> {
         final rejected = <Property>[];
 
         for (var p in props) {
-          // find the Buyer object for this user
           final buyer = p.buyers.firstWhere(
             (b) => b.phone == widget.userId,
             orElse: () =>
                 Buyer(name: '', phone: '', status: '', currentStep: ''),
           );
-          if (buyer.status == 'visitPending') {
-            interested.add(p);
-          } else if (buyer.status == 'rejected') {
-            rejected.add(p);
-          } else if (buyer.status == 'accepted' &&
-              p.stage == 'saleInProgress') {
-            accepted.add(p);
-          } else if (buyer.status == 'bought' && p.stage == 'sold') {
-            bought.add(p);
-          } else {
-            // any other non-pending states count as visited
-            visited.add(p);
+          switch (buyer.status) {
+            case 'visitPending':
+              interested.add(p);
+              break;
+            case 'rejected':
+              rejected.add(p);
+              break;
+            case 'accepted':
+              if (p.stage == 'saleInProgress') {
+                accepted.add(p);
+              } else {
+                visited.add(p);
+              }
+              break;
+            case 'bought':
+              if (p.stage == 'sold') {
+                bought.add(p);
+              } else {
+                visited.add(p);
+              }
+              break;
+            default:
+              visited.add(p);
           }
         }
 
@@ -86,37 +103,44 @@ class _BuyingTabState extends State<BuyingTab> {
               .map((p) => VisitedCard(property: p, userPhone: widget.userId)));
         }
 
-        // placeholders for Accepted, Bought, Rejected
         if (accepted.isNotEmpty) {
           children.add(const Padding(
             padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
             child: Text('Accepted (Sale In Progress)',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           ));
-          // TODO: map to AcceptedCard
+          children.addAll(accepted
+              .map((p) => AcceptedCard(property: p, userPhone: widget.userId)));
         }
+
         if (bought.isNotEmpty) {
           children.add(const Padding(
             padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
             child: Text('Bought',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           ));
-          // TODO: map to BoughtCard
+          children.addAll(bought
+              .map((p) => BoughtCard(property: p, userPhone: widget.userId)));
         }
+
         if (rejected.isNotEmpty) {
           children.add(const Padding(
             padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
             child: Text('Rejected',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           ));
-          // TODO: map to RejectedCard
+          children.addAll(rejected
+              .map((p) => RejectedCard(property: p, userPhone: widget.userId)));
         }
 
         if (children.isEmpty) {
           return const Center(child: Text('No buying activity.'));
         }
 
-        return ListView(children: children);
+        return ListView(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          children: children,
+        );
       },
     );
   }

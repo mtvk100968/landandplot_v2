@@ -57,21 +57,23 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
           uid: firebaseUser.uid,
           file: _pickedImage!,
         );
-        // optional mirror to Auth
-        await firebaseUser.updatePhotoURL(photoUrl);
+        try {
+          await firebaseUser.updatePhotoURL(photoUrl);
+        } catch (_) {}
       }
 
-      // 2. Build updated model (email only in Firestore)
+      // 2. Build updated model and mark profileComplete
       final updated = widget.user.copyWith(
         name: _nameCtrl.text.trim(),
         email: _emailCtrl.text.trim().isEmpty ? null : _emailCtrl.text.trim(),
         photoUrl: photoUrl,
+        profileComplete: true,
       );
 
-      // 3. Save to Firestore
-      await UserService().saveUser(updated);
+      // 3. Save guarded (won’t wipe other fields)
+      await UserService().updateUser(updated);
 
-      // 4. Update displayName in Auth (safe)
+      // 4. Mirror displayName (optional)
       if (updated.name?.isNotEmpty == true) {
         try {
           await firebaseUser.updateDisplayName(updated.name);
@@ -79,7 +81,6 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
       }
 
       if (!mounted) return;
-      debugPrint('✅ Closing dialog');
       Navigator.of(context, rootNavigator: true).pop<AppUser>(updated);
     } catch (e, st) {
       debugPrint('⚠️ submit error: $e');
@@ -96,6 +97,9 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final isNameEditable =
+        widget.user.name == null || widget.user.name!.isEmpty;
+
     return AlertDialog(
       title: const Text('Complete Your Profile'),
       content: SingleChildScrollView(
@@ -119,13 +123,10 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
             const SizedBox(height: 12),
             TextFormField(
               controller: _nameCtrl,
-              enabled: widget.user.name == null || widget.user.name!.isEmpty,
+              enabled: isNameEditable,
               decoration: const InputDecoration(labelText: 'Name *'),
-              style: TextStyle(
-                color: (widget.user.name == null || widget.user.name!.isEmpty)
-                    ? Colors.black
-                    : Colors.grey,
-              ),
+              style:
+                  TextStyle(color: isNameEditable ? Colors.black : Colors.grey),
               validator: (v) =>
                   v == null || v.trim().isEmpty ? 'Name is required' : null,
             ),

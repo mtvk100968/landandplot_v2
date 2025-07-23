@@ -4,26 +4,17 @@ class AppUser {
   final String? email;
   final String? phoneNumber;
   final String? photoUrl;
-  // NEW: userType (admin, agent, or user)
-  //an agent can do all the things a user can do - buying and selling, and also be the agent for other's properties - either by posting them or assigning by LANDANDPLOT
-  final String userType;
+  final String userType; // admin | agent | user
+  final bool profileComplete; // ← NEW
 
-  // Existing lists
-  final List<String> postedPropertyIds; //posted by a user/agent
-  final List<String> assignedPropertyIds; // for agents only
-  final List<String> favoritedPropertyIds; //favorited by a user/agent
-  final List<String>
-      interestedPropertyIds; // for buyers/sellers - could be a user/agent
-  final List<String>
-      boughtPropertyIds; //properties you've bought, as a user/agent
-
-  // NEW: agentAreas (for agents to show their areas of operation)
+  final List<String> postedPropertyIds;
+  final List<String> assignedPropertyIds;
+  final List<String> favoritedPropertyIds;
+  final List<String> interestedPropertyIds;
+  final List<String> boughtPropertyIds;
   final List<String> agentAreas;
-
-  // NEW
-  final List<String> fcmTokens; // for push notifications
-  final List<String>
-      searchedAreas; // areas this user wants new‐property alerts for
+  final List<String> fcmTokens;
+  final List<String> searchedAreas;
 
   AppUser({
     required this.uid,
@@ -31,8 +22,8 @@ class AppUser {
     this.email,
     this.phoneNumber,
     this.photoUrl,
-    // default to 'user' if none is provided
     this.userType = 'user',
+    this.profileComplete = false, // ← default
     List<String>? postedPropertyIds,
     List<String>? favoritedPropertyIds,
     List<String>? boughtPropertyIds,
@@ -48,48 +39,30 @@ class AppUser {
         assignedPropertyIds = assignedPropertyIds ?? [],
         agentAreas = agentAreas ?? [];
 
-  // Convert AppUser object to a Map for Firestore
   Map<String, dynamic> toMap() {
     final data = <String, dynamic>{
       'uid': uid,
-      'name': name,
-      'email': email,
-      'phoneNumber': phoneNumber,
       'userType': userType,
+      'profileComplete': profileComplete, // ← include
+      if (name != null) 'name': name,
+      if (email != null) 'email': email,
+      if (phoneNumber != null) 'phoneNumber': phoneNumber,
       if (photoUrl != null) 'photoUrl': photoUrl,
+      if (postedPropertyIds.isNotEmpty) 'postedPropertyIds': postedPropertyIds,
+      if (favoritedPropertyIds.isNotEmpty)
+        'favoritedPropertyIds': favoritedPropertyIds,
+      if (boughtPropertyIds.isNotEmpty) 'boughtPropertyIds': boughtPropertyIds,
+      if (interestedPropertyIds.isNotEmpty)
+        'interestedPropertyIds': interestedPropertyIds,
+      if (assignedPropertyIds.isNotEmpty)
+        'assignedPropertyIds': assignedPropertyIds,
+      if (agentAreas.isNotEmpty) 'agentAreas': agentAreas,
+      if (fcmTokens.isNotEmpty) 'fcmTokens': fcmTokens,
+      if (searchedAreas.isNotEmpty) 'searchedAreas': searchedAreas,
     };
-
-    if (postedPropertyIds.isNotEmpty) {
-      data['postedPropertyIds'] = postedPropertyIds;
-    }
-    if (favoritedPropertyIds.isNotEmpty) {
-      data['favoritedPropertyIds'] = favoritedPropertyIds;
-    }
-
-    if (boughtPropertyIds.isNotEmpty) {
-      data['boughtPropertyIds'] = boughtPropertyIds;
-    }
-    if (interestedPropertyIds.isNotEmpty) {
-      data['interestedPropertyIds'] = interestedPropertyIds;
-    }
-    if (assignedPropertyIds.isNotEmpty) {
-      data['assignedPropertyIds'] = assignedPropertyIds;
-    }
-    // NEW: include agentAreas
-    if (agentAreas.isNotEmpty) {
-      data['agentAreas'] = agentAreas;
-    }
-    if (fcmTokens.isNotEmpty) {
-      data['fcmTokens'] = fcmTokens;
-    }
-    if (searchedAreas.isNotEmpty) {
-      data['searchedAreas'] = searchedAreas;
-    }
-
     return data;
   }
 
-  // Create AppUser object from a Firestore DocumentSnapshot
   factory AppUser.fromDocument(Map<String, dynamic> doc) {
     return AppUser(
       uid: doc['uid'] ?? '',
@@ -98,6 +71,7 @@ class AppUser {
       phoneNumber: doc['phoneNumber'],
       photoUrl: doc['photoUrl'],
       userType: doc['userType'] ?? 'user',
+      profileComplete: doc['profileComplete'] ?? false, // ← read
       postedPropertyIds: List<String>.from(doc['postedPropertyIds'] ?? []),
       favoritedPropertyIds:
           List<String>.from(doc['favoritedPropertyIds'] ?? []),
@@ -105,7 +79,6 @@ class AppUser {
       interestedPropertyIds:
           List<String>.from(doc['interestedPropertyIds'] ?? []),
       assignedPropertyIds: List<String>.from(doc['assignedPropertyIds'] ?? []),
-      // NEW: load agentAreas
       agentAreas: List<String>.from(doc['agentAreas'] ?? []),
       fcmTokens: List<String>.from(doc['fcmTokens'] ?? []),
       searchedAreas: List<String>.from(doc['searchedAreas'] ?? []),
@@ -118,6 +91,7 @@ class AppUser {
     String? phoneNumber,
     String? userType,
     String? photoUrl,
+    bool? profileComplete, // ← NEW
     List<String>? postedPropertyIds,
     List<String>? favoritedPropertyIds,
     List<String>? boughtPropertyIds,
@@ -128,12 +102,13 @@ class AppUser {
     List<String>? searchedAreas,
   }) {
     return AppUser(
-      uid: uid, // never changes
+      uid: uid,
       name: name ?? this.name,
       email: email ?? this.email,
       phoneNumber: phoneNumber ?? this.phoneNumber,
       photoUrl: photoUrl ?? this.photoUrl,
       userType: userType ?? this.userType,
+      profileComplete: profileComplete ?? this.profileComplete,
       postedPropertyIds: postedPropertyIds ?? this.postedPropertyIds,
       favoritedPropertyIds: favoritedPropertyIds ?? this.favoritedPropertyIds,
       boughtPropertyIds: boughtPropertyIds ?? this.boughtPropertyIds,
