@@ -12,7 +12,7 @@ class EditProfileDialog extends StatefulWidget {
   const EditProfileDialog({Key? key, required this.user}) : super(key: key);
 
   @override
-  _EditProfileDialogState createState() => _EditProfileDialogState();
+  State<EditProfileDialog> createState() => _EditProfileDialogState();
 }
 
 class _EditProfileDialogState extends State<EditProfileDialog> {
@@ -29,6 +29,13 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
     _emailCtrl.text = widget.user.email ?? '';
   }
 
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _emailCtrl.dispose();
+    super.dispose();
+  }
+
   Future<void> _pickPhoto() async {
     final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
     if (picked != null) {
@@ -38,41 +45,59 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    setState(() => _submitting = true);
 
+    setState(() => _submitting = true);
     final firebaseUser = FirebaseAuth.instance.currentUser!;
     String? photoUrl = widget.user.photoUrl;
 
-    if (_pickedImage != null) {
-      photoUrl = await UserService().uploadProfileImage(
-        uid: firebaseUser.uid,
-        file: _pickedImage!,
+    try {
+      // 1. Upload photo if picked
+      if (_pickedImage != null) {
+        photoUrl = await UserService().uploadProfileImage(
+          uid: firebaseUser.uid,
+          file: _pickedImage!,
+        );
+        // optional mirror to Auth
+        await firebaseUser.updatePhotoURL(photoUrl);
+      }
+
+      // 2. Build updated model (email only in Firestore)
+      final updated = widget.user.copyWith(
+        name: _nameCtrl.text.trim(),
+        email: _emailCtrl.text.trim().isEmpty ? null : _emailCtrl.text.trim(),
+        photoUrl: photoUrl,
       );
-      await firebaseUser.updatePhotoURL(photoUrl);
+
+      // 3. Save to Firestore
+      await UserService().saveUser(updated);
+
+      // 4. Update displayName in Auth (safe)
+      if (updated.name?.isNotEmpty == true) {
+        try {
+          await firebaseUser.updateDisplayName(updated.name);
+        } catch (_) {}
+      }
+
+      if (!mounted) return;
+      debugPrint('✅ Closing dialog');
+      Navigator.of(context, rootNavigator: true).pop<AppUser>(updated);
+    } catch (e, st) {
+      debugPrint('⚠️ submit error: $e');
+      debugPrintStack(stackTrace: st);
+      _showSnack('Something went wrong: $e');
+    } finally {
+      if (mounted) setState(() => _submitting = false);
     }
+  }
 
-    final updated = widget.user.copyWith(
-      name: _nameCtrl.text.trim(),
-      email: _emailCtrl.text.trim().isEmpty ? null : _emailCtrl.text.trim(),
-      photoUrl: photoUrl,
-    );
-
-    await UserService().saveUser(updated);
-
-    if (_nameCtrl.text.trim().isNotEmpty) {
-      await firebaseUser.updateDisplayName(updated.name);
-    }
-    if (updated.email != null && updated.email!.isNotEmpty) {
-      await firebaseUser.updateEmail(updated.email!);
-    }
-
-    Navigator.of(context).pop();
+  void _showSnack(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text('Complete Your Profile'),
+      title: const Text('Complete Your Profile'),
       content: SingleChildScrollView(
         child: Form(
           key: _formKey,
@@ -87,7 +112,7 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
                         ? NetworkImage(widget.user.photoUrl!) as ImageProvider
                         : null),
                 child: _pickedImage == null && widget.user.photoUrl == null
-                    ? Icon(Icons.camera_alt, size: 32)
+                    ? const Icon(Icons.camera_alt, size: 32)
                     : null,
               ),
             ),
@@ -95,7 +120,7 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
             TextFormField(
               controller: _nameCtrl,
               enabled: widget.user.name == null || widget.user.name!.isEmpty,
-              decoration: InputDecoration(labelText: 'Name *'),
+              decoration: const InputDecoration(labelText: 'Name *'),
               style: TextStyle(
                 color: (widget.user.name == null || widget.user.name!.isEmpty)
                     ? Colors.black
@@ -107,13 +132,12 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
             const SizedBox(height: 8),
             TextFormField(
               controller: _emailCtrl,
-              decoration: InputDecoration(labelText: 'Email (optional)'),
+              decoration: const InputDecoration(labelText: 'Email (optional)'),
               keyboardType: TextInputType.emailAddress,
               validator: (v) {
                 if (v != null && v.isNotEmpty) {
-                  final emailRegex =
-                      RegExp(r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@"
-                          r"[a-zA-Z0-9]+\.[a-zA-Z]+");
+                  final emailRegex = RegExp(
+                      r"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+\.[a-zA-Z]+$");
                   return emailRegex.hasMatch(v) ? null : 'Invalid email';
                 }
                 return null;
@@ -125,17 +149,17 @@ class _EditProfileDialogState extends State<EditProfileDialog> {
       actions: [
         TextButton(
           onPressed: _submitting ? null : () => Navigator.of(context).pop(),
-          child: Text('Cancel'),
+          child: const Text('Cancel'),
         ),
         ElevatedButton(
           onPressed: _submitting ? null : _submit,
           child: _submitting
-              ? SizedBox(
+              ? const SizedBox(
                   width: 16,
                   height: 16,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : Text('Save'),
+              : const Text('Save'),
         ),
       ],
     );

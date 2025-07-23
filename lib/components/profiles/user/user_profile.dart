@@ -28,12 +28,16 @@ class _UserProfileState extends State<UserProfile>
 
     // only show setup dialog for plain “user” with no name
     if (_user.userType == 'user' && (_user.name?.isEmpty ?? true)) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        showDialog(
+      // When you show the dialog:
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        final updatedUser = await showDialog<AppUser>(
           context: context,
           barrierDismissible: false,
           builder: (_) => EditProfileDialog(user: _user),
         );
+        if (updatedUser != null && mounted) {
+          setState(() => _user = updatedUser);
+        }
       });
     }
   }
@@ -47,7 +51,7 @@ class _UserProfileState extends State<UserProfile>
           TextButton(
             onPressed: () async {
               await _authService.signOut();
-              },
+            },
             child: Text(
               'Logout',
               style: TextStyle(
