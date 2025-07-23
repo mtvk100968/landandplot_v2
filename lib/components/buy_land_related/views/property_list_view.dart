@@ -28,28 +28,36 @@ class PropertyListView extends StatelessWidget {
   Widget build(BuildContext context) {
     print("🔍 PropertyListView properties count: ${properties.length}");
 
-    if (properties.isEmpty) {
+    // 1) show only approved
+    final visible = properties.where((p) => p.adminApproved).toList();
+    print("✅ Approved properties count: ${visible.length}");
+
+    // 2) empty state
+    if (visible.isEmpty) {
       final cityName = selectedCity ?? 'this area';
-      return Center(
-        child: Text('No properties found in $cityName.'),
-      );
+      return Center(child: Text('No properties found in $cityName.'));
     }
 
-    return ListView.builder(
-      itemCount: properties.length,
-      itemBuilder: (context, index) {
-        final property = properties[index];
-        final isFavorited = favoritedPropertyIds.contains(property.id);
-        print("Rendering Property: ${property.id}, Property Price: ${property.totalPrice}");
+    // 3) sort the visible list
+    final List<Property> sorted = [...visible]..sort((a, b) {
+        final aFav = favoritedPropertyIds.contains(a.id);
+        final bFav = favoritedPropertyIds.contains(b.id);
+        if (aFav != bFav) return aFav ? -1 : 1;
+        return b.createdAt.compareTo(a.createdAt);
+      });
 
+    return ListView.builder(
+      itemCount: sorted.length,
+      itemBuilder: (context, index) {
+        final property = sorted[index];
+        final isFavorited = favoritedPropertyIds.contains(property.id);
         return PropertyCard(
           property: property,
           isFavorited: isFavorited,
           onFavoriteToggle: (newIsFavorited) {
-            // Pass the property.id along with the new favorited status
             onFavoriteToggle(property.id, newIsFavorited);
           },
-          onTap: () => onTapProperty(property), // Handle property tap
+          onTap: () => onTapProperty(property),
         );
       },
     );

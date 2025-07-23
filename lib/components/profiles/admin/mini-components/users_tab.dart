@@ -77,17 +77,63 @@ class _UsersTabState extends State<UsersTab> {
                     return ListTile(
                       title: Text(u.name ?? ''),
                       subtitle: Text(u.phoneNumber ?? ''),
-                      trailing: const Icon(Icons.keyboard_arrow_right),
                       onTap: () {
+                        // still opens detail screen on tile tap
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (_) => UserDetailScreen(
-                              userId: u.uid, // ← pass the UID
-                            ),
+                            builder: (_) => UserDetailScreen(userId: u.uid),
                           ),
                         );
                       },
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // role change menu
+                          PopupMenuButton<String>(
+                            tooltip: 'Change role',
+                            onSelected: (v) async {
+                              if (v == 'make_agent') {
+                                await AdminService()
+                                    .setUserType(u.uid, 'agent');
+                                setState(() =>
+                                    _list[i] = u.copyWith(userType: 'agent'));
+                              } else if (v == 'make_user') {
+                                await AdminService().setUserType(u.uid, 'user');
+                                setState(() =>
+                                    _list[i] = u.copyWith(userType: 'user'));
+                              }
+                            },
+                            itemBuilder: (_) => [
+                              if (u.userType != 'agent')
+                                const PopupMenuItem(
+                                  value: 'make_agent',
+                                  child: Text('Make Agent'),
+                                ),
+                              if (u.userType != 'user')
+                                const PopupMenuItem(
+                                  value: 'make_user',
+                                  child: Text('Make User'),
+                                ),
+                            ],
+                            child: const Icon(Icons.more_vert),
+                          ),
+                          const SizedBox(width: 4),
+                          // arrow that also navigates
+                          IconButton(
+                            icon: const Icon(Icons.keyboard_arrow_right),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      UserDetailScreen(userId: u.uid),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
                     );
                   },
                 ),

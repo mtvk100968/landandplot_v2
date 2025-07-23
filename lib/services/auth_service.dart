@@ -1,80 +1,148 @@
 // lib/services/auth_service.dart
-
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
+
 import '../models/user_model.dart';
 import './user_service.dart';
 
+/// Phones that should become admin automatically (optional)
+const _bypassPhones = [
+  '+19999999999',
+  '+18888888888',
+  '+17777777777',
+  '9959788005'
+];
+
+const _adminPhones = {'+919959788005', '+19999999999'};
+
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final _userService = UserService();
 
-  /// Initiates phone number verification and sends OTP.
-  /// The [codeSent] callback returns the verificationId.
-  /// [verificationFailed] is called if the process fails.
-  Future<void> signInWithPhoneNumber(String phoneNumber,
-      Function(String) codeSent,
-      Function(FirebaseAuthException) verificationFailed,) async {
-    await _auth.verifyPhoneNumber(
-      phoneNumber: phoneNumber,
-      verificationCompleted: (PhoneAuthCredential credential) async {
-        final UserCredential authResult =
-        await _auth.signInWithCredential(credential);
-        final User? user = authResult.user;
+  // -------- DEBUG LOGGER --------
+  void _logAuthError(FirebaseAuthException e, {StackTrace? st}) {
+    debugPrint('🔴 FirebaseAuthException');
+    debugPrint('  • code: ${e.code}');
+    debugPrint('  • message: ${e.message}');
+    debugPrint('  • email: ${e.email}');
+    debugPrint('  • credential: ${e.credential}');
+    final dyn = e as dynamic;
+    for (final k in ['plugin', 'tenantId', 'phoneAuthCredential', 'details']) {
+      try {
+        debugPrint('  • $k: ${dyn.$k}');
+      } catch (_) {}
+    }
+    if (e.stackTrace != null) {
+      debugPrintStack(stackTrace: e.stackTrace, label: '  • e.stackTrace');
+    }
+    if (st != null) {
+      debugPrintStack(stackTrace: st, label: '  • caught stackTrace');
+    }
+  }
+  // --------------------------------
 
-        if (user != null) {
-          // Create an AppUser instance
-          // Default userType to 'user' if not specifically set
-          AppUser appUser = AppUser(
-            uid: user.uid,
-            name: user.displayName,
-            email: user.email,
-            phoneNumber: user.phoneNumber,
-            userType: phoneNumber == '9959788005' ? 'admin' : 'user',
-          );
+  /// Public: start phone auth, trigger callbacks
+  Future<void> signInWithPhoneNumber(
+    String phoneNumber,
+    Function(String verificationId) codeSent,
+    Function(FirebaseAuthException) verificationFailed,
+  ) async {
+    debugPrint('🔔 verifyPhoneNumber() phone=$phoneNumber');
 
-          // Save or update the user in Firestore
-          await UserService().saveUser(appUser);
+    try {
+      await _auth
+          .verifyPhoneNumber(
+        phoneNumber: phoneNumber,
+        timeout: const Duration(seconds: 60),
+        verificationCompleted: (PhoneAuthCredential credential) async {
+          debugPrint('✅ verificationCompleted (auto sign-in).');
+          try {
+            await signInWithPhoneAuthCredential(credential);
+          } catch (e, st) {
+            debugPrint('❌ auto sign-in save failed: $e');
+            debugPrintStack(stackTrace: st);
+          }
+        },
+        verificationFailed: (FirebaseAuthException e) {
+          debugPrint('  • raw toString(): $e');
+          try {
+            debugPrint('  • details map: ${(e as dynamic).details}');
+          } catch (_) {}
+          _logAuthError(e);
+          verificationFailed(e);
+        },
+        codeSent: (String verificationId, int? resendToken) {
+          debugPrint(
+              '✉️ codeSent verId=$verificationId resendToken=$resendToken');
+          codeSent(verificationId);
+        },
+        codeAutoRetrievalTimeout: (String verificationId) {
+          debugPrint('⌛ codeAutoRetrievalTimeout verId=$verificationId');
+        },
+      )
+          .catchError((error, st) {
+        debugPrint('🔥 verifyPhoneNumber FUTURE error: $error');
+        if (error is PlatformException) {
+          debugPrint('  • platform code: ${error.code}');
+          debugPrint('  • platform message: ${error.message}');
+          debugPrint('  • platform details: ${error.details}');
         }
-      },
-      verificationFailed: verificationFailed,
-      codeSent: (String verificationId, int? resendToken) {
-        codeSent(verificationId);
-      },
-      codeAutoRetrievalTimeout: (String verificationId) {},
-    );
+        debugPrintStack(stackTrace: st);
+        if (error is FirebaseAuthException) {
+          _logAuthError(error, st: st);
+          verificationFailed(error);
+        }
+      });
+    } catch (err, st) {
+      if (err is FirebaseAuthException) {
+        _logAuthError(err, st: st);
+        verificationFailed(err);
+      } else {
+        debugPrint('⚠️ NON-FirebaseAuth error in verifyPhoneNumber: $err');
+        debugPrintStack(stackTrace: st);
+        rethrow;
+      }
+    }
   }
 
-  /// Signs in with the provided [phoneAuthCredential] and sets the user's type in Firestore.
+  /// Public: complete sign-in with credential. Decides role internally.
   Future<User?> signInWithPhoneAuthCredential(
-      PhoneAuthCredential phoneAuthCredential,
-      String userType,) async {
-    final UserCredential authResult =
-    await _auth.signInWithCredential(phoneAuthCredential);
-    final User? user = authResult.user;
+    PhoneAuthCredential phoneAuthCredential,
+  ) async {
+    final authResult = await _auth.signInWithCredential(phoneAuthCredential);
+    final user = authResult.user;
+    if (user == null) return null;
 
-    if (user != null) {
-      // Create an AppUser instance
-      AppUser appUser = AppUser(
-        uid: user.uid,
-        name: user.displayName,
-        email: user.email,
-        phoneNumber: user.phoneNumber,
-        userType: userType,
-      );
-
-      // Save or update the user in Firestore
-      await UserService().saveUser(appUser);
-    }
-
+    await _ensureUserDoc(user);
     return user;
   }
 
-  /// Signs out the current user
-  Future<void> signOut() async {
-    await _auth.signOut();
-  }
+  Future<void> signOut() async => _auth.signOut();
 
-  /// Returns the currently signed-in [User], or null if none
-  User? getCurrentUser() {
-    return _auth.currentUser;
+  User? getCurrentUser() => _auth.currentUser;
+
+  // ---------- Helpers ----------
+
+  Future<void> _ensureUserDoc(User user) async {
+    final existing = await _userService.getUserById(user.uid);
+    final phone = user.phoneNumber ?? '';
+
+    String role;
+    if (_adminPhones.contains(phone)) {
+      role = 'admin'; // ALWAYS admin for these phones
+    } else if (existing != null) {
+      role = existing.userType; // keep whatever they already are
+    } else {
+      role = 'user'; // default new users
+    }
+
+    await _userService.saveUser(AppUser(
+      uid: user.uid,
+      name: user.displayName,
+      email: user.email,
+      phoneNumber: phone,
+      userType: role,
+    ));
   }
 }

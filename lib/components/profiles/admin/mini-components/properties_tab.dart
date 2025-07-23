@@ -91,7 +91,34 @@ class _PropertiesTabState extends State<PropertiesTab> {
                     return ListTile(
                       title: Text(p.name),
                       subtitle: Text(p.address ?? ''),
-                      trailing: Text(p.isAssigned ? 'A' : 'U'),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Tooltip(
+                            message: p.isAssigned ? 'Assigned' : 'Unassigned',
+                            child: Text(p.isAssigned ? 'A' : 'U'),
+                          ),
+                          const SizedBox(width: 6),
+                          Tooltip(
+                            message: p.adminApproved
+                                ? 'Approved'
+                                : 'Pending Approval',
+                            child: Text(p.adminApproved ? '✔' : '⏳'),
+                          ),
+                          const SizedBox(width: 4),
+                          IconButton(
+                            icon: const Icon(Icons.keyboard_arrow_right),
+                            onPressed: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    PropertyDetailScreen(propertyId: p.id),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
                       // onTap in PropertiesTab:
                       onTap: () => Navigator.push(
                         context,

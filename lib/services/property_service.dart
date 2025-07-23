@@ -19,11 +19,11 @@ class PropertyService {
   /// Generates a custom property ID based on the district and mandal.
   /// Returns the generated property ID upon successful completion.
   Future<String> addProperty(
-      Property property,
-      List<File> images, {
-        List<File>? videos,
-        List<File>? documents,
-      }) async {
+    Property property,
+    List<File> images, {
+    List<File>? videos,
+    List<File>? documents,
+  }) async {
     try {
       // Step 1: Generate Custom Property ID
       if (property.district == null || property.taluqMandal == null) {
@@ -31,11 +31,11 @@ class PropertyService {
       }
 
       String propertyId =
-      await _generatePropertyId(property.district!, property.taluqMandal!);
+          await _generatePropertyId(property.district!, property.taluqMandal!);
 
       // Step 2: Upload Media Files with Custom Naming
       List<String> imageUrls =
-      await _uploadMediaFiles(propertyId, images, 'property_images', 'img');
+          await _uploadMediaFiles(propertyId, images, 'property_images', 'img');
 
       List<String> videoUrls = [];
       if (videos != null && videos.isNotEmpty) {
@@ -101,6 +101,7 @@ class PropertyService {
         pipeline: property.pipeline,
         electricity: property.electricity,
         plantation: property.plantation,
+        adminApproved: false,
       );
 
       // Step 5: Add the property to Firestore with the custom property ID
@@ -127,7 +128,7 @@ class PropertyService {
   Future<Property?> getPropertyById(String propertyId) async {
     try {
       DocumentSnapshot<Map<String, dynamic>> doc =
-      await _firestore.collection(collectionPath).doc(propertyId).get();
+          await _firestore.collection(collectionPath).doc(propertyId).get();
       if (doc.exists) {
         return Property.fromMap(doc.id, doc.data()!);
       }
@@ -143,11 +144,11 @@ class PropertyService {
   /// Updates an existing property in Firestore.
   /// Optionally handles new image, video, or document uploads if provided.
   Future<void> updateProperty(
-      Property property, {
-        List<File>? newImages,
-        List<File>? newVideos,
-        List<File>? newDocuments,
-      }) async {
+    Property property, {
+    List<File>? newImages,
+    List<File>? newVideos,
+    List<File>? newDocuments,
+  }) async {
     try {
       List<String> updatedImageUrls = List.from(property.images);
       List<String> updatedVideoUrls = List.from(property.videos);
@@ -199,12 +200,12 @@ class PropertyService {
 
   /// Deletes a property from Firestore and removes its images, videos, and documents from Firebase Storage.
   Future<void> deleteProperty(
-      String propertyId,
-      List<String> imageUrls, {
-        List<String>? videoUrls,
-        List<String>? documentUrls,
-        String? userId,
-      }) async {
+    String propertyId,
+    List<String> imageUrls, {
+    List<String>? videoUrls,
+    List<String>? documentUrls,
+    String? userId,
+  }) async {
     try {
       // Step 1: Delete images from Firebase Storage
       if (imageUrls.isNotEmpty) {
@@ -294,8 +295,8 @@ class PropertyService {
     double? maxPrice,
     double? minArea,
     double? maxArea,
-    int? bedrooms,      // ← NEW
-    int? bathrooms,     // ← NEW
+    int? bedrooms, // ← NEW
+    int? bathrooms, // ← NEW
     double? minLat,
     double? maxLat,
     double? minLon,
@@ -306,18 +307,20 @@ class PropertyService {
     String? searchQuery,
   }) async {
     try {
-
       // 🔍 DEBUG: Check what subtypes actually exist in Firestore for 'Development'
-      final allSnap = await FirebaseFirestore.instance.collection('properties').get();
+      final allSnap =
+          await FirebaseFirestore.instance.collection('properties').get();
       for (var d in allSnap.docs) {
         final data = d.data();
         if (data.containsKey('propertyType')) {
-          print('🧾 DEV PROPERTY: id=${d.id}, ${data['propertyType']}, subtype: ${data['subtype']}');
+          print(
+              '🧾 DEV PROPERTY: id=${d.id}, ${data['propertyType']}, subtype: ${data['subtype']}');
         }
       }
 
       // Start building Firestore query
-      var query = _firestore.collection(collectionPath) as Query<Map<String, dynamic>>;
+      var query =
+          _firestore.collection(collectionPath) as Query<Map<String, dynamic>>;
 
       // PropertyType filter
       if (propertyTypes != null && propertyTypes.isNotEmpty) {
@@ -332,9 +335,10 @@ class PropertyService {
       }
       print('🎯 subtypeKeys sent to Firestore: $subtypeKeys');
 
-      if (city      != null) query = query.where('city',     isEqualTo: city);
-      if (district  != null) query = query.where('district', isEqualTo: district);
-      if (pincode   != null) query = query.where('pincode',  isEqualTo: pincode);
+      if (city != null) query = query.where('city', isEqualTo: city);
+      if (district != null)
+        query = query.where('district', isEqualTo: district);
+      if (pincode != null) query = query.where('pincode', isEqualTo: pincode);
       // text‐search
       if (searchQuery != null && searchQuery.isNotEmpty) {
         query = query
@@ -369,7 +373,8 @@ class PropertyService {
       print('• minArea: $minArea, maxArea: $maxArea');
 
       final snap = await query.get();
-      var props = snap.docs.map((d) => Property.fromMap(d.id, d.data())).toList();
+      var props =
+          snap.docs.map((d) => Property.fromMap(d.id, d.data())).toList();
 
       // Now do **all** the other ranges in Dart:
       return props.where((p) {
@@ -377,7 +382,8 @@ class PropertyService {
         double areaVal;
         if (p.propertyType == pt.PropertyType.apartment) {
           areaVal = p.carpetArea ?? 0;
-        } else if (p.propertyType == pt.PropertyType.villa || p.propertyType == pt.PropertyType.house) {
+        } else if (p.propertyType == pt.PropertyType.villa ||
+            p.propertyType == pt.PropertyType.house) {
           areaVal = p.constructedArea ?? 0;
         } else {
           areaVal = p.landArea;
@@ -389,14 +395,15 @@ class PropertyService {
         print('👀 propertyType: ${p.propertyType}, area: $areaVal');
 
         // only compare if areaVal itself is non-null
-        final okArea = (minArea == null  || (areaVal != null && areaVal >= minArea))
-            && (maxArea == null  || (areaVal != null && areaVal <= maxArea));
-        final okLat   = (minLat        == null || p.latitude     >= minLat)
-            && (maxLat        == null || p.latitude     <= maxLat);
-        final okLon   = (minLon        == null || p.longitude    >= minLon)
-            && (maxLon        == null || p.longitude    <= maxLon);
-        final okBeds  = bedrooms      == null || p.bedrooms    == bedrooms;
-        final okBaths = bathrooms     == null || p.bathrooms   == bathrooms;
+        final okArea =
+            (minArea == null || (areaVal != null && areaVal >= minArea)) &&
+                (maxArea == null || (areaVal != null && areaVal <= maxArea));
+        final okLat = (minLat == null || p.latitude >= minLat) &&
+            (maxLat == null || p.latitude <= maxLat);
+        final okLon = (minLon == null || p.longitude >= minLon) &&
+            (maxLon == null || p.longitude <= maxLon);
+        final okBeds = bedrooms == null || p.bedrooms == bedrooms;
+        final okBaths = bathrooms == null || p.bathrooms == bathrooms;
         // totalPrice already filtered server‐side, no need to re-filter it here.
         return okArea && okLat && okLon && okBeds && okBaths;
       }).toList();
@@ -441,7 +448,7 @@ class PropertyService {
       String propertyId) async {
     try {
       DocumentSnapshot<Map<String, dynamic>> doc =
-      await _firestore.collection(collectionPath).doc(propertyId).get();
+          await _firestore.collection(collectionPath).doc(propertyId).get();
 
       if (doc.exists && doc.data() != null) {
         final data = doc.data()!;
@@ -528,9 +535,9 @@ class PropertyService {
   Future<String> _generatePropertyId(String district, String mandal) async {
     // Extract first two letters of district and mandal, uppercase
     String districtCode =
-    district.length >= 2 ? district.substring(0, 2).toUpperCase() : 'XX';
+        district.length >= 2 ? district.substring(0, 2).toUpperCase() : 'XX';
     String mandalCode =
-    mandal.length >= 2 ? mandal.substring(0, 2).toUpperCase() : 'YY';
+        mandal.length >= 2 ? mandal.substring(0, 2).toUpperCase() : 'YY';
 
     String prefix = '$districtCode$mandalCode';
 
@@ -659,11 +666,11 @@ class PropertyService {
       _firestore.doc('properties/$propertyId').update({'stage': newStage});
 
   Future<void> updateBuyer(
-      String propertyId,
-      Buyer oldBuyer,
-      Buyer updatedBuyer,
-      String? agentId,
-      ) async {
+    String propertyId,
+    Buyer oldBuyer,
+    Buyer updatedBuyer,
+    String? agentId,
+  ) async {
     final docRef = _firestore.collection('properties').doc(propertyId);
 
 // 1) remove old entry from buyers list
@@ -689,10 +696,10 @@ class PropertyService {
   }
 
   Future<void> updateBuyerByBuyer(
-      String propertyId,
-      Buyer oldBuyer,
-      Buyer newBuyer,
-      ) async {
+    String propertyId,
+    Buyer oldBuyer,
+    Buyer newBuyer,
+  ) async {
     final docRef = _firestore.collection('properties').doc(propertyId);
 
     // 1) Remove the old buyer map

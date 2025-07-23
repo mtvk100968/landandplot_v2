@@ -73,13 +73,16 @@ class Property {
   /// 'findingAgents', 'findingBuyers', 'saleInProgress', or 'sold'
   final String stage;
 
+  final bool adminApproved;
+
   Property({
     this.id = '',
+    this.adminApproved = false,
     required this.userId,
     required this.name,
     required this.mobileNumber,
     required this.propertyType,
-    this.devSubtype,                // ← NEW
+    this.devSubtype, // ← NEW
     required this.landAreaUnitRaw,
     this.reraNo,
     this.bedrooms,
@@ -134,12 +137,13 @@ class Property {
   /// Serialize to Firestore
   Map<String, dynamic> toMap() {
     final map = <String, dynamic>{
+      'adminApproved': adminApproved,
       'userId': userId,
       'name': name,
       'mobileNumber': mobileNumber,
       'propertyType': propertyType,
       'devSubtype': devSubtype?.firestoreKey,
-      'landAreaUnitRaw': landAreaUnitRaw,         // ← NEW
+      'landAreaUnitRaw': landAreaUnitRaw, // ← NEW
       'reraNo': reraNo,
       'bedrooms': bedrooms,
       'bathrooms': bathrooms,
@@ -193,25 +197,25 @@ class Property {
 
   /// Deserialize from Firestore map
   factory Property.fromMap(String id, Map<String, dynamic> m) {
-    print('🔥 Raw Firestore doc: $m');  // Add this line
+    print('🔥 Raw Firestore doc: $m'); // Add this line
 
     return Property(
       id: id,
+      adminApproved: m['adminApproved'] ?? false,
       userId: m['userId'] ?? '',
       name: m['name'] ?? '',
       mobileNumber: m['mobileNumber'] ?? '',
       propertyType: m['propertyType'] ?? '',
-      devSubtype: m['devSubtype'] != null
-          ? DevSubtype.fromKey(m['devSubtype'])
-          : null,
+      devSubtype:
+          m['devSubtype'] != null ? DevSubtype.fromKey(m['devSubtype']) : null,
       landAreaUnitRaw: m['landAreaUnitRaw'] as String? ?? 'sqyd',
       reraNo: m['reraNo'] ?? '',
       bedrooms: m['bedrooms'],
       bathrooms: m['bathrooms'],
-      carpetArea:      (m['carpetArea']      as num?)?.toDouble(),
+      carpetArea: (m['carpetArea'] as num?)?.toDouble(),
       constructedArea: (m['constructedArea'] as num?)?.toDouble(),
-      plotArea:        (m['plotArea']        as num?)?.toDouble(),
-      landArea:        (m['landArea']        as num?)!.toDouble(),
+      plotArea: (m['plotArea'] as num?)?.toDouble(),
+      landArea: (m['landArea'] as num?)!.toDouble(),
       pricePerUnit: (m['pricePerUnit'] as num?)?.toDouble() ?? 0.0,
       totalPrice: (m['totalPrice'] as num?)?.toDouble() ?? 0.0,
       surveyNumber: m['surveyNumber'] ?? '',
@@ -248,8 +252,8 @@ class Property {
       electricity: m['electricity'],
       plantation: m['plantation'],
       buyers: (m['buyers'] as List?)
-          ?.map((e) => Buyer.fromMap(e as Map<String, dynamic>))
-          .toList() ??
+              ?.map((e) => Buyer.fromMap(e as Map<String, dynamic>))
+              .toList() ??
           [],
       assignedAgentIds: List<String>.from(m['assignedAgentIds'] ?? []),
       winningAgentId: m['winningAgentId'] as String?,

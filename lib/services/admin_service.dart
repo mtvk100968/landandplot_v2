@@ -7,6 +7,17 @@ import '../models/property_model.dart';
 class AdminService {
   final _users = FirebaseFirestore.instance.collection('users');
   final _props = FirebaseFirestore.instance.collection('properties');
+  final _usersCol = FirebaseFirestore.instance.collection('users');
+
+  /// Approve property to be posted
+  Future<void> approveProperty(String id, bool value) async {
+    await _props.doc(id).update({'adminApproved': value});
+  }
+
+  /// Change user to agent
+  Future<void> setUserType(String uid, String newType) async {
+    await _usersCol.doc(uid).update({'userType': newType});
+  }
 
   /// Fetch all agents
   Future<List<AppUser>> getAgents() async {
