@@ -34,7 +34,7 @@ class _SellLandFormState extends State<SellLandForm> {
 
   // We’ll generate 8 keys (max possible pages)
   final List<GlobalKey<FormState>> _formKeys =
-  List.generate(8, (_) => GlobalKey<FormState>());
+      List.generate(8, (_) => GlobalKey<FormState>());
 
   List<Widget> _buildPages(BuildContext context) {
     // watch here so that when propertyType changes the pages list rebuilds
@@ -44,10 +44,7 @@ class _SellLandFormState extends State<SellLandForm> {
     final pages = <Widget>[
       SingleChildScrollView(
         padding: EdgeInsets.only(
-          bottom: MediaQuery
-              .of(context)
-              .viewInsets
-              .bottom + 100,
+          bottom: MediaQuery.of(context).viewInsets.bottom + 100,
         ),
         child: Step1BasicDetails(formKey: _formKeys[0]),
       ),
@@ -96,7 +93,6 @@ class _SellLandFormState extends State<SellLandForm> {
         ),
       );
       print('SellLandForm: building pages for propertyType="$type"');
-
     } else if (type == 'commercial') {
       pages.add(
         Padding(
@@ -109,7 +105,6 @@ class _SellLandFormState extends State<SellLandForm> {
         ),
       );
       print('SellLandForm: building pages for propertyType="$type"');
-
     }
     // media upload is always last
     pages.add(Step6MediaUpload(formKey: _formKeys[6]));
@@ -127,18 +122,18 @@ class _SellLandFormState extends State<SellLandForm> {
   }
 
   Future<void> _submitForm() async {
-    final p = context.read<PropertyProvider>();
-    final service = context.read<PropertyService>();
-    final property = p.toProperty();
-    final images = p.imageFiles;
+    final propProvider = context.read<PropertyProvider>();
+    final propertyService = context.read<PropertyService>();
 
-    if (images.isEmpty) {
+    // 1) Basic validation
+    if (propProvider.imageFiles.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please add at least one image.')),
       );
       return;
     }
 
+    // 2) Show loader
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -146,21 +141,29 @@ class _SellLandFormState extends State<SellLandForm> {
     );
 
     try {
-      final id = await service.addProperty(
-        property,
-        images,
-        videos: p.videoFiles,
-        documents: p.documentFiles,
+      // 3) Save property
+      final propertyId = await propertyService.addProperty(
+        propProvider.toProperty(),
+        propProvider.imageFiles,
+        videos: propProvider.videoFiles,
+        documents: propProvider.documentFiles,
       );
-      Navigator.of(context, rootNavigator: true).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Property Listed! ID: $id')),
-      );
-      p.resetForm();
 
-      final bottomNav = bottomNavBarKey.currentState;
-      bottomNav?.switchTab(0);
+      // 4) Close loader
+      if (!mounted) return;
+      Navigator.of(context, rootNavigator: true).pop();
+
+      // (Optional) reset local form state
+      propProvider.resetForm();
+
+      // 5) Go to payment screen
+      Navigator.pushReplacementNamed(
+        context,
+        '/phonepePay',
+        arguments: propertyId,
+      );
     } catch (e) {
+      if (!mounted) return;
       Navigator.of(context, rootNavigator: true).pop();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to list property: $e')),
@@ -199,7 +202,6 @@ class _SellLandFormState extends State<SellLandForm> {
               children: pages,
             ),
           ),
-
           Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
@@ -220,7 +222,6 @@ class _SellLandFormState extends State<SellLandForm> {
                   label: Text(
                     _currentPage < totalSteps - 1 ? 'Next' : 'Submit',
                   ),
-
                   onPressed: () {
                     // 1) validate current form
                     final formKey = _formKeys[_currentPage];

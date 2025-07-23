@@ -2,7 +2,7 @@
 
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
-const {sendFcm} = require("./utils/fcmHelper");
+const {sendFcm} = require("../utils/fcmHelper");
 
 // admin.initializeApp() stays only in index.js
 

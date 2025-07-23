@@ -1,6 +1,6 @@
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
-const {sendFcm} = require("./utils/fcmHelper");
+const {sendFcm} = require("../utils/fcmHelper");
 
 exports.sendNotification = functions.https.onCall(async (data, context) => {
   const {notificationId} = data;

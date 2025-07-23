@@ -1,21 +1,41 @@
-// functions/index.js
-const functions = require("firebase-functions");
-// Force all Functions V2 to live in asia-south1
-functions.setGlobalOptions({region:["asia-south1"]});
-
-const admin = require("firebase-admin");
+/* eslint-disable */
+const functions = require('firebase-functions/v1'); // force v1 style API
+const admin = require('firebase-admin');
 admin.initializeApp();
 
-// Bring in your trigger factories
-const {onNewProperty} = require("./propertyTriggers");
-const {onBuyerUpdate} = require("./buyerTriggers");
-const {onSellerUpdate} = require("./sellerTriggers");
-const {onAgentUpdate} = require("./agentTriggers");
-const {sendNotification} = require("./sendNotifications");
+const REGION = 'asia-south1';
 
-// Re-export them
-exports.onNewProperty = onNewProperty;
-exports.onBuyerUpdate = onBuyerUpdate;
-exports.onSellerUpdate = onSellerUpdate;
-exports.onAgentUpdate = onAgentUpdate;
-exports.sendNotification = sendNotification;
+// /* ---------- FIRESTORE / FCM TRIGGERS ---------- */
+// const { onNewProperty }   = require('./alerts/propertyTriggers');
+// const { onBuyerUpdate }   = require('./alerts/buyerTriggers');
+// const { onSellerUpdate }  = require('./alerts/sellerTriggers');
+// const { onAgentUpdate }   = require('./alerts/agentTriggers');
+// const { sendNotification } = require('./alerts/sendNotifications');
+
+// exports.onNewProperty    = functions.region(REGION)
+//   .firestore.document('properties/{propId}')
+//   .onCreate(onNewProperty);
+
+// exports.onBuyerUpdate    = functions.region(REGION)
+//   .firestore.document('buyers/{buyerId}')
+//   .onUpdate(onBuyerUpdate);
+
+// exports.onSellerUpdate   = functions.region(REGION)
+//   .firestore.document('sellers/{sellerId}')
+//   .onUpdate(onSellerUpdate);
+
+// exports.onAgentUpdate    = functions.region(REGION)
+//   .firestore.document('agents/{agentId}')
+//   .onUpdate(onAgentUpdate);
+
+// exports.sendNotification = functions.region(REGION)
+//   .https.onCall(sendNotification);
+
+/* ---------- PHONEPE HTTP ENDPOINTS ---------- */
+const { createOrder } = require('./phonepe/createOrder');
+const { getStatus }   = require('./phonepe/getStatus');
+const { webhook }     = require('./phonepe/webhook');
+
+exports.phonepeCreateOrder = functions.region(REGION).https.onRequest(createOrder);
+exports.phonepeGetStatus   = functions.region(REGION).https.onRequest(getStatus);
+exports.phonepeWebhook     = functions.region(REGION).https.onRequest(webhook);
