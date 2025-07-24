@@ -1,29 +1,44 @@
+//pluginManagement {
+//    def flutterSdkPath = {
+//        def properties = new Properties()
+//        file("local.properties").withInputStream { stream -> properties.load(stream) }
+//        def sdk = properties.getProperty("flutter.sdk")
+//        if (sdk == null) throw new GradleException("flutter.sdk not set in local.properties")
+//        return sdk
+//    }()
+//
+//    includeBuild("${flutterSdkPath}/packages/flutter_tools/gradle")
+//
+//    repositories {
+//        google()
+//        mavenCentral()
+//        gradlePluginPortal()
+//    }
+//}
+//
+//dependencyResolutionManagement {
+//    repositories {
+//        google()
+//        mavenCentral()
+//    }
+//}
+//
+//include(":app")
 pluginManagement {
-    def flutterSdkPath = {
-        def properties = new Properties()
-        file("local.properties").withInputStream { stream -> properties.load(stream) }
-        def sdk = properties.getProperty("flutter.sdk")
-        if (sdk == null) throw new GradleException("flutter.sdk not set in local.properties")
-        return sdk
-    }()
-
-    includeBuild("${flutterSdkPath}/packages/flutter_tools/gradle")
-
     repositories {
         google()
         mavenCentral()
         gradlePluginPortal()
-        // PhonePe repo (needed at pluginManagement level for some setups)
-        maven { url "https://phonepe.mycloudrepo.io/public/repositories/phonepe-intentsdk-android" }
+        // 👇 add this if missing
+        maven { url 'https://storage.googleapis.com/download.flutter.io' }
     }
 }
 
+
 dependencyResolutionManagement {
-//    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
         google()
         mavenCentral()
-        maven { url "https://phonepe.mycloudrepo.io/public/repositories/phonepe-intentsdk-android" }
     }
 }
 

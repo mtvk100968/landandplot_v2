@@ -1,13 +1,48 @@
+//buildscript {
+//    ext.kotlin_version = '2.1.0' // match your plugin
+//    repositories {
+//        google()
+//        mavenCentral()
+//        maven { url 'https://storage.googleapis.com/download.flutter.io' }
+//    }
+//    dependencies {
+//        classpath "com.android.tools.build:gradle:8.4.2"
+//        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+//        classpath "dev.flutter:flutter-gradle-plugin"
+//        classpath "com.google.gms:google-services:4.4.3"
+//    }
+//}
+//
+//allprojects {
+//    repositories {
+//        google()
+//        mavenCentral()
+//        maven { url 'https://storage.googleapis.com/download.flutter.io' }
+//    }
+//}
+//
+//def newBuildDir = rootProject.layout.buildDirectory.dir("../../build").get()
+//rootProject.layout.buildDirectory.set(newBuildDir)
+//
+//subprojects {
+//    project.buildDir = "${rootProject.buildDir}/${project.name}"
+//    project.evaluationDependsOn(":app")
+//}
+//
+//tasks.register("clean", Delete) {
+//    delete rootProject.buildDir
+//}
+
+// android/build.gradle
 buildscript {
+    ext.kotlin_version = '1.9.22'  // or latest Flutter-supported version
     repositories {
         google()
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.1.4'
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.20") // ✅ Updated Kotlin plugin
-        // add the Google services plugin
-        classpath "com.google.gms:google-services:4.4.3"
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath "com.android.tools.build:gradle:8.3.2"
     }
 }
 
@@ -15,18 +50,5 @@ allprojects {
     repositories {
         google()
         mavenCentral()
-        maven { url 'https://storage.googleapis.com/download.flutter.io' }
     }
-}
-
-def newBuildDir = rootProject.layout.buildDirectory.dir("../../build").get()
-rootProject.layout.buildDirectory.set(newBuildDir)
-
-subprojects {
-    project.buildDir = "${rootProject.buildDir}/${project.name}"
-    project.evaluationDependsOn(":app")
-}
-
-tasks.register("clean", Delete) {
-    delete rootProject.buildDir
 }

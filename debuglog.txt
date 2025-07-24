@@ -1,0 +1,286 @@
+[2025-07-24T10:05:04.031Z] Object "" in "firebase.json" has unknown property: {"additionalProperty":"flutter"}
+[2025-07-24T10:05:04.037Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[2025-07-24T10:05:04.038Z] > authorizing via signed-in user (tirupathim@gmail.com)
+[2025-07-24T10:05:04.038Z] [iam] checking project landandplot-v2 for permissions ["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]
+[2025-07-24T10:05:04.040Z] Checked if tokens are valid: true, expires at: 1753355040093
+[2025-07-24T10:05:04.040Z] Checked if tokens are valid: true, expires at: 1753355040093
+[2025-07-24T10:05:04.041Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/landandplot-v2:testIamPermissions [none]
+[2025-07-24T10:05:04.041Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/landandplot-v2:testIamPermissions x-goog-quota-user=projects/landandplot-v2
+[2025-07-24T10:05:04.042Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/landandplot-v2:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]}
+[2025-07-24T10:05:05.541Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/landandplot-v2:testIamPermissions 200
+[2025-07-24T10:05:05.542Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/landandplot-v2:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]}
+[2025-07-24T10:05:05.542Z] Checked if tokens are valid: true, expires at: 1753355040093
+[2025-07-24T10:05:05.543Z] Checked if tokens are valid: true, expires at: 1753355040093
+[2025-07-24T10:05:05.543Z] >>> [apiv2][query] POST https://iam.googleapis.com/v1/projects/landandplot-v2/serviceAccounts/landandplot-v2@appspot.gserviceaccount.com:testIamPermissions [none]
+[2025-07-24T10:05:05.543Z] >>> [apiv2][body] POST https://iam.googleapis.com/v1/projects/landandplot-v2/serviceAccounts/landandplot-v2@appspot.gserviceaccount.com:testIamPermissions {"permissions":["iam.serviceAccounts.actAs"]}
+[2025-07-24T10:05:07.131Z] <<< [apiv2][status] POST https://iam.googleapis.com/v1/projects/landandplot-v2/serviceAccounts/landandplot-v2@appspot.gserviceaccount.com:testIamPermissions 200
+[2025-07-24T10:05:07.132Z] <<< [apiv2][body] POST https://iam.googleapis.com/v1/projects/landandplot-v2/serviceAccounts/landandplot-v2@appspot.gserviceaccount.com:testIamPermissions {"permissions":["iam.serviceAccounts.actAs"]}
+
+=== Deploying to 'landandplot-v2'...
+
+i  deploying functions 
+Running command: npm --prefix "$RESOURCE_DIR" run lint
+
+> lint
+> eslint . --ext .js --fix
+
+✔  functions: Finished running predeploy script. 
+[2025-07-24T10:05:08.387Z] Checked if tokens are valid: true, expires at: 1753355040093
+[2025-07-24T10:05:08.387Z] Checked if tokens are valid: true, expires at: 1753355040093
+[2025-07-24T10:05:08.387Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/landandplot-v2/services/cloudresourcemanager.googleapis.com [none]
+[2025-07-24T10:05:08.387Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/landandplot-v2/services/cloudresourcemanager.googleapis.com x-goog-quota-user=projects/landandplot-v2
+[2025-07-24T10:05:10.064Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/landandplot-v2/services/cloudresourcemanager.googleapis.com 200
+[2025-07-24T10:05:10.065Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/landandplot-v2/services/cloudresourcemanager.googleapis.com [omitted]
+[2025-07-24T10:05:10.066Z] Checked if tokens are valid: true, expires at: 1753355040093
+[2025-07-24T10:05:10.066Z] Checked if tokens are valid: true, expires at: 1753355040093
+[2025-07-24T10:05:10.067Z] >>> [apiv2][query] GET https://cloudresourcemanager.googleapis.com/v1/projects/landandplot-v2 [none]
+[2025-07-24T10:05:10.392Z] <<< [apiv2][status] GET https://cloudresourcemanager.googleapis.com/v1/projects/landandplot-v2 200
+[2025-07-24T10:05:10.393Z] <<< [apiv2][body] GET https://cloudresourcemanager.googleapis.com/v1/projects/landandplot-v2 {"projectNumber":"423847166550","projectId":"landandplot-v2","lifecycleState":"ACTIVE","name":"landandplot-v2","labels":{"firebase":"enabled"},"createTime":"2024-08-31T16:12:08.969244Z"}
+i  functions: preparing codebase default for deployment 
+i  functions: ensuring required API cloudfunctions.googleapis.com is enabled... 
+[2025-07-24T10:05:10.398Z] Checked if tokens are valid: true, expires at: 1753355040093
+[2025-07-24T10:05:10.399Z] Checked if tokens are valid: true, expires at: 1753355040093
+[2025-07-24T10:05:10.400Z] Checked if tokens are valid: true, expires at: 1753355040093
+[2025-07-24T10:05:10.400Z] Checked if tokens are valid: true, expires at: 1753355040093
+i  functions: ensuring required API cloudbuild.googleapis.com is enabled... 
+[2025-07-24T10:05:10.403Z] Checked if tokens are valid: true, expires at: 1753355040093
+[2025-07-24T10:05:10.404Z] Checked if tokens are valid: true, expires at: 1753355040093
+i  artifactregistry: ensuring required API artifactregistry.googleapis.com is enabled... 
+[2025-07-24T10:05:10.406Z] Checked if tokens are valid: true, expires at: 1753355040093
+[2025-07-24T10:05:10.406Z] Checked if tokens are valid: true, expires at: 1753355040093
+[2025-07-24T10:05:10.407Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/landandplot-v2/services/cloudfunctions.googleapis.com [none]
+[2025-07-24T10:05:10.407Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/landandplot-v2/services/cloudfunctions.googleapis.com x-goog-quota-user=projects/landandplot-v2
+[2025-07-24T10:05:10.408Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/landandplot-v2/services/runtimeconfig.googleapis.com [none]
+[2025-07-24T10:05:10.408Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/landandplot-v2/services/runtimeconfig.googleapis.com x-goog-quota-user=projects/landandplot-v2
+[2025-07-24T10:05:10.413Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/landandplot-v2/services/cloudbuild.googleapis.com [none]
+[2025-07-24T10:05:10.413Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/landandplot-v2/services/cloudbuild.googleapis.com x-goog-quota-user=projects/landandplot-v2
+[2025-07-24T10:05:10.415Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/landandplot-v2/services/artifactregistry.googleapis.com [none]
+[2025-07-24T10:05:10.415Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/landandplot-v2/services/artifactregistry.googleapis.com x-goog-quota-user=projects/landandplot-v2
+[2025-07-24T10:05:11.050Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/landandplot-v2/services/cloudfunctions.googleapis.com 200
+[2025-07-24T10:05:11.050Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/landandplot-v2/services/cloudfunctions.googleapis.com [omitted]
+✔  functions: required API cloudfunctions.googleapis.com is enabled 
+[2025-07-24T10:05:12.165Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/landandplot-v2/services/runtimeconfig.googleapis.com 200
+[2025-07-24T10:05:12.165Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/landandplot-v2/services/runtimeconfig.googleapis.com [omitted]
+[2025-07-24T10:05:12.166Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/landandplot-v2/services/cloudbuild.googleapis.com 200
+[2025-07-24T10:05:12.166Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/landandplot-v2/services/cloudbuild.googleapis.com [omitted]
+✔  functions: required API cloudbuild.googleapis.com is enabled 
+[2025-07-24T10:05:12.168Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/landandplot-v2/services/artifactregistry.googleapis.com 200
+[2025-07-24T10:05:12.168Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/landandplot-v2/services/artifactregistry.googleapis.com [omitted]
+✔  artifactregistry: required API artifactregistry.googleapis.com is enabled 
+[2025-07-24T10:05:12.170Z] Checked if tokens are valid: true, expires at: 1753355040093
+[2025-07-24T10:05:12.170Z] Checked if tokens are valid: true, expires at: 1753355040093
+[2025-07-24T10:05:12.170Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/landandplot-v2/adminSdkConfig [none]
+[2025-07-24T10:05:13.436Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/landandplot-v2/adminSdkConfig 200
+[2025-07-24T10:05:13.442Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/landandplot-v2/adminSdkConfig {"projectId":"landandplot-v2","databaseURL":"https://landandplot-v2-default-rtdb.asia-southeast1.firebasedatabase.app","storageBucket":"landandplot-v2.appspot.com","locationId":"asia-south1"}
+[2025-07-24T10:05:13.444Z] Checked if tokens are valid: true, expires at: 1753355040093
+[2025-07-24T10:05:13.444Z] Checked if tokens are valid: true, expires at: 1753355040093
+[2025-07-24T10:05:13.444Z] >>> [apiv2][query] GET https://runtimeconfig.googleapis.com/v1beta1/projects/landandplot-v2/configs [none]
+[2025-07-24T10:05:14.654Z] <<< [apiv2][status] GET https://runtimeconfig.googleapis.com/v1beta1/projects/landandplot-v2/configs 200
+[2025-07-24T10:05:14.657Z] <<< [apiv2][body] GET https://runtimeconfig.googleapis.com/v1beta1/projects/landandplot-v2/configs {}
+[2025-07-24T10:05:14.661Z] Validating nodejs source
+⚠  functions: Runtime Node.js 18 was deprecated on 2025-04-30 and will be decommissioned on 2025-10-30, after which you will not be able to deploy without upgrading. Consider upgrading now to avoid disruption. See https://cloud.google.com/functions/docs/runtime-support for full details on the lifecycle policy 
+[2025-07-24T10:05:15.289Z] > [functions] package.json contents: {
+  "name": "functions",
+  "description": "Cloud Functions for Firebase",
+  "scripts": {
+    "lint": "eslint . --ext .js --fix",
+    "serve": "firebase emulators:start --only functions",
+    "shell": "firebase functions:shell",
+    "start": "npm run shell",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "engines": {
+    "node": "20"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "axios": "^1.10.0",
+    "crypto": "^1.0.1",
+    "firebase-admin": "^13.4.0",
+    "firebase-functions": "^6.4.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.15.0",
+    "eslint-config-google": "^0.14.0",
+    "firebase-functions-test": "^3.1.0"
+  },
+  "private": true
+}
+[2025-07-24T10:05:15.290Z] Building nodejs source
+i  functions: Loading and analyzing source code for codebase default to determine what to deploy 
+[2025-07-24T10:05:15.291Z] Could not find functions.yaml. Must use http discovery
+[2025-07-24T10:05:15.300Z] Found firebase-functions binary at '/Users/mrudula/Products/landandplot/functions/node_modules/.bin/firebase-functions'
+Serving at port 8178
+
+✅ newPropertyTriggers.js loaded successfully
+
+[2025-07-24T10:05:15.843Z] Got response from /__/functions.yaml {"endpoints":{"onNewProperty":{"platform":"gcfv1","availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"serviceAccountEmail":null,"vpc":null,"region":["asia-south1"],"eventTrigger":{"eventType":"providers/cloud.firestore/eventTypes/document.create","eventFilters":{"resource":"projects/landandplot-v2/databases/(default)/documents/properties/{propId}"},"retry":false},"labels":{},"entryPoint":"onNewProperty"},"onBuyerUpdate":{"platform":"gcfv1","availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"serviceAccountEmail":null,"vpc":null,"region":["asia-south1"],"eventTrigger":{"eventType":"providers/cloud.firestore/eventTypes/document.update","eventFilters":{"resource":"projects/landandplot-v2/databases/(default)/documents/buyers/{buyerId}"},"retry":false},"labels":{},"entryPoint":"onBuyerUpdate"},"onSellerUpdate":{"platform":"gcfv1","availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"serviceAccountEmail":null,"vpc":null,"region":["asia-south1"],"eventTrigger":{"eventType":"providers/cloud.firestore/eventTypes/document.update","eventFilters":{"resource":"projects/landandplot-v2/databases/(default)/documents/sellers/{sellerId}"},"retry":false},"labels":{},"entryPoint":"onSellerUpdate"},"onAgentUpdate":{"platform":"gcfv1","availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"serviceAccountEmail":null,"vpc":null,"region":["asia-south1"],"eventTrigger":{"eventType":"providers/cloud.firestore/eventTypes/document.update","eventFilters":{"resource":"projects/landandplot-v2/databases/(default)/documents/agents/{agentId}"},"retry":false},"labels":{},"entryPoint":"onAgentUpdate"},"sendNotification":{"platform":"gcfv1","labels":{},"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"serviceAccountEmail":null,"vpc":null,"region":["asia-south1"],"callableTrigger":{},"entryPoint":"sendNotification"},"phonepeCreateOrder":{"platform":"gcfv1","availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"serviceAccountEmail":null,"vpc":null,"region":["asia-south1"],"httpsTrigger":{},"entryPoint":"phonepeCreateOrder"},"phonepeGetStatus":{"platform":"gcfv1","availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"serviceAccountEmail":null,"vpc":null,"region":["asia-south1"],"httpsTrigger":{},"entryPoint":"phonepeGetStatus"},"phonepeWebhook":{"platform":"gcfv1","availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"serviceAccountEmail":null,"vpc":null,"region":["asia-south1"],"httpsTrigger":{},"entryPoint":"phonepeWebhook"}},"specVersion":"v1alpha1","requiredAPIs":[],"extensions":{}}
+i  extensions: ensuring required API firebaseextensions.googleapis.com is enabled... 
+[2025-07-24T10:05:19.893Z] Checked if tokens are valid: true, expires at: 1753355040093
+[2025-07-24T10:05:19.893Z] Checked if tokens are valid: true, expires at: 1753355040093
+[2025-07-24T10:05:19.894Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/landandplot-v2/services/firebaseextensions.googleapis.com [none]
+[2025-07-24T10:05:19.894Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/landandplot-v2/services/firebaseextensions.googleapis.com x-goog-quota-user=projects/landandplot-v2
+[2025-07-24T10:05:21.559Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/landandplot-v2/services/firebaseextensions.googleapis.com 200
+[2025-07-24T10:05:21.560Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/landandplot-v2/services/firebaseextensions.googleapis.com [omitted]
+✔  extensions: required API firebaseextensions.googleapis.com is enabled 
+[2025-07-24T10:05:21.561Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[2025-07-24T10:05:21.562Z] > authorizing via signed-in user (tirupathim@gmail.com)
+[2025-07-24T10:05:21.562Z] [iam] checking project landandplot-v2 for permissions ["firebase.projects.get","firebaseextensions.instances.list"]
+[2025-07-24T10:05:21.563Z] Checked if tokens are valid: true, expires at: 1753355040093
+[2025-07-24T10:05:21.564Z] Checked if tokens are valid: true, expires at: 1753355040093
+[2025-07-24T10:05:21.564Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/landandplot-v2:testIamPermissions [none]
+[2025-07-24T10:05:21.564Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/landandplot-v2:testIamPermissions x-goog-quota-user=projects/landandplot-v2
+[2025-07-24T10:05:21.564Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/landandplot-v2:testIamPermissions {"permissions":["firebase.projects.get","firebaseextensions.instances.list"]}
+[2025-07-24T10:05:22.914Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/landandplot-v2:testIamPermissions 200
+[2025-07-24T10:05:22.915Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/landandplot-v2:testIamPermissions {"permissions":["firebase.projects.get","firebaseextensions.instances.list"]}
+[2025-07-24T10:05:22.916Z] Checked if tokens are valid: true, expires at: 1753355040093
+[2025-07-24T10:05:22.917Z] Checked if tokens are valid: true, expires at: 1753355040093
+[2025-07-24T10:05:22.918Z] >>> [apiv2][query] GET https://firebaseextensions.googleapis.com/v1beta/projects/landandplot-v2/instances pageSize=100&pageToken=
+[2025-07-24T10:05:24.467Z] <<< [apiv2][status] GET https://firebaseextensions.googleapis.com/v1beta/projects/landandplot-v2/instances 200
+[2025-07-24T10:05:24.470Z] <<< [apiv2][body] GET https://firebaseextensions.googleapis.com/v1beta/projects/landandplot-v2/instances {}
+i  functions: Loaded environment variables from .env. 
+i  functions: preparing functions directory for uploading... 
+i  functions: packaged /Users/mrudula/Products/landandplot/functions (81.12 KB) for uploading 
+[2025-07-24T10:05:24.558Z] Checked if tokens are valid: true, expires at: 1753355040093
+[2025-07-24T10:05:24.558Z] Checked if tokens are valid: true, expires at: 1753355040093
+[2025-07-24T10:05:24.558Z] >>> [apiv2][query] GET https://cloudfunctions.googleapis.com/v1/projects/landandplot-v2/locations/-/functions [none]
+[2025-07-24T10:05:25.374Z] <<< [apiv2][status] GET https://cloudfunctions.googleapis.com/v1/projects/landandplot-v2/locations/-/functions 200
+[2025-07-24T10:05:25.375Z] <<< [apiv2][body] GET https://cloudfunctions.googleapis.com/v1/projects/landandplot-v2/locations/-/functions {}
+[2025-07-24T10:05:25.376Z] Checked if tokens are valid: true, expires at: 1753355040093
+[2025-07-24T10:05:25.376Z] Checked if tokens are valid: true, expires at: 1753355040093
+[2025-07-24T10:05:25.377Z] >>> [apiv2][query] GET https://cloudfunctions.googleapis.com/v2/projects/landandplot-v2/locations/-/functions filter=environment%3D%22GEN_2%22
+[2025-07-24T10:05:27.109Z] <<< [apiv2][status] GET https://cloudfunctions.googleapis.com/v2/projects/landandplot-v2/locations/-/functions 200
+[2025-07-24T10:05:27.110Z] <<< [apiv2][body] GET https://cloudfunctions.googleapis.com/v2/projects/landandplot-v2/locations/-/functions {}
+[2025-07-24T10:05:27.112Z] Checked if tokens are valid: true, expires at: 1753355040093
+[2025-07-24T10:05:27.113Z] Checked if tokens are valid: true, expires at: 1753355040093
+[2025-07-24T10:05:27.113Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/landandplot-v2/services/cloudresourcemanager.googleapis.com [none]
+[2025-07-24T10:05:27.113Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/landandplot-v2/services/cloudresourcemanager.googleapis.com x-goog-quota-user=projects/landandplot-v2
+[2025-07-24T10:05:28.781Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/landandplot-v2/services/cloudresourcemanager.googleapis.com 200
+[2025-07-24T10:05:28.782Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/landandplot-v2/services/cloudresourcemanager.googleapis.com [omitted]
+[2025-07-24T10:05:28.782Z] Checked if tokens are valid: true, expires at: 1753355040093
+[2025-07-24T10:05:28.783Z] Checked if tokens are valid: true, expires at: 1753355040093
+[2025-07-24T10:05:28.783Z] >>> [apiv2][query] GET https://cloudresourcemanager.googleapis.com/v1/projects/landandplot-v2 [none]
+[2025-07-24T10:05:30.186Z] <<< [apiv2][status] GET https://cloudresourcemanager.googleapis.com/v1/projects/landandplot-v2 200
+[2025-07-24T10:05:30.188Z] <<< [apiv2][body] GET https://cloudresourcemanager.googleapis.com/v1/projects/landandplot-v2 {"projectNumber":"423847166550","projectId":"landandplot-v2","lifecycleState":"ACTIVE","name":"landandplot-v2","labels":{"firebase":"enabled"},"createTime":"2024-08-31T16:12:08.969244Z"}
+[2025-07-24T10:05:30.192Z] Checked if tokens are valid: true, expires at: 1753355040093
+[2025-07-24T10:05:30.192Z] Checked if tokens are valid: true, expires at: 1753355040093
+[2025-07-24T10:05:30.193Z] >>> [apiv2][query] GET https://cloudbilling.googleapis.com/v1/projects/landandplot-v2/billingInfo [none]
+[2025-07-24T10:05:31.724Z] <<< [apiv2][status] GET https://cloudbilling.googleapis.com/v1/projects/landandplot-v2/billingInfo 200
+[2025-07-24T10:05:31.725Z] <<< [apiv2][body] GET https://cloudbilling.googleapis.com/v1/projects/landandplot-v2/billingInfo {"name":"projects/landandplot-v2/billingInfo","projectId":"landandplot-v2","billingAccountName":"billingAccounts/01D7B8-AFCC21-8B57C4","billingEnabled":true}
+[2025-07-24T10:05:31.734Z] Checked if tokens are valid: true, expires at: 1753355040093
+[2025-07-24T10:05:31.735Z] Checked if tokens are valid: true, expires at: 1753355040093
+[2025-07-24T10:05:31.736Z] >>> [apiv2][query] POST https://cloudfunctions.googleapis.com/v1/projects/landandplot-v2/locations/asia-south1/functions:generateUploadUrl [none]
+[2025-07-24T10:05:31.736Z] >>> [apiv2][body] POST https://cloudfunctions.googleapis.com/v1/projects/landandplot-v2/locations/asia-south1/functions:generateUploadUrl {}
+[2025-07-24T10:05:33.602Z] <<< [apiv2][status] POST https://cloudfunctions.googleapis.com/v1/projects/landandplot-v2/locations/asia-south1/functions:generateUploadUrl 200
+[2025-07-24T10:05:33.603Z] <<< [apiv2][body] POST https://cloudfunctions.googleapis.com/v1/projects/landandplot-v2/locations/asia-south1/functions:generateUploadUrl {"uploadUrl":"https://storage.googleapis.com/uploads-95593361048.asia-south1.cloudfunctions.appspot.com/4604a23b-9bc0-40b7-9b17-c39a15ce2ffc.zip?GoogleAccessId=service-423847166550@gcf-admin-robot.iam.gserviceaccount.com&Expires=1753353333&Signature=oPCRZQvzP9Q969OhFqDnjz96M%2Bc13AZAp8F48li4smnBvOksq9mkUzQkZ5r%2B798BUMn8bmyIDNaI0ywbgve9vQ8SCiXjavVOjO8iDQYV8kim%2ByuQlTAO9GhmlPAhIQOnv0H23iCblqgTzBCZQjlARfnOg36iVdbbQ56F46at64S1rUfNX6N4UNEfk461EV2DNuTzG99AB5RVKimEamh8kAeVyGOjj4NJjq28u4HjHlzv%2Fs5hefUwwxSuORCNOKUS7q%2BLR8CCT%2FumH5YyktV5uLI8TbHl3fxjXCsATx%2BI1c%2FcBJFQ6jS0qN9ZSNQ8MXTdWud9qgLoCuT0fi4OuvyO7A%3D%3D"}
+[2025-07-24T10:05:33.607Z] >>> [apiv2][query] PUT https://storage.googleapis.com/uploads-95593361048.asia-south1.cloudfunctions.appspot.com/4604a23b-9bc0-40b7-9b17-c39a15ce2ffc.zip GoogleAccessId=service-423847166550%40gcf-admin-robot.iam.gserviceaccount.com&Expires=1753353333&Signature=oPCRZQvzP9Q969OhFqDnjz96M%2Bc13AZAp8F48li4smnBvOksq9mkUzQkZ5r%2B798BUMn8bmyIDNaI0ywbgve9vQ8SCiXjavVOjO8iDQYV8kim%2ByuQlTAO9GhmlPAhIQOnv0H23iCblqgTzBCZQjlARfnOg36iVdbbQ56F46at64S1rUfNX6N4UNEfk461EV2DNuTzG99AB5RVKimEamh8kAeVyGOjj4NJjq28u4HjHlzv%2Fs5hefUwwxSuORCNOKUS7q%2BLR8CCT%2FumH5YyktV5uLI8TbHl3fxjXCsATx%2BI1c%2FcBJFQ6jS0qN9ZSNQ8MXTdWud9qgLoCuT0fi4OuvyO7A%3D%3D
+[2025-07-24T10:05:33.607Z] >>> [apiv2][body] PUT https://storage.googleapis.com/uploads-95593361048.asia-south1.cloudfunctions.appspot.com/4604a23b-9bc0-40b7-9b17-c39a15ce2ffc.zip [stream]
+[2025-07-24T10:05:33.901Z] <<< [apiv2][status] PUT https://storage.googleapis.com/uploads-95593361048.asia-south1.cloudfunctions.appspot.com/4604a23b-9bc0-40b7-9b17-c39a15ce2ffc.zip 200
+[2025-07-24T10:05:33.902Z] <<< [apiv2][body] PUT https://storage.googleapis.com/uploads-95593361048.asia-south1.cloudfunctions.appspot.com/4604a23b-9bc0-40b7-9b17-c39a15ce2ffc.zip [omitted]
+✔  functions: functions folder uploaded successfully 
+i  functions: creating Node.js 18 (1st Gen) function onNewProperty(asia-south1)... 
+[2025-07-24T10:05:33.915Z] Checked if tokens are valid: true, expires at: 1753355040093
+[2025-07-24T10:05:33.915Z] Checked if tokens are valid: true, expires at: 1753355040093
+[2025-07-24T10:05:33.916Z] >>> [apiv2][query] POST https://cloudfunctions.googleapis.com/v1/projects/landandplot-v2/locations/asia-south1/functions [none]
+[2025-07-24T10:05:33.916Z] >>> [apiv2][body] POST https://cloudfunctions.googleapis.com/v1/projects/landandplot-v2/locations/asia-south1/functions {"name":"projects/landandplot-v2/locations/asia-south1/functions/onNewProperty","sourceUploadUrl":"https://storage.googleapis.com/uploads-95593361048.asia-south1.cloudfunctions.appspot.com/4604a23b-9bc0-40b7-9b17-c39a15ce2ffc.zip?GoogleAccessId=service-423847166550@gcf-admin-robot.iam.gserviceaccount.com&Expires=1753353333&Signature=oPCRZQvzP9Q969OhFqDnjz96M%2Bc13AZAp8F48li4smnBvOksq9mkUzQkZ5r%2B798BUMn8bmyIDNaI0ywbgve9vQ8SCiXjavVOjO8iDQYV8kim%2ByuQlTAO9GhmlPAhIQOnv0H23iCblqgTzBCZQjlARfnOg36iVdbbQ56F46at64S1rUfNX6N4UNEfk461EV2DNuTzG99AB5RVKimEamh8kAeVyGOjj4NJjq28u4HjHlzv%2Fs5hefUwwxSuORCNOKUS7q%2BLR8CCT%2FumH5YyktV5uLI8TbHl3fxjXCsATx%2BI1c%2FcBJFQ6jS0qN9ZSNQ8MXTdWud9qgLoCuT0fi4OuvyO7A%3D%3D","entryPoint":"onNewProperty","runtime":"nodejs18","dockerRegistry":"ARTIFACT_REGISTRY","labels":{"deployment-tool":"cli-firebase","firebase-functions-hash":"3e486a157eda5ddcc54eb50389c86a405a2ca8a2"},"eventTrigger":{"eventType":"providers/cloud.firestore/eventTypes/document.create","resource":"projects/landandplot-v2/databases/(default)/documents/properties/{propId}"},"minInstances":null,"maxInstances":null,"ingressSettings":null,"environmentVariables":{"PHONEPE_BASE_URL":"https://api-preprod.phonepe.com/apis/pg-sandbox/pg/v1/pay","PHONEPE_MERCHANT_ID":"PGTESTPAYUAT","PHONEPE_SALT_KEY":"099eb0cd-02cf-4e2a-8aca-3e6c6aff0399","PHONEPE_SALT_INDEX":"1","FIREBASE_CONFIG":"{\"projectId\":\"landandplot-v2\",\"databaseURL\":\"https://landandplot-v2-default-rtdb.asia-southeast1.firebasedatabase.app\",\"storageBucket\":\"landandplot-v2.appspot.com\",\"locationId\":\"asia-south1\"}","GCLOUD_PROJECT":"landandplot-v2","EVENTARC_CLOUD_EVENT_SOURCE":"projects/landandplot-v2/locations/asia-south1/functions/onNewProperty"},"serviceAccountEmail":null,"availableMemoryMb":null,"timeout":null,"vpcConnector":null,"vpcConnectorEgressSettings":null,"buildEnvironmentVariables":{"GOOGLE_NODE_RUN_SCRIPTS":""}}
+[2025-07-24T10:05:34.454Z] <<< [apiv2][status] POST https://cloudfunctions.googleapis.com/v1/projects/landandplot-v2/locations/asia-south1/functions 403
+[2025-07-24T10:05:34.455Z] <<< [apiv2][body] POST https://cloudfunctions.googleapis.com/v1/projects/landandplot-v2/locations/asia-south1/functions {"error":{"code":403,"message":"Failed to create 1st Gen function projects/landandplot-v2/locations/asia-south1/functions/onNewProperty: Unable to retrieve the repository metadata for projects/landandplot-v2/locations/asia-south1/repositories/gcf-artifacts. Ensure that the Cloud Functions service account has 'artifactregistry.repositories.list' and 'artifactregistry.repositories.get' permissions. You can add the permissions by granting the role 'roles/artifactregistry.reader'.","status":"PERMISSION_DENIED"}}
+⚠  functions: failed to create function projects/landandplot-v2/locations/asia-south1/functions/onNewProperty 
+Failed to create function projects/landandplot-v2/locations/asia-south1/functions/onNewProperty
+[2025-07-24T10:05:34.475Z] Total Function Deployment time: 553
+[2025-07-24T10:05:34.475Z] 1 Functions Deployed
+[2025-07-24T10:05:34.475Z] 1 Functions Errored
+[2025-07-24T10:05:34.476Z] 0 Function Deployments Aborted
+[2025-07-24T10:05:34.476Z] Average Function Deployment time: 551
+
+Functions deploy had errors with the following functions:
+	onNewProperty(asia-south1)
+[2025-07-24T10:05:34.661Z] Not printing URL for HTTPS function. Typically this means it didn't match a filter or we failed deployment
+[2025-07-24T10:05:34.661Z] Not printing URL for HTTPS function. Typically this means it didn't match a filter or we failed deployment
+[2025-07-24T10:05:34.661Z] Not printing URL for HTTPS function. Typically this means it didn't match a filter or we failed deployment
+[2025-07-24T10:05:34.663Z] Checked if tokens are valid: true, expires at: 1753355040093
+[2025-07-24T10:05:34.664Z] Checked if tokens are valid: true, expires at: 1753355040093
+[2025-07-24T10:05:34.664Z] >>> [apiv2][query] GET https://artifactregistry.googleapis.com/v1/projects/landandplot-v2/locations/asia-south1/repositories/gcf-artifacts [none]
+[2025-07-24T10:05:35.256Z] <<< [apiv2][status] GET https://artifactregistry.googleapis.com/v1/projects/landandplot-v2/locations/asia-south1/repositories/gcf-artifacts 403
+[2025-07-24T10:05:35.257Z] <<< [apiv2][body] GET https://artifactregistry.googleapis.com/v1/projects/landandplot-v2/locations/asia-south1/repositories/gcf-artifacts {"error":{"code":403,"message":"This API method requires billing to be enabled. Please enable billing on project #landandplot-v2 by visiting https://console.developers.google.com/billing/enable?project=landandplot-v2 then retry. If you enabled billing for this project recently, wait a few minutes for the action to propagate to our systems and retry.","status":"PERMISSION_DENIED","details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"BILLING_DISABLED","domain":"googleapis.com","metadata":{"consumer":"projects/landandplot-v2","service":"artifactregistry.googleapis.com","containerInfo":"landandplot-v2"}},{"@type":"type.googleapis.com/google.rpc.LocalizedMessage","locale":"en-US","message":"This API method requires billing to be enabled. Please enable billing on project #landandplot-v2 by visiting https://console.developers.google.com/billing/enable?project=landandplot-v2 then retry. If you enabled billing for this project recently, wait a few minutes for the action to propagate to our systems and retry."},{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Google developers console billing","url":"https://console.developers.google.com/billing/enable?project=landandplot-v2"}]}]}}
+[2025-07-24T10:05:35.258Z] Failed to check artifact cleanup policy for region asia-south1: Request to https://artifactregistry.googleapis.com/v1/projects/landandplot-v2/locations/asia-south1/repositories/gcf-artifacts had HTTP Error: 403, This API method requires billing to be enabled. Please enable billing on project #landandplot-v2 by visiting https://console.developers.google.com/billing/enable?project=landandplot-v2 then retry. If you enabled billing for this project recently, wait a few minutes for the action to propagate to our systems and retry. {"name":"FirebaseError","children":[],"context":{"body":{"error":{"code":403,"message":"This API method requires billing to be enabled. Please enable billing on project #landandplot-v2 by visiting https://console.developers.google.com/billing/enable?project=landandplot-v2 then retry. If you enabled billing for this project recently, wait a few minutes for the action to propagate to our systems and retry.","status":"PERMISSION_DENIED","details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"BILLING_DISABLED","domain":"googleapis.com","metadata":{"consumer":"projects/landandplot-v2","service":"artifactregistry.googleapis.com","containerInfo":"landandplot-v2"}},{"@type":"type.googleapis.com/google.rpc.LocalizedMessage","locale":"en-US","message":"This API method requires billing to be enabled. Please enable billing on project #landandplot-v2 by visiting https://console.developers.google.com/billing/enable?project=landandplot-v2 then retry. If you enabled billing for this project recently, wait a few minutes for the action to propagate to our systems and retry."},{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Google developers console billing","url":"https://console.developers.google.com/billing/enable?project=landandplot-v2"}]}]}},"response":{"statusCode":403}},"exit":1,"message":"Request to https://artifactregistry.googleapis.com/v1/projects/landandplot-v2/locations/asia-south1/repositories/gcf-artifacts had HTTP Error: 403, This API method requires billing to be enabled. Please enable billing on project #landandplot-v2 by visiting https://console.developers.google.com/billing/enable?project=landandplot-v2 then retry. If you enabled billing for this project recently, wait a few minutes for the action to propagate to our systems and retry.","status":403}
+[2025-07-24T10:05:35.261Z] Functions deploy failed.
+[2025-07-24T10:05:35.261Z] {
+  "endpoint": {
+    "id": "onNewProperty",
+    "project": "landandplot-v2",
+    "region": "asia-south1",
+    "entryPoint": "onNewProperty",
+    "platform": "gcfv1",
+    "runtime": "nodejs18",
+    "eventTrigger": {
+      "eventType": "providers/cloud.firestore/eventTypes/document.create",
+      "retry": false,
+      "eventFilters": {
+        "resource": "projects/landandplot-v2/databases/(default)/documents/properties/{propId}"
+      }
+    },
+    "labels": {
+      "deployment-tool": "cli-firebase"
+    },
+    "serviceAccount": null,
+    "ingressSettings": null,
+    "availableMemoryMb": null,
+    "timeoutSeconds": null,
+    "maxInstances": null,
+    "minInstances": null,
+    "vpc": null,
+    "environmentVariables": {
+      "PHONEPE_BASE_URL": "https://api-preprod.phonepe.com/apis/pg-sandbox/pg/v1/pay",
+      "PHONEPE_MERCHANT_ID": "PGTESTPAYUAT",
+      "PHONEPE_SALT_KEY": "099eb0cd-02cf-4e2a-8aca-3e6c6aff0399",
+      "PHONEPE_SALT_INDEX": "1",
+      "FIREBASE_CONFIG": "{\"projectId\":\"landandplot-v2\",\"databaseURL\":\"https://landandplot-v2-default-rtdb.asia-southeast1.firebasedatabase.app\",\"storageBucket\":\"landandplot-v2.appspot.com\",\"locationId\":\"asia-south1\"}",
+      "GCLOUD_PROJECT": "landandplot-v2",
+      "EVENTARC_CLOUD_EVENT_SOURCE": "projects/landandplot-v2/locations/asia-south1/functions/onNewProperty"
+    },
+    "codebase": "default",
+    "targetedByOnly": true,
+    "hash": "3e486a157eda5ddcc54eb50389c86a405a2ca8a2"
+  },
+  "op": "create",
+  "original": {
+    "name": "FirebaseError",
+    "children": [],
+    "context": {
+      "function": "projects/landandplot-v2/locations/asia-south1/functions/onNewProperty"
+    },
+    "exit": 1,
+    "message": "Failed to create function projects/landandplot-v2/locations/asia-south1/functions/onNewProperty",
+    "original": {
+      "name": "FirebaseError",
+      "children": [],
+      "context": {
+        "body": {
+          "error": {
+            "code": 403,
+            "message": "Failed to create 1st Gen function projects/landandplot-v2/locations/asia-south1/functions/onNewProperty: Unable to retrieve the repository metadata for projects/landandplot-v2/locations/asia-south1/repositories/gcf-artifacts. Ensure that the Cloud Functions service account has 'artifactregistry.repositories.list' and 'artifactregistry.repositories.get' permissions. You can add the permissions by granting the role 'roles/artifactregistry.reader'.",
+            "status": "PERMISSION_DENIED"
+          }
+        },
+        "response": {
+          "statusCode": 403
+        }
+      },
+      "exit": 1,
+      "message": "Request to https://cloudfunctions.googleapis.com/v1/projects/landandplot-v2/locations/asia-south1/functions had HTTP Error: 403, Failed to create 1st Gen function projects/landandplot-v2/locations/asia-south1/functions/onNewProperty: Unable to retrieve the repository metadata for projects/landandplot-v2/locations/asia-south1/repositories/gcf-artifacts. Ensure that the Cloud Functions service account has 'artifactregistry.repositories.list' and 'artifactregistry.repositories.get' permissions. You can add the permissions by granting the role 'roles/artifactregistry.reader'.",
+      "status": 403
+    },
+    "status": 403,
+    "code": 403
+  }
+}
+[2025-07-24T10:05:35.317Z] Error: Failed to create function onNewProperty in region asia-south1
+    at /Users/mrudula/.nvm/versions/node/v20.18.3/lib/node_modules/firebase-tools/lib/deploy/functions/release/fabricator.js:52:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async Fabricator.createV1Function (/Users/mrudula/.nvm/versions/node/v20.18.3/lib/node_modules/firebase-tools/lib/deploy/functions/release/fabricator.js:182:32)
+    at async Fabricator.createEndpoint (/Users/mrudula/.nvm/versions/node/v20.18.3/lib/node_modules/firebase-tools/lib/deploy/functions/release/fabricator.js:134:13)
+    at async handle (/Users/mrudula/.nvm/versions/node/v20.18.3/lib/node_modules/firebase-tools/lib/deploy/functions/release/fabricator.js:89:17)
+
+Error: There was an error deploying functions

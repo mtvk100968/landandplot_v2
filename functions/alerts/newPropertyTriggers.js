@@ -1,8 +1,15 @@
 /* eslint-disable */
+const functions = require('firebase-functions/v1'); // ✅ Add this
 const admin = require('firebase-admin');
 const { sendFcm } = require('../utils/fcmHelper');
 
-exports.onNewProperty = async (snap, ctx) => {
+console.log("✅ newPropertyTriggers.js loaded successfully");
+
+exports.onNewProperty = functions.region('asia-south1')
+  .firestore.document('properties/{propId}')
+  .onCreate(async (snap, ctx) => {
+    console.log("📦 onNewProperty triggered");
+
   const property = snap.data();
   const propId = ctx.params.propId;
 
@@ -46,4 +53,4 @@ exports.onNewProperty = async (snap, ctx) => {
     });
   }
   return null;
-};
+});

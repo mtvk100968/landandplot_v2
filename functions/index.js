@@ -6,30 +6,37 @@ admin.initializeApp();
 const REGION = 'asia-south1';
 
 // /* ---------- FIRESTORE / FCM TRIGGERS ---------- */
-// const { onNewProperty }   = require('./alerts/propertyTriggers');
-// const { onBuyerUpdate }   = require('./alerts/buyerTriggers');
-// const { onSellerUpdate }  = require('./alerts/sellerTriggers');
-// const { onAgentUpdate }   = require('./alerts/agentTriggers');
-// const { sendNotification } = require('./alerts/sendNotifications');
 
-// exports.onNewProperty    = functions.region(REGION)
-//   .firestore.document('properties/{propId}')
-//   .onCreate(onNewProperty);
+ const { onNewProperty }   = require('./alerts/newPropertyTriggers');
+ const { onBuyerUpdate }   = require('./alerts/buyerTriggers');
+ const { onSellerUpdate }  = require('./alerts/sellerTriggers');
+ const { onAgentUpdate }   = require('./alerts/agentTriggers');
+ const { sendNotification } = require('./alerts/sendNotifications');
 
-// exports.onBuyerUpdate    = functions.region(REGION)
-//   .firestore.document('buyers/{buyerId}')
-//   .onUpdate(onBuyerUpdate);
+exports.onNewProperty = functions.region('asia-south1')
+  .firestore.document('properties/{propId}')
+  .onCreate(async (snap, context) => {
+    console.log('✅ Dummy function ran for propId:', context.params.propId);
+    console.log('📦 onNewProperty triggered');
+    return null;
+  });
 
-// exports.onSellerUpdate   = functions.region(REGION)
-//   .firestore.document('sellers/{sellerId}')
-//   .onUpdate(onSellerUpdate);
+// exports.onNewProperty = onNewProperty;
 
-// exports.onAgentUpdate    = functions.region(REGION)
-//   .firestore.document('agents/{agentId}')
-//   .onUpdate(onAgentUpdate);
+ exports.onBuyerUpdate    = functions.region(REGION)
+   .firestore.document('buyers/{buyerId}')
+   .onUpdate(onBuyerUpdate);
 
-// exports.sendNotification = functions.region(REGION)
-//   .https.onCall(sendNotification);
+ exports.onSellerUpdate   = functions.region(REGION)
+   .firestore.document('sellers/{sellerId}')
+   .onUpdate(onSellerUpdate);
+
+ exports.onAgentUpdate    = functions.region(REGION)
+   .firestore.document('agents/{agentId}')
+   .onUpdate(onAgentUpdate);
+
+ exports.sendNotification = functions.region(REGION)
+   .https.onCall(sendNotification);
 
 /* ---------- PHONEPE HTTP ENDPOINTS ---------- */
 const { createOrder } = require('./phonepe/createOrder');
